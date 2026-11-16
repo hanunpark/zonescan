@@ -1,0 +1,625 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>존 스캔 수집</title>
+<style>
+  :root{--bg:#14161c;--card:#1f232d;--line:#313746;--txt:#eef1f6;--sub:#9aa3b5;--ok:#35c27a;--warn:#f0a531;--err:#ef5350;--acc:#4d8dff}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--txt);font:16px/1.4 -apple-system,"Malgun Gothic","Apple SD Gothic Neo",sans-serif;-webkit-tap-highlight-color:transparent}
+  header{display:flex;gap:8px;align-items:center;padding:10px 12px;border-bottom:1px solid var(--line)}
+  header b{font-size:17px;flex:1}
+  header small{color:var(--sub);font-size:12px}
+  main{padding:10px 12px 90px}
+  input,button{font:inherit;color:inherit}
+  input[type=text]{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:11px 12px;width:100%}
+  button{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:11px 12px}
+  button.pri{background:var(--acc);border-color:var(--acc);color:#fff;font-weight:700}
+  button.on{background:var(--warn);border-color:var(--warn);color:#111;font-weight:700}
+  button.danger{border-color:var(--err);color:var(--err)}
+  .row{display:flex;gap:8px;margin-top:8px}
+  .row>*{flex:1}
+  .row>.fix{flex:0 0 auto}
+  #zonebox{margin-top:10px;background:var(--card);border:2px solid var(--line);border-radius:12px;padding:12px 14px;display:flex;align-items:center;gap:12px}
+  #zonebox.set{border-color:var(--acc)}
+  #zonebox .lab{color:var(--sub);font-size:12px}
+  #zone{font-size:30px;font-weight:800;letter-spacing:.5px;word-break:break-all}
+  #zcnt{margin-left:auto;text-align:right}
+  #zcnt b{font-size:34px}
+  #msg{margin-top:8px;border-radius:8px;padding:10px 12px;font-weight:700;min-height:44px;background:var(--card);border:1px solid var(--line)}
+  #msg.ok{background:#12351f;border-color:var(--ok);color:#8ff0b7}
+  #msg.warn{background:#3a2a0b;border-color:var(--warn);color:#ffd58a}
+  #msg.err{background:#3d1516;border-color:var(--err);color:#ffb0ae}
+  #camwrap{margin-top:8px;position:relative;border-radius:10px;overflow:hidden;background:#000;display:none}
+  #camwrap.show{display:block}
+  video{width:100%;height:250px;object-fit:cover;display:block}
+  #aim{position:absolute;left:10%;right:10%;top:16%;bottom:16%;border:2px solid rgba(255,255,255,.85);border-radius:10px;box-shadow:0 0 0 2000px rgba(0,0,0,.28)}
+  #camwrap.hit #aim{border-color:#35c27a;border-width:5px}
+  #camctl{margin-top:6px;gap:10px;align-items:center;font-size:13px;color:var(--sub)}
+  #camctl button{padding:8px 14px}
+  #camctl label{flex:1;display:flex;align-items:center;gap:8px}
+  #camctl input{flex:1}
+  #apibox{margin-top:8px}
+  h3{margin:16px 0 6px;font-size:14px;color:var(--sub);font-weight:600}
+  .list{background:var(--card);border:1px solid var(--line);border-radius:10px;overflow:hidden}
+  .it{display:flex;align-items:center;gap:8px;padding:9px 12px;border-top:1px solid var(--line)}
+  .it:first-child{border-top:0}
+  .it .wb{font-weight:700;font-variant-numeric:tabular-nums}
+  .it .z{color:var(--sub);font-size:13px}
+  .it .t{color:var(--sub);font-size:12px;margin-left:auto}
+  .it .dup{background:var(--err);color:#fff;font-size:11px;font-weight:700;border-radius:4px;padding:1px 5px}
+  #dupwrap{color:#ffb0ae}
+  .lab2{margin-top:12px;font-size:13px;color:var(--sub);font-weight:600}
+  .row .cam{border-color:var(--acc);color:#9cc0ff}
+  #camstat{margin-top:8px;display:flex;align-items:center;gap:8px;font-size:13px;color:var(--sub)}
+  #camstat span{flex:1}
+  #camstat.bad span{color:#ffd58a;font-weight:700}
+  #camstat.good span{color:#8ff0b7}
+  #camstat button{padding:7px 10px;font-size:13px}
+  #rzask{display:none;margin-top:8px;background:#3a2a0b;border:2px solid var(--warn);border-radius:10px;padding:12px}
+  #rzask .q{font-weight:800;color:#ffd58a}
+  #rzask .d{margin-top:4px;font-size:14px}
+  #rzask .col{display:flex;flex-direction:column;gap:8px;margin-top:10px}
+  #rzask button{padding:14px 8px;font-weight:700}
+  .zs{cursor:pointer}
+  .zs .arr{color:var(--sub);margin-left:8px;font-size:12px}
+  .zd{background:#171a22;border-top:1px solid var(--line);padding:6px 12px 10px}
+  .zd .w{display:flex;gap:8px;padding:4px 0;font-variant-numeric:tabular-nums;font-size:14px}
+  .zd .w .t{margin-left:auto;color:var(--sub);font-size:12px}
+  .zd .w .dup{background:var(--err);color:#fff;font-size:11px;font-weight:700;border-radius:4px;padding:0 5px}
+  #dupask{display:none;margin-top:8px;background:#3d1516;border:2px solid var(--err);border-radius:10px;padding:12px}
+  #dupask .q{font-weight:800;color:#ffb0ae}
+  #dupask .d{margin-top:4px;font-size:14px}
+  #dupask button{padding:16px 8px;font-weight:700}
+  .it button{padding:5px 9px;font-size:13px}
+  .empty{padding:14px;color:var(--sub);text-align:center}
+  .zs{display:flex;padding:8px 12px;border-top:1px solid var(--line)}
+  .zs:first-child{border-top:0}
+  .zs b{margin-left:auto}
+  .zs.cur{color:var(--acc);font-weight:700}
+  footer{position:fixed;left:0;right:0;bottom:0;background:#0f1116;border-top:1px solid var(--line);padding:8px 12px;display:flex;gap:10px;align-items:center;font-size:13px;color:var(--sub)}
+  footer b{color:var(--txt)}
+  #sync{margin-left:auto}
+  #sync.bad{color:var(--warn)}
+  textarea{width:100%;height:120px;background:var(--card);color:var(--txt);border:1px solid var(--line);border-radius:8px;padding:8px;font:12px/1.4 monospace;margin-top:8px;display:none}
+</style>
+</head>
+<body>
+<header>
+  <b>존 스캔 수집</b>
+  <small>v2.0 · 2026-11-16</small>
+</header>
+<main>
+  <div class="row">
+    <input type="text" id="worker" placeholder="작업자 이름" autocomplete="off">
+    <button class="pri fix" id="start">시작</button>
+  </div>
+
+  <div id="zonebox">
+    <div>
+      <div class="lab">현재 존</div>
+      <div id="zone">미지정</div>
+    </div>
+    <div id="zcnt"><div class="lab">이 존 운송장</div><b>0</b></div>
+  </div>
+
+  <div id="msg">① 존코드를 넣고 → ② 운송장을 넣으세요.</div>
+
+  <div class="row"><button class="pri" id="camtoggle">카메라 스캔 켜기</button></div>
+  <div id="camstat"><span id="camtxt">카메라 스캔: 꺼짐</span></div>
+
+  <div id="rzask">
+    <div class="q">이미 스캔한 존</div>
+    <div class="d"><b id="rzname"></b> 에는 이미 <b id="rzcnt"></b>건이 있습니다. 다시 작업할까요?</div>
+    <div class="col">
+      <button class="on" id="rzredo">처음부터 다시</button>
+      <button id="rzcont">이어서 추가 (기존 유지)</button>
+      <button id="rzskip">건너뛰기 (지금 존 그대로)</button>
+    </div>
+  </div>
+
+  <div id="dupask">
+    <div class="q">같은 존 중복 스캔</div>
+    <div class="d"><b id="dupwb"></b> 은(는) <b id="dupzone"></b> 에 이미 <b id="dupsame"></b>건 있습니다.</div>
+    <div class="row">
+      <button class="on" id="dupadd">실물이 또 있음 · 넣기</button>
+      <button id="dupskip">다시 찍힌 것 · 빼기</button>
+    </div>
+  </div>
+
+  <div id="camwrap"><video id="video" playsinline muted></video><div id="aim"></div></div>
+  <div id="camctl" style="display:none"><button id="torch">조명</button><label id="zoomwrap">확대 <input type="range" id="zoom"></label></div>
+
+  <div class="lab2">① 존코드 — 스캔하거나 입력</div>
+  <div class="row">
+    <input type="text" id="zin" placeholder="존코드" autocomplete="off" autocapitalize="characters" enterkeyhint="done">
+    <button class="fix pri" id="zok">지정</button>
+  </div>
+  <div class="lab2">② 운송장 — 스캔하거나 입력 (존코드를 넣으면 다음 존으로 넘어감)</div>
+  <div class="row">
+    <input type="text" id="win" placeholder="운송장번호" autocomplete="off" inputmode="text" enterkeyhint="done">
+    <button class="fix pri" id="wok">추가</button>
+  </div>
+  <div class="row">
+    <button id="say">현재 존 수량 듣기</button>
+  </div>
+
+  <h3 id="curh">현재 존 스캔 목록</h3>
+  <div class="list" id="recent"><div class="empty">아직 없습니다.</div></div>
+
+  <h3>존별 스캔 목록 (존을 누르면 운송장이 펼쳐집니다)</h3>
+  <div class="list" id="zones"><div class="empty">아직 없습니다.</div></div>
+
+  <h3>내보내기와 초기화</h3>
+  <div class="row">
+    <button id="copy">목록 복사</button>
+    <button id="show">목록 보기</button>
+    <button class="danger" id="reset">전체 초기화</button>
+  </div>
+  <textarea id="out" readonly></textarea>
+  <div id="apibox">
+    <h3>시트 저장 주소 (Apps Script 웹 앱 주소 — 한 번만 넣으면 됩니다)</h3>
+    <div class="row"><input type="text" id="api" placeholder="https://script.google.com/macros/s/…/exec" autocomplete="off"><button class="fix" id="apisave">저장</button></div>
+  </div>
+</main>
+<footer>
+  <span>전체 <b id="tot">0</b>건</span>
+  <span>존 <b id="zn">0</b>개</span>
+  <span id="dupwrap" style="display:none">중복 <b id="dupn">0</b></span>
+  <span id="sync">이 폰에만 저장</span>
+</footer>
+
+<script>
+/*LOGIC-BEGIN*/
+// 한글 자판 상태에서 스캐너가 보낸 영문이 한글로 바뀐 것을 되돌린다.
+var KMAP = { 'ㅂ': 'q', 'ㅈ': 'w', 'ㄷ': 'e', 'ㄱ': 'r', 'ㅅ': 't', 'ㅛ': 'y', 'ㅕ': 'u', 'ㅑ': 'i', 'ㅐ': 'o', 'ㅔ': 'p', 'ㅁ': 'a', 'ㄴ': 's', 'ㅇ': 'd', 'ㄹ': 'f', 'ㅎ': 'g', 'ㅗ': 'h', 'ㅓ': 'j', 'ㅏ': 'k', 'ㅣ': 'l', 'ㅋ': 'z', 'ㅌ': 'x', 'ㅊ': 'c', 'ㅍ': 'v', 'ㅠ': 'b', 'ㅜ': 'n', 'ㅡ': 'm', 'ㅃ': 'Q', 'ㅉ': 'W', 'ㄸ': 'E', 'ㄲ': 'R', 'ㅆ': 'T', 'ㅒ': 'O', 'ㅖ': 'P', 'ㅘ': 'hk', 'ㅙ': 'ho', 'ㅚ': 'hl', 'ㅝ': 'nj', 'ㅞ': 'np', 'ㅟ': 'nl', 'ㅢ': 'ml', 'ㄳ': 'rt', 'ㄵ': 'sw', 'ㄶ': 'sg', 'ㄺ': 'fr', 'ㄻ': 'fa', 'ㄼ': 'fq', 'ㄽ': 'ft', 'ㄾ': 'fx', 'ㄿ': 'fv', 'ㅀ': 'fg', 'ㅄ': 'qt' };
+var CHO = 'ㄱㄲㄴㄷㄸㄹㅁㅂㅃㅅㅆㅇㅈㅉㅊㅋㅌㅍㅎ'.split(''), JUNG = 'ㅏㅐㅑㅒㅓㅔㅕㅖㅗㅘㅙㅚㅛㅜㅝㅞㅟㅠㅡㅢㅣ'.split('');
+var JONG = ['', 'ㄱ', 'ㄲ', 'ㄳ', 'ㄴ', 'ㄵ', 'ㄶ', 'ㄷ', 'ㄹ', 'ㄺ', 'ㄻ', 'ㄼ', 'ㄽ', 'ㄾ', 'ㄿ', 'ㅀ', 'ㅁ', 'ㅂ', 'ㅄ', 'ㅅ', 'ㅆ', 'ㅇ', 'ㅈ', 'ㅊ', 'ㅋ', 'ㅌ', 'ㅍ', 'ㅎ'];
+function unKorean(s) {
+  var o = '';
+  for (var i = 0; i < s.length; i++) {
+    var ch = s.charAt(i), c = s.charCodeAt(i);
+    if (c >= 0xAC00 && c <= 0xD7A3) { c -= 0xAC00; o += KMAP[CHO[Math.floor(c / 588)]] + KMAP[JUNG[Math.floor((c % 588) / 28)]] + (c % 28 ? KMAP[JONG[c % 28]] : ''); }
+    else o += (KMAP[ch] || ch);
+  }
+  return o;
+}
+// 존 QR 값(c:센터:l:로케이션:z:존코드)에서 존코드만 뽑는다. 한글로 깨진 값은 먼저 영문으로 되돌린다.
+function normZone(raw) {
+  var s = String(raw == null ? '' : raw).trim();
+  var t = (/[ㄱ-ㅣ가-힣]/.test(s) && /:.*:/.test(s)) ? unKorean(s) : s;
+  var m = t.match(/(?:^|:)z:([^:]+)$/i);
+  return m ? m[1].trim().toUpperCase() : s;
+}
+// 스캔 문자열을 운송장 / 존 / 알 수 없음으로 나눈다.
+function classify(raw, forceZone) {
+  var s = String(raw == null ? '' : raw).trim();
+  if (!s) return { type: 'none' };
+  var z = s;
+  try { var j = JSON.parse(s); if (j && typeof j === 'object') z = String(j.zoneCode || j.code || j.zone || s); } catch (e) {}
+  var m = z.match(/[?&](?:zoneCode|code|zone)=([^&#]+)/i);
+  if (m) { try { z = decodeURIComponent(m[1]); } catch (e) { z = m[1]; } }
+  z = normZone(z);
+  if (forceZone) return { type: 'zone', value: z };
+  var d = s.replace(/[\s-]/g, '');
+  if (/^\d{12}$/.test(d)) return { type: 'wb', value: d.slice(0, 4) + '-' + d.slice(4, 8) + '-' + d.slice(8) };
+  if (/^\d+$/.test(d)) return { type: 'unknown', value: s };   // 제품 바코드(KAN 등)는 무시
+  return { type: 'zone', value: z };
+}
+// 현재 유효한 스캔 행들. 스캔 1번 = 1건이며, 같은 운송장이 여러 번(같은 존·다른 존) 있어도 각각 남는다.
+function activeRows(rows) {
+  var del = {}, out = [];
+  for (var i = 0; i < rows.length; i++) if (rows[i].kind === 'DEL') del[rows[i].ref] = 1;
+  for (var k = 0; k < rows.length; k++) if (rows[k].kind !== 'DEL' && !del[rows[k].id]) out.push(rows[k]);
+  return out;
+}
+function countZone(rows, zone) {
+  return activeRows(rows).filter(function (r) { return r.zone === zone; }).length;
+}
+function zoneSummary(rows) {
+  var order = [], cnt = {};
+  for (var i = 0; i < rows.length; i++) { var z = rows[i].zone; if (!(z in cnt)) { cnt[z] = 0; order.push(z); } }
+  activeRows(rows).forEach(function (r) { cnt[r.zone]++; });
+  return order.map(function (z) { return { zone: z, n: cnt[z] }; });
+}
+// 이 운송장이 스캔된 존 목록(중복 없이, 스캔 순서)
+function zonesOf(rows, wb) {
+  var out = []; activeRows(rows).forEach(function (r) { if (r.wb === wb && out.indexOf(r.zone) < 0) out.push(r.zone); }); return out;
+}
+// 중복 설명: 같은 존에 여러 건이면 "같은 존 N건", 다른 존에도 있으면 그 존들
+function dupInfo(rows, row) {
+  var act = activeRows(rows), same = 0, others = [];
+  act.forEach(function (r) { if (r.wb !== row.wb) return; if (r.zone === row.zone) same++; else if (others.indexOf(r.zone) < 0) others.push(r.zone); });
+  var parts = []; if (same > 1) parts.push('같은 존 ' + same + '건'); if (others.length) parts.push(others.join(' / '));
+  return parts.join(' / ');
+}
+// 존 하나의 유효 스캔을 모두 지운다(재작업용). 지운 건수를 돌려준다.
+function clearZone(S, zone, now) {
+  var list = activeRows(S.rows).filter(function (r) { return r.zone === zone; });
+  for (var i = 0; i < list.length; i++) S.rows.push({ id: newId(), t: now, zone: zone, wb: list[i].wb, worker: S.worker || '', kind: 'DEL', ref: list[i].id, note: '삭제:' + list[i].id + ' (존 재작업)', synced: false });
+  return list.length;
+}
+function newId() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 8); }
+// 운송장 1건 추가.
+// 결과: nozone | dup(같은 존에 이미 있음 → 넣을지 물어봐야 함) | dupsame(같은 존 중복으로 추가함) | dupzone(다른 존에도 있음, 둘 다 유지) | ok
+function scanWaybill(S, wb, now, addSameZoneDup) {
+  if (!S.zone) return { status: 'nozone' };
+  var act = activeRows(S.rows);
+  var same = act.filter(function (r) { return r.wb === wb && r.zone === S.zone; }).length;
+  if (same && !addSameZoneDup) return { status: 'dup', same: same };
+  var others = zonesOf(S.rows, wb).filter(function (z) { return z !== S.zone; });
+  var notes = [];
+  if (same) notes.push('같은 존 중복 ' + (same + 1) + '번째');
+  if (others.length) notes.push('중복: ' + others.join(', ') + ' 에도 있음');
+  var row = { id: newId(), t: now, zone: S.zone, wb: wb, worker: S.worker || '', kind: 'SCAN', note: notes.join(' / '), synced: false };
+  S.rows.push(row);
+  return { status: same ? 'dupsame' : (others.length ? 'dupzone' : 'ok'), row: row, others: others, same: same + 1 };
+}
+function deleteRow(S, id, now) {
+  var cur = activeRows(S.rows).filter(function (r) { return r.id === id; })[0];
+  if (!cur) return null;
+  var row = { id: newId(), t: now, zone: cur.zone, wb: cur.wb, worker: S.worker || '', kind: 'DEL', ref: id, note: '삭제:' + id, synced: false };
+  S.rows.push(row);
+  return row;
+}
+// 음성용 존 이름: 앞의 로케이션 코드(예: 001-)를 떼고 읽는다.
+function speakZone(z) {
+  return String(z).replace(/^\d{3}-/, '').replace(/-/g, ' ');
+}
+function toCsv(rows) {
+  var out = ['존코드,운송장번호,스캔시각,작업자,중복'];
+  var list = activeRows(rows).slice().sort(function (a, b) { return a.t - b.t; });
+  for (var i = 0; i < list.length; i++) {
+    var r = list[i];
+    out.push([r.zone, r.wb, new Date(r.t).toISOString(), r.worker, dupInfo(rows, r)].map(function (v) {
+      v = String(v); return /[",\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v;
+    }).join(','));
+  }
+  return out.join('\n');
+}
+/*LOGIC-END*/
+
+var LS = 'zonescan.v1';
+var S = { worker: '', zone: '', rows: [] };
+var started = false, viewZone = null;
+var $ = function (id) { return document.getElementById(id); };
+
+function load() { try { var j = JSON.parse(localStorage.getItem(LS) || 'null'); if (j && j.rows) S = j; } catch (e) {} }
+function save() { try { localStorage.setItem(LS, JSON.stringify(S)); } catch (e) {} }
+
+// ── 소리 ──
+var actx = null;
+function beep(kind) {
+  try {
+    if (!actx) actx = new (window.AudioContext || window.webkitAudioContext)();
+    var seq = kind === 'ok' ? [[880, .09]] : kind === 'zone' ? [[660, .08], [990, .12]] : [[220, .18], [220, .18]];
+    var t = actx.currentTime;
+    seq.forEach(function (p) {
+      var o = actx.createOscillator(), g = actx.createGain();
+      o.type = kind === 'err' ? 'square' : 'sine'; o.frequency.value = p[0];
+      g.gain.setValueAtTime(.25, t); g.gain.exponentialRampToValueAtTime(.001, t + p[1]);
+      o.connect(g); g.connect(actx.destination); o.start(t); o.stop(t + p[1]); t += p[1] + .05;
+    });
+  } catch (e) {}
+  try { if (navigator.vibrate) navigator.vibrate(kind === 'err' ? [120, 60, 120] : 40); } catch (e) {}
+}
+function say(text) {
+  try {
+    if (!('speechSynthesis' in window)) return;
+    var u = new SpeechSynthesisUtterance(text); u.lang = 'ko-KR'; u.rate = 1.1;
+    window.speechSynthesis.cancel(); window.speechSynthesis.speak(u);
+  } catch (e) {}
+}
+function msg(text, cls) { var m = $('msg'); m.textContent = text; m.className = cls || ''; }
+
+// ── 스캔 처리 ──
+var pendingZone = null;  // 이미 스캔한 존을 다시 찍었을 때 선택을 기다리는 존
+function focusWb() { if (stream) { try { document.activeElement.blur(); } catch (e) {} return; } try { $('win').focus(); } catch (e) {} }   // 카메라 스캔 중에는 자판이 올라오지 않게 한다
+function askZone(z) {
+  pendingZone = z; var n = countZone(S.rows, z);
+  $('rzname').textContent = z; $('rzcnt').textContent = n; $('rzredo').textContent = '처음부터 다시 (기존 ' + n + '건 지움)';
+  $('rzask').style.display = 'block'; $('zin').value = '';
+  beep('err'); say('이미 스캔한 존입니다. ' + speakZone(z) + ', ' + n + '건. 다시 작업할지 선택하세요');
+  msg('이미 스캔한 존: ' + z + ' (' + n + '건) — 아래에서 선택하세요.', 'err');
+}
+function enterZone(z, how) {
+  var prev = S.zone, pn = prev ? countZone(S.rows, prev) : 0;
+  pendingZone = null; $('rzask').style.display = 'none';
+  var removed = 0; if (how === 'redo') removed = clearZone(S, z, Date.now());
+  S.zone = z; beep('zone');
+  var n = countZone(S.rows, z);
+  say((prev && prev !== z ? speakZone(prev) + ', ' + pn + '건. ' : '') + '다음 ' + speakZone(z) + (how === 'redo' ? ', 처음부터 다시' : ', 이어서 ' + n + '건부터'));
+  msg(how === 'redo' ? ('현재 존 ' + z + ' — 기존 ' + removed + '건을 지우고 처음부터 다시 스캔합니다.') : ('현재 존 ' + z + ' — 기존 ' + n + '건에 이어서 스캔합니다.'), 'ok');
+  save(); render(); syncSoon(); focusWb();
+}
+var pendingDup = null;   // 같은 존 중복 스캔에 대한 선택을 기다리는 운송장
+function askDup(wb, same) {
+  pendingDup = wb;
+  $('dupwb').textContent = wb; $('dupzone').textContent = S.zone; $('dupsame').textContent = same;
+  $('dupask').style.display = 'block';
+  beep('err'); say('중복. 넣을지 뺄지 선택하세요');
+  msg('같은 존 중복 스캔: ' + wb + ' — 아래에서 선택하세요.', 'err');
+}
+function closeDup() { pendingDup = null; $('dupask').style.display = 'none'; }
+function handle(raw, asZone) {
+  var c = classify(raw, !!asZone);
+  if (c.type === 'none') return;
+  if (pendingDup) { beep('err'); say('중복 선택을 먼저 하세요'); return; }
+  if (pendingZone) { beep('err'); say('존 선택을 먼저 하세요'); return; }
+  if (c.type === 'unknown') { beep('err'); msg('운송장도 존도 아닌 바코드입니다: ' + c.value, 'err'); return; }
+  if (c.type === 'zone') {
+    var prev = S.zone;
+    if (prev !== c.value && countZone(S.rows, c.value) > 0) { askZone(c.value); return; }
+    if (prev && prev !== c.value) {
+      var n = countZone(S.rows, prev);
+      say(speakZone(prev) + ', ' + n + '건. 다음 ' + speakZone(c.value));
+      msg('이전 존 ' + prev + ' : ' + n + '건 → 현재 존 ' + c.value, 'ok');
+    } else if (prev === c.value) {
+      say(speakZone(prev) + ', 현재 ' + countZone(S.rows, prev) + '건');
+      msg('같은 존입니다: ' + prev, 'warn');
+    } else {
+      say('존 ' + speakZone(c.value));
+      msg('현재 존 ' + c.value + ' — 운송장을 스캔하세요.', 'ok');
+    }
+    S.zone = c.value; beep('zone'); save(); render(); $('zin').value = ''; focusWb(); return;
+  }
+  var r = scanWaybill(S, c.value, Date.now());
+  if (r.status === 'nozone') { beep('err'); say('존을 먼저 스캔하세요'); msg('존을 먼저 스캔하세요. (' + c.value + ')', 'err'); return; }
+  if (r.status === 'dup') { askDup(c.value, r.same); return; }
+  if (r.status === 'dupzone') { beep('err'); say('중복. 다른 존에도 있습니다'); msg('중복 운송장 ' + c.value + ' : ' + r.others.join(', ') + ' 에도 있습니다. 두 곳 모두 기록했습니다.', 'err'); }
+  else { beep('ok'); msg(c.value + ' 추가 (' + S.zone + ' ' + countZone(S.rows, S.zone) + '건)', 'ok'); }
+  save(); render(); syncSoon();
+}
+
+// ── 화면 ──
+function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+function hhmm(t) { var d = new Date(t); return ('0' + d.getHours()).slice(-2) + ':' + ('0' + d.getMinutes()).slice(-2) + ':' + ('0' + d.getSeconds()).slice(-2); }
+function render() {
+  $('zone').textContent = S.zone || '미지정';
+  $('zonebox').className = S.zone ? 'set' : '';
+  $('zcnt').querySelector('b').textContent = S.zone ? countZone(S.rows, S.zone) : 0;
+  var act = activeRows(S.rows).slice().sort(function (a, b) { return b.t - a.t; });
+  $('tot').textContent = act.length;
+  var cntWb = {}; act.forEach(function (r) { cntWb[r.wb] = (cntWb[r.wb] || 0) + 1; });
+  var dupN = Object.keys(cntWb).filter(function (k) { return cntWb[k] > 1; }).length;
+  $('dupn').textContent = dupN; $('dupwrap').style.display = dupN ? '' : 'none';
+  var cur = act.filter(function (r) { return r.zone === S.zone; });
+  $('curh').textContent = S.zone ? ('현재 존 스캔 목록 — ' + S.zone + ' (' + cur.length + '건)') : '현재 존 스캔 목록';
+  $('recent').innerHTML = !S.zone ? '<div class="empty">존코드를 먼저 넣으세요.</div>' : cur.length ? cur.map(function (r) {
+    return '<div class="it"><span class="wb">' + esc(r.wb) + '</span><span class="z">' + esc(r.zone) + '</span>' + (cntWb[r.wb] > 1 ? '<span class="dup">중복</span>' : '') + '<span class="t">' + hhmm(r.t) + '</span><button data-del="' + esc(r.id) + '">삭제</button></div>';
+  }).join('') : '<div class="empty">이 존에 스캔한 운송장이 아직 없습니다.</div>';
+  var zs = zoneSummary(S.rows).filter(function (z) { return z.n > 0 || z.zone === S.zone; });
+  $('zn').textContent = zs.filter(function (z) { return z.n > 0; }).length;
+  $('zones').innerHTML = zs.length ? zs.slice().reverse().map(function (z) {
+    var open = viewZone === z.zone;
+    var h = '<div class="zs' + (z.zone === S.zone ? ' cur' : '') + '" data-z="' + esc(z.zone) + '"><span>' + esc(z.zone) + '</span><b>' + z.n + '</b><span class="arr">' + (open ? '접기 ▲' : '목록 ▼') + '</span></div>';
+    if (open) {
+      var l = act.filter(function (r) { return r.zone === z.zone; }).sort(function (a, b) { return a.t - b.t; });
+      h += '<div class="zd">' + (l.length ? l.map(function (r, i) { return '<div class="w"><span>' + (i + 1) + '.</span><span>' + esc(r.wb) + '</span>' + (cntWb[r.wb] > 1 ? '<span class="dup">중복</span>' : '') + '<span class="t">' + hhmm(r.t) + '</span></div>'; }).join('') : '<div class="empty">없습니다.</div>') + '</div>';
+    }
+    return h;
+  }).join('') : '<div class="empty">아직 없습니다.</div>';
+  renderSync();
+}
+
+// ── 시트 저장: Apps Script 안에서는 직접, 다른 주소에서 열었을 때는 저장 주소(웹 앱 URL)로 보낸다 ──
+var gasRun = !!(window.google && google.script && google.script.run);
+var API = ''; try { API = localStorage.getItem('zonescan.api') || ''; } catch (e) {}
+(function () { var m = location.hash.match(/api=([^&]+)/); if (m) { try { API = decodeURIComponent(m[1]); localStorage.setItem('zonescan.api', API); } catch (e) {} } })();
+function hasServer() { return gasRun || !!API; }
+function sendBatch(rows, ok, fail) {
+  if (gasRun) { google.script.run.withSuccessHandler(ok).withFailureHandler(fail).appendRows(rows); return; }
+  fetch(API, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ rows: rows }), redirect: 'follow' })
+    .then(function (r) { return r.json(); })
+    .then(function (j) { if (j && j.ok) ok(j.ids); else fail(j && j.error || '저장 실패'); })
+    .catch(fail);
+}
+var syncing = false, syncTimer = null, syncErr = '';
+function unsynced() { return S.rows.filter(function (r) { return !r.synced; }); }
+function renderSync() {
+  var el = $('sync'), n = unsynced().length;
+  if (!hasServer()) { el.textContent = '이 폰에만 저장 (' + n + '건)'; el.className = n ? 'bad' : ''; return; }
+  if (syncErr) { el.textContent = '시트 저장 대기 ' + n + '건'; el.className = 'bad'; return; }
+  el.textContent = n ? '시트 저장 중 ' + n + '건' : '시트 저장 완료'; el.className = n ? 'bad' : '';
+}
+function syncSoon() { if (!hasServer()) { renderSync(); return; } clearTimeout(syncTimer); syncTimer = setTimeout(syncNow, 1500); }
+function syncNow() {
+  if (!hasServer() || syncing) return;
+  var batch = unsynced().slice(0, 200);
+  if (!batch.length) { renderSync(); return; }
+  syncing = true;
+  sendBatch(batch.map(function (r) { return [r.id, new Date(r.t).toISOString(), r.zone, r.wb, r.worker, r.kind, r.note || '']; }), function (ids) {
+    syncing = false; syncErr = '';
+    var set = {}; (ids || []).forEach(function (i) { set[i] = 1; });
+    S.rows.forEach(function (r) { if (set[r.id]) r.synced = true; });
+    save(); renderSync(); if (unsynced().length) syncSoon();
+  }, function (e) {
+    syncing = false; syncErr = String(e && e.message || e); renderSync();
+    clearTimeout(syncTimer); syncTimer = setTimeout(syncNow, 8000);
+  });
+}
+
+// ── 카메라 실시간 인식(사진을 찍지 않고 화면에 비추면 바로 읽는다) ──
+var stream = null, track = null, det = null, scanOn = false, busy = false, loopT = null;
+var lastRaw = '', lastAt = 0, cand = '', candN = 0;
+var FORMATS = ['qr_code', 'data_matrix', 'code_128', 'code_39', 'code_93', 'itf', 'codabar', 'pdf417', 'aztec'];
+var inApp = /KAKAOTALK|NAVER\(inapp|Line\/|FBAN|FBAV|Instagram/i.test(navigator.userAgent);
+function camStat(text, cls) { $('camtxt').textContent = text; $('camstat').className = cls || ''; }
+function camHelp(name) {
+  if (inApp) return '카카오톡 등 앱 안의 화면에서는 카메라가 막힙니다. 크롬에서 여세요.';
+  if (gasRun) return '구글 Apps Script 주소에서는 카메라 실시간 인식이 막혀 있습니다. 카메라용 주소로 여세요.';
+  if (name === 'NotAllowedError') return '주소창 왼쪽 아이콘 → 권한에서 카메라를 허용한 뒤 다시 누르세요.';
+  return '다시 눌러 보세요.';
+}
+function onDetected(raw) {
+  var now = Date.now();
+  if (raw === lastRaw && now - lastAt < 2500) { lastAt = now; return; }   // 같은 라벨을 계속 비추는 동안은 다시 받지 않는다
+  lastRaw = raw; lastAt = now;
+  var w = $('camwrap'); w.classList.add('hit'); setTimeout(function () { w.classList.remove('hit'); }, 250);
+  handle(raw, false);
+}
+// 화면 가운데(조준 틀) 안의 바코드만, 두 번 연속 같은 값으로 읽혔을 때 받아들인다 → 옆 라벨 오인식과 오독을 줄인다.
+function pickCenter(codes, vw, vh) {
+  var best = null, bd = 1e9;
+  for (var i = 0; i < codes.length; i++) {
+    var b = codes[i].boundingBox; if (!codes[i].rawValue || !b) continue;
+    var cx = (b.x + b.width / 2) / vw, cy = (b.y + b.height / 2) / vh;
+    if (cx < 0.12 || cx > 0.88 || cy < 0.15 || cy > 0.85) continue;
+    var d = Math.abs(cx - 0.5) + Math.abs(cy - 0.5);
+    if (d < bd) { bd = d; best = codes[i]; }
+  }
+  return best;
+}
+function accept(raw) { if (raw === cand) candN++; else { cand = raw; candN = 1; } if (candN >= 2) onDetected(raw); }
+function loop() {
+  if (!scanOn) return;
+  var v = $('video');
+  if (det && v.readyState >= 2 && !busy && !pendingDup && !pendingZone) {
+    busy = true;
+    det.detect(v).then(function (codes) {
+      busy = false;
+      var c = pickCenter(codes, v.videoWidth, v.videoHeight);
+      if (c) accept(c.rawValue); else { cand = ''; candN = 0; }
+    }).catch(function () { busy = false; });
+  }
+  loopT = setTimeout(loop, 70);
+}
+function stopCamera() {
+  scanOn = false; clearTimeout(loopT);
+  try { if (stream) stream.getTracks().forEach(function (t) { t.stop(); }); } catch (e) {}
+  stream = null; track = null; $('camwrap').className = ''; $('camctl').style.display = 'none';
+  $('camtoggle').textContent = '카메라 스캔 켜기'; $('camtoggle').className = 'pri';
+}
+function setupControls() {
+  var caps = {}; try { caps = track.getCapabilities ? track.getCapabilities() : {}; } catch (e) {}
+  try { if (caps.focusMode && caps.focusMode.indexOf('continuous') >= 0) track.applyConstraints({ advanced: [{ focusMode: 'continuous' }] }); } catch (e) {}
+  var show = false;
+  if (caps.torch) { $('torch').style.display = ''; show = true; } else $('torch').style.display = 'none';
+  if (caps.zoom && caps.zoom.max > caps.zoom.min) {
+    var z = $('zoom'); z.min = caps.zoom.min; z.max = Math.min(caps.zoom.max, 6); z.step = caps.zoom.step || 0.1;
+    var saved = 0; try { saved = parseFloat(localStorage.getItem('zonescan.zoom')) || 0; } catch (e) {}
+    z.value = saved || Math.min(2, z.max);
+    try { track.applyConstraints({ advanced: [{ zoom: parseFloat(z.value) }] }); } catch (e) {}
+    $('zoomwrap').style.display = ''; show = true;
+  } else $('zoomwrap').style.display = 'none';
+  $('camctl').style.display = show ? 'flex' : 'none';
+}
+function startCamera() {
+  stopCamera();
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) { camStat('이 화면에서는 카메라를 쓸 수 없습니다. ' + camHelp(), 'bad'); return; }
+  camStat('카메라 켜는 중…', '');
+  navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: 'environment' }, width: { ideal: 1920 }, height: { ideal: 1080 } }, audio: false }).then(function (st) {
+    stream = st; track = st.getVideoTracks()[0];
+    var v = $('video'); v.srcObject = st; $('camwrap').className = 'show';
+    $('camtoggle').textContent = '카메라 스캔 끄기'; $('camtoggle').className = 'on';
+    return v.play();
+  }).then(function () {
+    setupControls();
+    if ('BarcodeDetector' in window) {
+      return BarcodeDetector.getSupportedFormats().then(function (sup) {
+        det = new BarcodeDetector({ formats: FORMATS.filter(function (f) { return sup.indexOf(f) >= 0; }) });
+        scanOn = true; loop(); camStat('인식 중 — 네모 틀 안에 바코드를 비추세요.', 'good');
+      });
+    }
+    camStat('인식 엔진을 불러오는 중…', '');
+    var s = document.createElement('script');
+    s.src = 'https://unpkg.com/@zxing/library@0.21.3/umd/index.min.js';
+    s.onload = function () {
+      try {
+        new ZXing.BrowserMultiFormatReader().decodeFromStream(stream, $('video'), function (res) { if (res && !pendingDup && !pendingZone) accept(res.getText()); });
+        scanOn = true; camStat('인식 중(호환 방식) — 네모 틀 안에 바코드를 비추세요.', 'good');
+      } catch (e) { camStat('이 브라우저는 바코드 인식을 지원하지 않습니다. 크롬으로 여세요.', 'bad'); }
+    };
+    s.onerror = function () { camStat('이 브라우저는 바코드 인식을 지원하지 않습니다. 크롬으로 여세요.', 'bad'); };
+    document.head.appendChild(s);
+  }).then(function () {
+    try { if (navigator.wakeLock) navigator.wakeLock.request('screen').catch(function () {}); } catch (e) {}
+  }).catch(function (e) {
+    stopCamera();
+    camStat('카메라를 열지 못했습니다(' + (e && e.name || e) + '). ' + camHelp(e && e.name), 'bad');
+  });
+}
+
+// ── 버튼 ──
+$('start').onclick = function () {
+  S.worker = $('worker').value.trim(); save();
+  beep('zone'); say(S.zone ? '이어서 시작합니다' : '존 코드를 넣으세요');
+  started = true; $('start').textContent = '작동 중';
+  msg(S.zone ? '현재 존 ' + S.zone + ' — 이어서 운송장을 넣으세요.' : '① 존코드를 먼저 넣으세요.', 'ok');
+  try { (S.zone ? $('win') : $('zin')).focus(); } catch (e) {}
+};
+$('camtoggle').onclick = function () { if (stream) { stopCamera(); camStat('카메라 스캔: 꺼짐', ''); } else startCamera(); };
+$('torch').onclick = function () { var on = this.className !== 'on'; try { track.applyConstraints({ advanced: [{ torch: on }] }); this.className = on ? 'on' : ''; } catch (e) {} };
+$('zoom').oninput = function () { try { track.applyConstraints({ advanced: [{ zoom: parseFloat(this.value) }] }); localStorage.setItem('zonescan.zoom', this.value); } catch (e) {} };
+$('apisave').onclick = function () {
+  API = $('api').value.trim(); try { localStorage.setItem('zonescan.api', API); } catch (e) {}
+  syncErr = ''; renderSync(); msg(API ? '저장 주소를 넣었습니다. 시트로 보내기 시작합니다.' : '저장 주소를 지웠습니다. 이 폰에만 저장합니다.', 'ok'); if (API) syncNow();
+};
+$('worker').onchange = function () { S.worker = $('worker').value.trim(); save(); };
+function submitZone() { var v = $('zin').value; $('zin').value = ''; if (v.trim()) handle(v, true); else { try { $('zin').focus(); } catch (e) {} } }
+function submitWb() { var v = $('win').value; $('win').value = ''; if (v.trim()) handle(v, false); focusWb(); }
+$('zok').onclick = submitZone; $('wok').onclick = submitWb;
+$('zin').onkeydown = function (e) { if (e.key === 'Enter') { e.preventDefault(); submitZone(); } };
+$('win').onkeydown = function (e) { if (e.key === 'Enter') { e.preventDefault(); submitWb(); } };
+
+$('say').onclick = function () {
+  if (!S.zone) { say('존이 지정되지 않았습니다'); return; }
+  var n = countZone(S.rows, S.zone); say(speakZone(S.zone) + ', ' + n + '건'); msg('현재 존 ' + S.zone + ' : ' + n + '건', 'ok');
+};
+$('recent').onclick = function (e) {
+  var b = e.target.closest('button[data-del]'); if (!b) return;
+  var id = b.getAttribute('data-del');
+  if (b.getAttribute('data-arm') !== '1') { b.setAttribute('data-arm', '1'); b.textContent = '한 번 더'; b.className = 'danger'; return; }
+  var d = deleteRow(S, id, Date.now()); save(); render(); syncSoon(); if (d) msg(d.zone + ' 의 ' + d.wb + ' 1건 삭제했습니다.', 'warn');
+};
+$('dupadd').onclick = function () {
+  var wb = pendingDup; if (!wb) return; closeDup();
+  var r = scanWaybill(S, wb, Date.now(), true);
+  beep('ok'); say('중복으로 넣었습니다');
+  msg(wb + ' 중복으로 추가 (' + S.zone + ' 에 ' + r.same + '건' + (r.others.length ? ', ' + r.others.join(', ') + ' 에도 있음' : '') + ')', 'warn');
+  save(); render(); syncSoon(); focusWb();
+};
+$('dupskip').onclick = function () {
+  var wb = pendingDup; if (!wb) return; closeDup();
+  beep('zone'); say('뺐습니다'); msg(wb + ' 는 넣지 않았습니다.', 'ok'); focusWb();
+};
+$('rzredo').onclick = function () {
+  if (!pendingZone) return;
+  if (this.getAttribute('data-arm') !== '1') { this.setAttribute('data-arm', '1'); this.textContent = '한 번 더 누르면 기존 ' + countZone(S.rows, pendingZone) + '건을 지웁니다'; return; }
+  this.removeAttribute('data-arm'); enterZone(pendingZone, 'redo');
+};
+$('rzcont').onclick = function () { if (!pendingZone) return; $('rzredo').removeAttribute('data-arm'); enterZone(pendingZone, 'cont'); };
+$('rzskip').onclick = function () {
+  if (!pendingZone) return; var z = pendingZone; pendingZone = null; $('rzredo').removeAttribute('data-arm'); $('rzask').style.display = 'none';
+  beep('zone'); say('건너뜁니다'); msg(z + ' 는 건너뜁니다. 현재 존은 ' + (S.zone || '미지정') + ' 그대로입니다.', 'ok');
+  if (S.zone) focusWb(); else { try { $('zin').focus(); } catch (e) {} }
+};
+$('zones').onclick = function (e) {
+  var el = e.target.closest('.zs'); if (!el) return;
+  var z = el.getAttribute('data-z'); viewZone = (viewZone === z) ? null : z; render();
+};
+$('copy').onclick = function () {
+  var csv = toCsv(S.rows);
+  try { navigator.clipboard.writeText(csv).then(function () { msg('목록을 복사했습니다. 메모나 메신저에 붙여넣으세요.', 'ok'); }, function () { showOut(csv); }); } catch (e) { showOut(csv); }
+};
+function showOut(csv) { var o = $('out'); o.style.display = 'block'; o.value = csv; o.focus(); o.select(); msg('아래 목록을 길게 눌러 전체 복사하세요.', 'warn'); }
+$('show').onclick = function () { var o = $('out'); if (o.style.display === 'block') { o.style.display = 'none'; return; } showOut(toCsv(S.rows)); };
+var resetArm = 0;
+$('reset').onclick = function () {
+  var now = Date.now();
+  if (now - resetArm > 4000) { resetArm = now; this.textContent = '한 번 더 누르면 삭제'; msg('이 폰에 저장된 스캔을 모두 지웁니다. 시트에 저장된 기록은 남습니다.', 'err'); return; }
+  resetArm = 0; this.textContent = '전체 초기화';
+  S = { worker: S.worker, zone: '', rows: [] }; save(); render(); msg('초기화했습니다. 존 코드를 스캔하세요.', 'warn');
+};
+
+load();
+(function () { var ch = false; S.rows.forEach(function (r) { var z = normZone(r.zone); if (z !== r.zone) { r.zone = z; ch = true; } }); if (S.zone) { var cz = normZone(S.zone); if (cz !== S.zone) { S.zone = cz; ch = true; } } if (ch) save(); })();
+$('worker').value = S.worker || '';
+if (inApp) camStat(camHelp(), 'bad');
+if (gasRun) $('apibox').style.display = 'none'; else $('api').value = API;
+render();
+setInterval(syncNow, 15000); syncSoon();
+</script>
+</body>
+</html>
