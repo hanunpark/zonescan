@@ -41,6 +41,7 @@
   #camctl label{flex:1;display:flex;align-items:center;gap:8px}
   #camctl input{flex:1}
   #apibox{margin-top:8px}
+  #pullstat.bad{color:#ffd58a}
   h3{margin:16px 0 6px;font-size:14px;color:var(--sub);font-weight:600}
   .list{background:var(--card);border:1px solid var(--line);border-radius:10px;overflow:hidden}
   .it{display:flex;align-items:center;gap:8px;padding:9px 12px;border-top:1px solid var(--line)}
@@ -88,7 +89,7 @@
 <body>
 <header>
   <b>존 스캔 수집</b>
-  <small>v2.0 · 2026-11-16</small>
+  <small>v2.1 · 2026-11-16</small>
 </header>
 <main>
   <div class="row">
@@ -150,6 +151,8 @@
 
   <h3>존별 스캔 목록 (존을 누르면 운송장이 펼쳐집니다)</h3>
   <div class="list" id="zones"><div class="empty">아직 없습니다.</div></div>
+
+  <div class="row"><span id="pullstat" class="lab2" style="margin:0;align-self:center">시트와 연결되지 않음 — 이 폰 기록만 표시</span><button class="fix" id="pull">시트 기록 불러오기</button></div>
 
   <h3>내보내기와 초기화</h3>
   <div class="row">
@@ -239,6 +242,21 @@ function clearZone(S, zone, now) {
   var list = activeRows(S.rows).filter(function (r) { return r.zone === zone; });
   for (var i = 0; i < list.length; i++) S.rows.push({ id: newId(), t: now, zone: zone, wb: list[i].wb, worker: S.worker || '', kind: 'DEL', ref: list[i].id, note: '삭제:' + list[i].id + ' (존 재작업)', synced: false });
   return list.length;
+}
+// 시트에 있는 기록을 이 폰 기록에 합친다(다른 날·다른 폰에서 찍은 것 포함). 새로 들어온 줄 수를 돌려준다.
+// 서버 줄: [id, 스캔시각(ISO), 존, 운송장, 작업자, 구분, 비고]
+function mergeServerRows(S, list) {
+  var have = {}, add = 0;
+  for (var i = 0; i < S.rows.length; i++) have[S.rows[i].id] = 1;
+  for (var k = 0; k < list.length; k++) {
+    var r = list[k]; if (!r || !r[0] || have[r[0]]) continue;
+    var t = Date.parse(r[1]); if (isNaN(t)) continue;
+    var row = { id: String(r[0]), t: t, zone: normZone(r[2]), wb: String(r[3]), worker: String(r[4] || ''), kind: r[5] === 'DEL' ? 'DEL' : 'SCAN', note: String(r[6] || ''), synced: true };
+    if (row.kind === 'DEL') { var m = row.note.match(/^삭제:([A-Za-z0-9]+)/); if (m) row.ref = m[1]; }
+    S.rows.push(row); have[row.id] = 1; add++;
+  }
+  if (add) S.rows.sort(function (a, b) { return a.t - b.t; });
+  return add;
 }
 function newId() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 8); }
 // 운송장 1건 추가.
@@ -415,6 +433,29 @@ function sendBatch(rows, ok, fail) {
     .then(function (j) { if (j && j.ok) ok(j.ids); else fail(j && j.error || '저장 실패'); })
     .catch(fail);
 }
+// 시트의 기존 기록 불러오기
+function fetchRows(ok, fail) {
+  if (gasRun) { google.script.run.withSuccessHandler(ok).withFailureHandler(fail).getRows(); return; }
+  fetch(API + (API.indexOf('?') >= 0 ? '&' : '?') + 'action=rows', { redirect: 'follow' })
+    .then(function (r) { return r.json(); })
+    .then(function (j) { if (j && j.ok) ok(j.rows); else fail(j && j.error || '불러오기 실패'); })
+    .catch(fail);
+}
+var pulled = false;
+function pullServer(quiet) {
+  if (!hasServer()) return;
+  $('pullstat').textContent = '시트 기록 불러오는 중…';
+  fetchRows(function (rows) {
+    var n = mergeServerRows(S, rows || []); pulled = true; save(); render();
+    var tot = activeRows(S.rows).length;
+    $('pullstat').textContent = '시트 기록 반영됨 (전체 ' + tot + '건)';
+    if (!quiet || n) msg('시트의 기존 기록 ' + n + '건을 불러왔습니다. 전체 ' + tot + '건.', 'ok');
+  }, function (e) {
+    $('pullstat').textContent = '시트 기록을 못 불러왔습니다 — 이미 찍은 존 확인이 안 될 수 있습니다';
+    $('pullstat').className = 'bad';
+    if (!quiet) msg('시트 기록을 불러오지 못했습니다: ' + String(e && e.message || e), 'err');
+  });
+}
 var syncing = false, syncTimer = null, syncErr = '';
 function unsynced() { return S.rows.filter(function (r) { return !r.synced; }); }
 function renderSync() {
@@ -549,12 +590,13 @@ $('start').onclick = function () {
   msg(S.zone ? '현재 존 ' + S.zone + ' — 이어서 운송장을 넣으세요.' : '① 존코드를 먼저 넣으세요.', 'ok');
   try { (S.zone ? $('win') : $('zin')).focus(); } catch (e) {}
 };
+$('pull').onclick = function () { if (!hasServer()) { msg('먼저 맨 아래 "시트 저장 주소"를 넣으세요.', 'warn'); return; } pullServer(false); };
 $('camtoggle').onclick = function () { if (stream) { stopCamera(); camStat('카메라 스캔: 꺼짐', ''); } else startCamera(); };
 $('torch').onclick = function () { var on = this.className !== 'on'; try { track.applyConstraints({ advanced: [{ torch: on }] }); this.className = on ? 'on' : ''; } catch (e) {} };
 $('zoom').oninput = function () { try { track.applyConstraints({ advanced: [{ zoom: parseFloat(this.value) }] }); localStorage.setItem('zonescan.zoom', this.value); } catch (e) {} };
 $('apisave').onclick = function () {
   API = $('api').value.trim(); try { localStorage.setItem('zonescan.api', API); } catch (e) {}
-  syncErr = ''; renderSync(); msg(API ? '저장 주소를 넣었습니다. 시트로 보내기 시작합니다.' : '저장 주소를 지웠습니다. 이 폰에만 저장합니다.', 'ok'); if (API) syncNow();
+  syncErr = ''; renderSync(); msg(API ? '저장 주소를 넣었습니다. 시트와 연결합니다.' : '저장 주소를 지웠습니다. 이 폰에만 저장합니다.', 'ok'); if (API) { pullServer(false); syncNow(); }
 };
 $('worker').onchange = function () { S.worker = $('worker').value.trim(); save(); };
 function submitZone() { var v = $('zin').value; $('zin').value = ''; if (v.trim()) handle(v, true); else { try { $('zin').focus(); } catch (e) {} } }
@@ -620,6 +662,7 @@ if (inApp) camStat(camHelp(), 'bad');
 if (gasRun) $('apibox').style.display = 'none'; else $('api').value = API;
 render();
 setInterval(syncNow, 15000); syncSoon();
+if (hasServer()) pullServer(true);
 </script>
 </body>
 </html>
