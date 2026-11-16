@@ -100,7 +100,7 @@
 <body>
 <header>
   <b>존 스캔 수집</b>
-  <small>v2.2 · 2026-11-16</small>
+  <small>v2.3 · 2026-11-16</small>
 </header>
 <main>
   <div class="row">
@@ -124,6 +124,11 @@
 
   <div id="msg">① 존코드를 넣고 → ② 운송장을 넣으세요.</div>
 
+  <div id="gaswarn" style="display:none;margin-top:8px;background:#3a2a0b;border:2px solid var(--warn);border-radius:10px;padding:12px">
+    <div style="font-weight:800">이 주소(구글 Apps Script)에서는 카메라가 열리지 않습니다.</div>
+    <div style="font-size:13px;margin-top:4px">카메라 스캔은 아래 버튼의 주소에서 하세요. 시트 저장 주소도 자동으로 들어갑니다.</div>
+    <a id="gaslink" target="_top" href="https://hanunpark.github.io/zonescan/" style="display:block;margin-top:10px;padding:14px 8px;text-align:center;font-weight:800;border-radius:8px;background:var(--acc);color:#fff;text-decoration:none">카메라 되는 주소로 열기</a>
+  </div>
   <div class="row"><button class="pri" id="camtoggle">카메라 스캔 켜기</button></div>
   <div id="camstat"><span id="camtxt">카메라 스캔: 꺼짐</span></div>
 
@@ -550,6 +555,13 @@ var gasRun = !!(window.google && google.script && google.script.run);
 var API = ''; try { API = localStorage.getItem('zonescan.api') || ''; } catch (e) {}
 (function () { var m = location.hash.match(/api=([^&]+)/); if (m) { try { API = decodeURIComponent(m[1]); localStorage.setItem('zonescan.api', API); } catch (e) {} } })();
 function hasServer() { return gasRun || !!API; }
+var EXEC_URL = '__EXEC_URL__';
+function showGasWarn() {
+  if (!gasRun) return;
+  var ok = /^https:\/\/script\.google\.com\//.test(EXEC_URL);
+  $('gaslink').href = 'https://hanunpark.github.io/zonescan/' + (ok ? '#api=' + encodeURIComponent(EXEC_URL) : '');
+  $('gaswarn').style.display = 'block';
+}
 function sendBatch(rows, ok, fail) {
   if (gasRun) { google.script.run.withSuccessHandler(ok).withFailureHandler(fail).appendRows(rows); return; }
   fetch(API, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ rows: rows }), redirect: 'follow' })
@@ -613,7 +625,7 @@ var inApp = /KAKAOTALK|NAVER\(inapp|Line\/|FBAN|FBAV|Instagram/i.test(navigator.
 function camStat(text, cls) { $('camtxt').textContent = text; $('camstat').className = cls || ''; }
 function camHelp(name) {
   if (inApp) return '카카오톡 등 앱 안의 화면에서는 카메라가 막힙니다. 크롬에서 여세요.';
-  if (gasRun) return '구글 Apps Script 주소에서는 카메라 실시간 인식이 막혀 있습니다. 카메라용 주소로 여세요.';
+  if (gasRun) return '구글 Apps Script 주소에서는 카메라가 막혀 있습니다. 위의 "카메라 되는 주소로 열기"를 누르세요.';
   if (name === 'NotAllowedError') return '주소창 왼쪽 아이콘 → 권한에서 카메라를 허용한 뒤 다시 누르세요.';
   return '다시 눌러 보세요.';
 }
@@ -807,7 +819,7 @@ load();
 $('worker').value = S.worker || '';
 if (inApp) camStat(camHelp(), 'bad');
 if (gasRun) $('apibox').style.display = 'none'; else $('api').value = API;
-render();
+render(); showGasWarn();
 setInterval(syncNow, 15000); syncSoon();
 if (hasServer()) pullServer(true);
 </script>
