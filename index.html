@@ -58,6 +58,17 @@
   #camstat.bad span{color:#ffd58a;font-weight:700}
   #camstat.good span{color:#8ff0b7}
   #camstat button{padding:7px 10px;font-size:13px}
+  #rcask{display:none;margin-top:8px;background:#10263d;border:2px solid var(--acc);border-radius:10px;padding:12px}
+  #rcask .q{font-weight:800;color:#9cc0ff}
+  #rcask .big{font-size:20px;font-weight:800;margin-top:6px}
+  #rcask .d{margin-top:6px;font-size:13px;color:var(--sub);word-break:break-all}
+  #rcask .col{display:flex;flex-direction:column;gap:8px;margin-top:10px}
+  #rcask button{padding:14px 8px;font-weight:700}
+  #zonebox.rc{border-color:var(--warn)}
+  .it .tag{font-size:11px;font-weight:700;border-radius:4px;padding:1px 5px;background:#12351f;color:#8ff0b7}
+  .it .tag.add{background:#3a2a0b;color:#ffd58a}
+  .it.gone{opacity:.55}
+  .zs .memo{color:var(--sub);font-size:12px;margin-left:8px;font-weight:400;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:45%}
   #rzask{display:none;margin-top:8px;background:#3a2a0b;border:2px solid var(--warn);border-radius:10px;padding:12px}
   #rzask .q{font-weight:800;color:#ffd58a}
   #rzask .d{margin-top:4px;font-size:14px}
@@ -89,7 +100,7 @@
 <body>
 <header>
   <b>존 스캔 수집</b>
-  <small>v2.1 · 2026-11-16</small>
+  <small>v2.2 · 2026-11-16</small>
 </header>
 <main>
   <div class="row">
@@ -105,6 +116,12 @@
     <div id="zcnt"><div class="lab">이 존 운송장</div><b>0</b></div>
   </div>
 
+  <div class="row" id="memorow">
+    <input type="text" id="memo" placeholder="이 존 메모 (예: 파손 1본, 라벨 없음 2본)" autocomplete="off" enterkeyhint="done">
+    <button class="fix" id="memosave">메모 저장</button>
+  </div>
+  <div class="row" id="rcdonerow" style="display:none"><button class="on" id="rcdone">재확인 끝내기 (결과 보기)</button></div>
+
   <div id="msg">① 존코드를 넣고 → ② 운송장을 넣으세요.</div>
 
   <div class="row"><button class="pri" id="camtoggle">카메라 스캔 켜기</button></div>
@@ -114,9 +131,21 @@
     <div class="q">이미 스캔한 존</div>
     <div class="d"><b id="rzname"></b> 에는 이미 <b id="rzcnt"></b>건이 있습니다. 다시 작업할까요?</div>
     <div class="col">
-      <button class="on" id="rzredo">처음부터 다시</button>
+      <button class="on" id="rzredo">다시 찍어 비교 (재확인)</button>
       <button id="rzcont">이어서 추가 (기존 유지)</button>
       <button id="rzskip">건너뛰기 (지금 존 그대로)</button>
+    </div>
+  </div>
+
+  <div id="rcask">
+    <div class="q">재확인 결과 — <span id="rcname"></span></div>
+    <div class="big" id="rcsum"></div>
+    <div class="d" id="rcadd"></div>
+    <div class="d" id="rcexcl"></div>
+    <div class="col">
+      <button class="on" id="rcapply">오늘 스캔으로 반영 (추가 넣고 제외 빼기)</button>
+      <button id="rckeep">기존 기록 유지 (오늘 스캔 버림)</button>
+      <button id="rcmore">계속 찍기</button>
     </div>
   </div>
 
@@ -214,7 +243,7 @@ function classify(raw, forceZone) {
 function activeRows(rows) {
   var del = {}, out = [];
   for (var i = 0; i < rows.length; i++) if (rows[i].kind === 'DEL') del[rows[i].ref] = 1;
-  for (var k = 0; k < rows.length; k++) if (rows[k].kind !== 'DEL' && !del[rows[k].id]) out.push(rows[k]);
+  for (var k = 0; k < rows.length; k++) if (rows[k].kind === 'SCAN' && !del[rows[k].id]) out.push(rows[k]);
   return out;
 }
 function countZone(rows, zone) {
@@ -251,7 +280,7 @@ function mergeServerRows(S, list) {
   for (var k = 0; k < list.length; k++) {
     var r = list[k]; if (!r || !r[0] || have[r[0]]) continue;
     var t = Date.parse(r[1]); if (isNaN(t)) continue;
-    var row = { id: String(r[0]), t: t, zone: normZone(r[2]), wb: String(r[3]), worker: String(r[4] || ''), kind: r[5] === 'DEL' ? 'DEL' : 'SCAN', note: String(r[6] || ''), synced: true };
+    var row = { id: String(r[0]), t: t, zone: normZone(r[2]), wb: String(r[3]), worker: String(r[4] || ''), kind: r[5] === 'DEL' ? 'DEL' : (r[5] === 'MEMO' ? 'MEMO' : 'SCAN'), note: String(r[6] || ''), synced: true };
     if (row.kind === 'DEL') { var m = row.note.match(/^삭제:([A-Za-z0-9]+)/); if (m) row.ref = m[1]; }
     S.rows.push(row); have[row.id] = 1; add++;
   }
@@ -281,16 +310,61 @@ function deleteRow(S, id, now) {
   S.rows.push(row);
   return row;
 }
+// ── 존 메모: 존마다 한 줄 메모. 마지막에 저장한 내용이 유효하다 ──
+function zoneMemo(rows, zone) {
+  var m = '';
+  for (var i = 0; i < rows.length; i++) if (rows[i].kind === 'MEMO' && rows[i].zone === zone) m = rows[i].note || '';
+  return m;
+}
+function setMemo(S, zone, text, now) {
+  text = String(text || '').trim();
+  if (!zone || zoneMemo(S.rows, zone) === text) return null;
+  var row = { id: newId(), t: now, zone: zone, wb: '', worker: S.worker || '', kind: 'MEMO', note: text, synced: false };
+  S.rows.push(row); return row;
+}
+// ── 재확인: 이미 찍은 존을 다시 찍어 기존 기록과 비교한 뒤, 반영할지 정한다 ──
+function recheckStart(S, zone) { S.zone = zone; S.recheck = { zone: zone, items: [] }; }
+function recheckAdd(S, wb, now, force) {
+  var same = S.recheck.items.filter(function (x) { return x.wb === wb; }).length;
+  if (same && !force) return { status: 'dup', same: same };
+  S.recheck.items.push({ wb: wb, t: now });
+  return { status: 'ok', same: same + 1 };
+}
+// 일치(match): 기존에도 있고 오늘도 찍힘 / 추가(add): 오늘만 찍힘 / 제외(excl): 기존에만 있고 오늘 안 찍힘
+function recheckDiff(S) {
+  var zone = S.recheck.zone, oldBy = {}, newBy = {}, keys = [];
+  activeRows(S.rows).forEach(function (r) { if (r.zone !== zone) return; if (!oldBy[r.wb]) { oldBy[r.wb] = []; if (keys.indexOf(r.wb) < 0) keys.push(r.wb); } oldBy[r.wb].push(r); });
+  S.recheck.items.forEach(function (x) { if (!newBy[x.wb]) { newBy[x.wb] = []; if (keys.indexOf(x.wb) < 0) keys.push(x.wb); } newBy[x.wb].push(x); });
+  var d = { match: 0, add: 0, excl: 0, addList: [], exclRows: [] };
+  keys.forEach(function (wb) {
+    var o = oldBy[wb] || [], n = newBy[wb] || [];
+    d.match += Math.min(o.length, n.length);
+    if (n.length > o.length) { d.addList = d.addList.concat(n.slice(o.length)); }
+    if (o.length > n.length) { d.exclRows = d.exclRows.concat(o.slice(n.length)); }
+  });
+  d.add = d.addList.length; d.excl = d.exclRows.length;
+  return d;
+}
+function recheckApply(S, now) {
+  var d = recheckDiff(S), zone = S.recheck.zone;
+  d.exclRows.forEach(function (r) { S.rows.push({ id: newId(), t: now, zone: zone, wb: r.wb, worker: S.worker || '', kind: 'DEL', ref: r.id, note: '삭제:' + r.id + ' (재확인 제외)', synced: false }); });
+  d.addList.forEach(function (x) {
+    var others = zonesOf(S.rows, x.wb).filter(function (z) { return z !== zone; });
+    S.rows.push({ id: newId(), t: x.t, zone: zone, wb: x.wb, worker: S.worker || '', kind: 'SCAN', note: '재확인 추가' + (others.length ? ' / 중복: ' + others.join(', ') + ' 에도 있음' : ''), synced: false });
+  });
+  S.recheck = null;
+  return d;
+}
 // 음성용 존 이름: 앞의 로케이션 코드(예: 001-)를 떼고 읽는다.
 function speakZone(z) {
   return String(z).replace(/^\d{3}-/, '').replace(/-/g, ' ');
 }
 function toCsv(rows) {
-  var out = ['존코드,운송장번호,스캔시각,작업자,중복'];
+  var out = ['존코드,운송장번호,스캔시각,작업자,중복,존메모'];
   var list = activeRows(rows).slice().sort(function (a, b) { return a.t - b.t; });
   for (var i = 0; i < list.length; i++) {
     var r = list[i];
-    out.push([r.zone, r.wb, new Date(r.t).toISOString(), r.worker, dupInfo(rows, r)].map(function (v) {
+    out.push([r.zone, r.wb, new Date(r.t).toISOString(), r.worker, dupInfo(rows, r), zoneMemo(rows, r.zone)].map(function (v) {
       v = String(v); return /[",\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v;
     }).join(','));
   }
@@ -336,7 +410,7 @@ var pendingZone = null;  // 이미 스캔한 존을 다시 찍었을 때 선택�
 function focusWb() { if (stream) { try { document.activeElement.blur(); } catch (e) {} return; } try { $('win').focus(); } catch (e) {} }   // 카메라 스캔 중에는 자판이 올라오지 않게 한다
 function askZone(z) {
   pendingZone = z; var n = countZone(S.rows, z);
-  $('rzname').textContent = z; $('rzcnt').textContent = n; $('rzredo').textContent = '처음부터 다시 (기존 ' + n + '건 지움)';
+  $('rzname').textContent = z; $('rzcnt').textContent = n; 
   $('rzask').style.display = 'block'; $('zin').value = '';
   beep('err'); say('이미 스캔한 존입니다. ' + speakZone(z) + ', ' + n + '건. 다시 작업할지 선택하세요');
   msg('이미 스캔한 존: ' + z + ' (' + n + '건) — 아래에서 선택하세요.', 'err');
@@ -344,12 +418,33 @@ function askZone(z) {
 function enterZone(z, how) {
   var prev = S.zone, pn = prev ? countZone(S.rows, prev) : 0;
   pendingZone = null; $('rzask').style.display = 'none';
-  var removed = 0; if (how === 'redo') removed = clearZone(S, z, Date.now());
-  S.zone = z; beep('zone');
   var n = countZone(S.rows, z);
-  say((prev && prev !== z ? speakZone(prev) + ', ' + pn + '건. ' : '') + '다음 ' + speakZone(z) + (how === 'redo' ? ', 처음부터 다시' : ', 이어서 ' + n + '건부터'));
-  msg(how === 'redo' ? ('현재 존 ' + z + ' — 기존 ' + removed + '건을 지우고 처음부터 다시 스캔합니다.') : ('현재 존 ' + z + ' — 기존 ' + n + '건에 이어서 스캔합니다.'), 'ok');
+  if (how === 'recheck') recheckStart(S, z); else S.zone = z;
+  beep('zone');
+  say((prev && prev !== z ? speakZone(prev) + ', ' + pn + '건. ' : '') + '다음 ' + speakZone(z) + (how === 'recheck' ? ', 재확인 시작. 이 존의 운송장을 모두 찍으세요' : ', 이어서 ' + n + '건부터'));
+  msg(how === 'recheck' ? ('재확인 시작 — ' + z + ' 의 운송장을 모두 다시 찍으세요. 기존 ' + n + '건과 비교합니다.') : ('현재 존 ' + z + ' — 기존 ' + n + '건에 이어서 스캔합니다.'), 'ok');
   save(); render(); syncSoon(); focusWb();
+}
+// ── 재확인 진행과 결과 선택 ──
+var pendingRecheck = null;   // 재확인 결과 창이 떠 있는 동안: {next: 다음에 들어갈 존 또는 null}
+function recheckLine() {
+  var d = recheckDiff(S);
+  return '재확인 ' + S.recheck.items.length + '건 찍음 (일치 ' + d.match + ' · 추가 ' + d.add + ' · 아직 안 찍힘 ' + d.excl + ')';
+}
+function finishRecheck(next) {
+  var d = recheckDiff(S); pendingRecheck = { next: next || null };
+  $('rcname').textContent = S.recheck.zone;
+  $('rcsum').textContent = '일치 ' + d.match + '건 · 추가 ' + d.add + '건 · 제외 ' + d.excl + '건';
+  $('rcadd').textContent = d.add ? ('추가(오늘 새로 찍힘): ' + d.addList.map(function (x) { return x.wb; }).join(', ')) : '';
+  $('rcexcl').textContent = d.excl ? ('제외(기존에 있었으나 오늘 안 찍힘): ' + d.exclRows.map(function (r) { return r.wb; }).join(', ')) : '';
+  $('rcask').style.display = 'block';
+  beep('err'); say('재확인 결과. 일치 ' + d.match + '건, 추가 ' + d.add + '건, 제외 ' + d.excl + '건. 반영할지 선택하세요');
+  msg('재확인 결과 — ' + S.recheck.zone + ' : 일치 ' + d.match + ' · 추가 ' + d.add + ' · 제외 ' + d.excl + '. 아래에서 선택하세요.', 'err');
+}
+function closeRecheck(text, cls) {
+  var next = pendingRecheck && pendingRecheck.next; pendingRecheck = null; $('rcask').style.display = 'none';
+  save(); render(); syncSoon(); msg(text, cls);
+  if (next) handle(next, true); else focusWb();
 }
 var pendingDup = null;   // 같은 존 중복 스캔에 대한 선택을 기다리는 운송장
 function askDup(wb, same) {
@@ -365,8 +460,14 @@ function handle(raw, asZone) {
   if (c.type === 'none') return;
   if (pendingDup) { beep('err'); say('중복 선택을 먼저 하세요'); return; }
   if (pendingZone) { beep('err'); say('존 선택을 먼저 하세요'); return; }
+  if (pendingRecheck) { beep('err'); say('재확인 결과를 먼저 선택하세요'); return; }
   if (c.type === 'unknown') { beep('err'); msg('운송장도 존도 아닌 바코드입니다: ' + c.value, 'err'); return; }
   if (c.type === 'zone') {
+    $('zin').value = '';
+    if (S.recheck) {   // 재확인 중에 존 코드를 찍으면 재확인을 끝내고 결과를 보여준다
+      if (c.value === S.recheck.zone) { say(speakZone(c.value) + ', ' + recheckLine()); msg('재확인 중인 존입니다. ' + recheckLine(), 'warn'); return; }
+      finishRecheck(c.value); return;
+    }
     var prev = S.zone;
     if (prev !== c.value && countZone(S.rows, c.value) > 0) { askZone(c.value); return; }
     if (prev && prev !== c.value) {
@@ -382,6 +483,13 @@ function handle(raw, asZone) {
     }
     S.zone = c.value; beep('zone'); save(); render(); $('zin').value = ''; focusWb(); return;
   }
+  if (S.recheck) {
+    var q = recheckAdd(S, c.value, Date.now(), false);
+    if (q.status === 'dup') { askDup(c.value, q.same); return; }
+    var was = activeRows(S.rows).some(function (x) { return x.zone === S.recheck.zone && x.wb === c.value; });
+    beep('ok'); msg(c.value + (was ? ' 일치' : ' 추가(기존에 없던 것)') + ' — ' + recheckLine(), was ? 'ok' : 'warn');
+    save(); render(); return;
+  }
   var r = scanWaybill(S, c.value, Date.now());
   if (r.status === 'nozone') { beep('err'); say('존을 먼저 스캔하세요'); msg('존을 먼저 스캔하세요. (' + c.value + ')', 'err'); return; }
   if (r.status === 'dup') { askDup(c.value, r.same); return; }
@@ -395,8 +503,13 @@ function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return { '&
 function hhmm(t) { var d = new Date(t); return ('0' + d.getHours()).slice(-2) + ':' + ('0' + d.getMinutes()).slice(-2) + ':' + ('0' + d.getSeconds()).slice(-2); }
 function render() {
   $('zone').textContent = S.zone || '미지정';
-  $('zonebox').className = S.zone ? 'set' : '';
-  $('zcnt').querySelector('b').textContent = S.zone ? countZone(S.rows, S.zone) : 0;
+  $('zonebox').className = S.recheck ? 'set rc' : (S.zone ? 'set' : '');
+  $('zonebox').querySelector('.lab').textContent = S.recheck ? '재확인 중인 존' : '현재 존';
+  $('zcnt').querySelector('.lab').textContent = S.recheck ? '오늘 찍은 수 / 기존' : '이 존 운송장';
+  $('zcnt').querySelector('b').textContent = S.recheck ? (S.recheck.items.length + ' / ' + countZone(S.rows, S.zone)) : (S.zone ? countZone(S.rows, S.zone) : 0);
+  $('rcdonerow').style.display = S.recheck ? '' : 'none';
+  $('memorow').style.display = S.zone ? '' : 'none';
+  if (document.activeElement !== $('memo')) $('memo').value = S.zone ? zoneMemo(S.rows, S.zone) : '';
   var act = activeRows(S.rows).slice().sort(function (a, b) { return b.t - a.t; });
   $('tot').textContent = act.length;
   var cntWb = {}; act.forEach(function (r) { cntWb[r.wb] = (cntWb[r.wb] || 0) + 1; });
@@ -404,17 +517,28 @@ function render() {
   $('dupn').textContent = dupN; $('dupwrap').style.display = dupN ? '' : 'none';
   var cur = act.filter(function (r) { return r.zone === S.zone; });
   $('curh').textContent = S.zone ? ('현재 존 스캔 목록 — ' + S.zone + ' (' + cur.length + '건)') : '현재 존 스캔 목록';
+  if (S.recheck) {
+    var d = recheckDiff(S), addSet = d.addList.slice();
+    $('curh').textContent = '재확인 목록 — ' + S.zone + ' (오늘 ' + S.recheck.items.length + '건 · 일치 ' + d.match + ' · 추가 ' + d.add + ' · 아직 안 찍힘 ' + d.excl + ')';
+    var h1 = S.recheck.items.map(function (x, i) { return { x: x, i: i }; }).reverse().map(function (o) {
+      var isAdd = addSet.indexOf(o.x) >= 0;
+      return '<div class="it"><span class="wb">' + esc(o.x.wb) + '</span><span class="tag' + (isAdd ? ' add' : '') + '">' + (isAdd ? '추가' : '일치') + '</span><span class="t">' + hhmm(o.x.t) + '</span><button data-rc="' + o.i + '">삭제</button></div>';
+    }).join('');
+    var h2 = d.exclRows.map(function (r) { return '<div class="it gone"><span class="wb">' + esc(r.wb) + '</span><span class="z">기존 기록 · 아직 안 찍힘</span></div>'; }).join('');
+    $('recent').innerHTML = (h1 + h2) || '<div class="empty">이 존의 운송장을 다시 찍으세요.</div>';
+  } else
   $('recent').innerHTML = !S.zone ? '<div class="empty">존코드를 먼저 넣으세요.</div>' : cur.length ? cur.map(function (r) {
     return '<div class="it"><span class="wb">' + esc(r.wb) + '</span><span class="z">' + esc(r.zone) + '</span>' + (cntWb[r.wb] > 1 ? '<span class="dup">중복</span>' : '') + '<span class="t">' + hhmm(r.t) + '</span><button data-del="' + esc(r.id) + '">삭제</button></div>';
   }).join('') : '<div class="empty">이 존에 스캔한 운송장이 아직 없습니다.</div>';
-  var zs = zoneSummary(S.rows).filter(function (z) { return z.n > 0 || z.zone === S.zone; });
+  var zs = zoneSummary(S.rows).filter(function (z) { return z.n > 0 || z.zone === S.zone || zoneMemo(S.rows, z.zone); });
   $('zn').textContent = zs.filter(function (z) { return z.n > 0; }).length;
   $('zones').innerHTML = zs.length ? zs.slice().reverse().map(function (z) {
     var open = viewZone === z.zone;
-    var h = '<div class="zs' + (z.zone === S.zone ? ' cur' : '') + '" data-z="' + esc(z.zone) + '"><span>' + esc(z.zone) + '</span><b>' + z.n + '</b><span class="arr">' + (open ? '접기 ▲' : '목록 ▼') + '</span></div>';
+    var mm = zoneMemo(S.rows, z.zone);
+    var h = '<div class="zs' + (z.zone === S.zone ? ' cur' : '') + '" data-z="' + esc(z.zone) + '"><span>' + esc(z.zone) + '</span>' + (mm ? '<span class="memo">' + esc(mm) + '</span>' : '') + '<b>' + z.n + '</b><span class="arr">' + (open ? '접기 ▲' : '목록 ▼') + '</span></div>';
     if (open) {
       var l = act.filter(function (r) { return r.zone === z.zone; }).sort(function (a, b) { return a.t - b.t; });
-      h += '<div class="zd">' + (l.length ? l.map(function (r, i) { return '<div class="w"><span>' + (i + 1) + '.</span><span>' + esc(r.wb) + '</span>' + (cntWb[r.wb] > 1 ? '<span class="dup">중복</span>' : '') + '<span class="t">' + hhmm(r.t) + '</span></div>'; }).join('') : '<div class="empty">없습니다.</div>') + '</div>';
+      h += '<div class="zd">' + (mm ? '<div class="w"><span>메모: ' + esc(mm) + '</span></div>' : '') + (l.length ? l.map(function (r, i) { return '<div class="w"><span>' + (i + 1) + '.</span><span>' + esc(r.wb) + '</span>' + (cntWb[r.wb] > 1 ? '<span class="dup">중복</span>' : '') + '<span class="t">' + hhmm(r.t) + '</span></div>'; }).join('') : '<div class="empty">없습니다.</div>') + '</div>';
     }
     return h;
   }).join('') : '<div class="empty">아직 없습니다.</div>';
@@ -516,7 +640,7 @@ function accept(raw) { if (raw === cand) candN++; else { cand = raw; candN = 1; 
 function loop() {
   if (!scanOn) return;
   var v = $('video');
-  if (det && v.readyState >= 2 && !busy && !pendingDup && !pendingZone) {
+  if (det && v.readyState >= 2 && !busy && !pendingDup && !pendingZone && !pendingRecheck) {
     busy = true;
     det.detect(v).then(function (codes) {
       busy = false;
@@ -568,7 +692,7 @@ function startCamera() {
     s.src = 'https://unpkg.com/@zxing/library@0.21.3/umd/index.min.js';
     s.onload = function () {
       try {
-        new ZXing.BrowserMultiFormatReader().decodeFromStream(stream, $('video'), function (res) { if (res && !pendingDup && !pendingZone) accept(res.getText()); });
+        new ZXing.BrowserMultiFormatReader().decodeFromStream(stream, $('video'), function (res) { if (res && !pendingDup && !pendingZone && !pendingRecheck) accept(res.getText()); });
         scanOn = true; camStat('인식 중(호환 방식) — 네모 틀 안에 바코드를 비추세요.', 'good');
       } catch (e) { camStat('이 브라우저는 바코드 인식을 지원하지 않습니다. 크롬으로 여세요.', 'bad'); }
     };
@@ -610,6 +734,8 @@ $('say').onclick = function () {
   var n = countZone(S.rows, S.zone); say(speakZone(S.zone) + ', ' + n + '건'); msg('현재 존 ' + S.zone + ' : ' + n + '건', 'ok');
 };
 $('recent').onclick = function (e) {
+  var rc = e.target.closest('button[data-rc]');
+  if (rc && S.recheck) { var x = S.recheck.items.splice(parseInt(rc.getAttribute('data-rc'), 10), 1)[0]; save(); render(); if (x) msg(x.wb + ' 를 오늘 찍은 목록에서 뺐습니다. ' + recheckLine(), 'warn'); return; }
   var b = e.target.closest('button[data-del]'); if (!b) return;
   var id = b.getAttribute('data-del');
   if (b.getAttribute('data-arm') !== '1') { b.setAttribute('data-arm', '1'); b.textContent = '한 번 더'; b.className = 'danger'; return; }
@@ -617,6 +743,10 @@ $('recent').onclick = function (e) {
 };
 $('dupadd').onclick = function () {
   var wb = pendingDup; if (!wb) return; closeDup();
+  if (S.recheck) {
+    recheckAdd(S, wb, Date.now(), true); beep('ok'); say('중복으로 넣었습니다');
+    msg(wb + ' 중복으로 추가 — ' + recheckLine(), 'warn'); save(); render(); focusWb(); return;
+  }
   var r = scanWaybill(S, wb, Date.now(), true);
   beep('ok'); say('중복으로 넣었습니다');
   msg(wb + ' 중복으로 추가 (' + S.zone + ' 에 ' + r.same + '건' + (r.others.length ? ', ' + r.others.join(', ') + ' 에도 있음' : '') + ')', 'warn');
@@ -626,14 +756,31 @@ $('dupskip').onclick = function () {
   var wb = pendingDup; if (!wb) return; closeDup();
   beep('zone'); say('뺐습니다'); msg(wb + ' 는 넣지 않았습니다.', 'ok'); focusWb();
 };
-$('rzredo').onclick = function () {
-  if (!pendingZone) return;
-  if (this.getAttribute('data-arm') !== '1') { this.setAttribute('data-arm', '1'); this.textContent = '한 번 더 누르면 기존 ' + countZone(S.rows, pendingZone) + '건을 지웁니다'; return; }
-  this.removeAttribute('data-arm'); enterZone(pendingZone, 'redo');
+$('rzredo').onclick = function () { if (!pendingZone) return; enterZone(pendingZone, 'recheck'); };
+$('rcdone').onclick = function () { if (S.recheck && !pendingRecheck) finishRecheck(null); };
+$('rcapply').onclick = function () {
+  if (!pendingRecheck) return; var z = S.recheck.zone, d = recheckApply(S, Date.now());
+  beep('ok'); say('반영했습니다. ' + speakZone(z) + ', ' + countZone(S.rows, z) + '건');
+  closeRecheck(z + ' 반영 완료 — 추가 ' + d.add + '건 넣고 제외 ' + d.excl + '건 뺐습니다. 현재 ' + countZone(S.rows, z) + '건.', 'ok');
 };
-$('rzcont').onclick = function () { if (!pendingZone) return; $('rzredo').removeAttribute('data-arm'); enterZone(pendingZone, 'cont'); };
+$('rckeep').onclick = function () {
+  if (!pendingRecheck) return; var z = S.recheck.zone; S.recheck = null;
+  beep('zone'); say('기존 기록을 유지합니다');
+  closeRecheck(z + ' 는 기존 기록 ' + countZone(S.rows, z) + '건을 그대로 둡니다. 오늘 찍은 것은 버렸습니다.', 'ok');
+};
+$('rcmore').onclick = function () {
+  if (!pendingRecheck) return; pendingRecheck = null; $('rcask').style.display = 'none';
+  msg('재확인을 계속합니다 — ' + recheckLine(), 'ok'); focusWb();
+};
+function saveMemo() {
+  if (!S.zone) return; var r = setMemo(S, S.zone, $('memo').value, Date.now());
+  save(); render(); syncSoon(); msg(r ? (S.zone + ' 메모를 저장했습니다.') : '메모에 바뀐 내용이 없습니다.', 'ok'); focusWb();
+}
+$('memosave').onclick = saveMemo;
+$('memo').onkeydown = function (e) { if (e.key === 'Enter') { e.preventDefault(); saveMemo(); } };
+$('rzcont').onclick = function () { if (!pendingZone) return; enterZone(pendingZone, 'cont'); };
 $('rzskip').onclick = function () {
-  if (!pendingZone) return; var z = pendingZone; pendingZone = null; $('rzredo').removeAttribute('data-arm'); $('rzask').style.display = 'none';
+  if (!pendingZone) return; var z = pendingZone; pendingZone = null; $('rzask').style.display = 'none';
   beep('zone'); say('건너뜁니다'); msg(z + ' 는 건너뜁니다. 현재 존은 ' + (S.zone || '미지정') + ' 그대로입니다.', 'ok');
   if (S.zone) focusWb(); else { try { $('zin').focus(); } catch (e) {} }
 };
@@ -652,7 +799,7 @@ $('reset').onclick = function () {
   var now = Date.now();
   if (now - resetArm > 4000) { resetArm = now; this.textContent = '한 번 더 누르면 삭제'; msg('이 폰에 저장된 스캔을 모두 지웁니다. 시트에 저장된 기록은 남습니다.', 'err'); return; }
   resetArm = 0; this.textContent = '전체 초기화';
-  S = { worker: S.worker, zone: '', rows: [] }; save(); render(); msg('초기화했습니다. 존 코드를 스캔하세요.', 'warn');
+  S = { worker: S.worker, zone: '', rows: [], recheck: null }; save(); render(); msg('초기화했습니다. 존 코드를 스캔하세요.', 'warn');
 };
 
 load();
