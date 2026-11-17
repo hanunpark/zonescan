@@ -100,7 +100,7 @@
 <body>
 <header>
   <b>존 스캔 수집</b>
-  <small>v2.3 · 2026-11-16</small>
+  <small>v2.4 · 2026-11-17</small>
 </header>
 <main>
   <div class="row">
@@ -279,12 +279,15 @@ function clearZone(S, zone, now) {
 }
 // 시트에 있는 기록을 이 폰 기록에 합친다(다른 날·다른 폰에서 찍은 것 포함). 새로 들어온 줄 수를 돌려준다.
 // 서버 줄: [id, 스캔시각(ISO), 존, 운송장, 작업자, 구분, 비고]
+// 기준 시각: 이 시각 이전의 기록은 폐기된 예전 기록으로 보고 쓰지 않는다 (2026-11-16 15:00 한국 시간 = 전체 재스캔 시작 전)
+var BASE_T = Date.parse('2026-11-16T06:00:00Z');
+function dropOld(S) { var n = S.rows.length; S.rows = S.rows.filter(function (r) { return r.t >= BASE_T; }); return n - S.rows.length; }
 function mergeServerRows(S, list) {
   var have = {}, add = 0;
   for (var i = 0; i < S.rows.length; i++) have[S.rows[i].id] = 1;
   for (var k = 0; k < list.length; k++) {
     var r = list[k]; if (!r || !r[0] || have[r[0]]) continue;
-    var t = Date.parse(r[1]); if (isNaN(t)) continue;
+    var t = Date.parse(r[1]); if (isNaN(t) || t < BASE_T) continue;
     var row = { id: String(r[0]), t: t, zone: normZone(r[2]), wb: String(r[3]), worker: String(r[4] || ''), kind: r[5] === 'DEL' ? 'DEL' : (r[5] === 'MEMO' ? 'MEMO' : 'SCAN'), note: String(r[6] || ''), synced: true };
     if (row.kind === 'DEL') { var m = row.note.match(/^삭제:([A-Za-z0-9]+)/); if (m) row.ref = m[1]; }
     S.rows.push(row); have[row.id] = 1; add++;
@@ -382,7 +385,7 @@ var S = { worker: '', zone: '', rows: [] };
 var started = false, viewZone = null;
 var $ = function (id) { return document.getElementById(id); };
 
-function load() { try { var j = JSON.parse(localStorage.getItem(LS) || 'null'); if (j && j.rows) S = j; } catch (e) {} }
+function load() { try { var j = JSON.parse(localStorage.getItem(LS) || 'null'); if (j && j.rows) S = j; } catch (e) {} if (dropOld(S)) { if (S.recheck) S.recheck = null; save(); } }
 function save() { try { localStorage.setItem(LS, JSON.stringify(S)); } catch (e) {} }
 
 // ── 소리 ──
@@ -584,7 +587,7 @@ function pullServer(quiet) {
   fetchRows(function (rows) {
     var n = mergeServerRows(S, rows || []); pulled = true; save(); render();
     var tot = activeRows(S.rows).length;
-    $('pullstat').textContent = '시트 기록 반영됨 (전체 ' + tot + '건)';
+    $('pullstat').textContent = '시트 기록 반영됨 (전체 ' + tot + '건 · 11-16 15시 이후 기록 기준)';
     if (!quiet || n) msg('시트의 기존 기록 ' + n + '건을 불러왔습니다. 전체 ' + tot + '건.', 'ok');
   }, function (e) {
     $('pullstat').textContent = '시트 기록을 못 불러왔습니다 — 이미 찍은 존 확인이 안 될 수 있습니다';
