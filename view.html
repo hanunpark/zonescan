@@ -11,7 +11,7 @@ main{padding:12px 16px 40px;max-width:900px;margin:0 auto}
 .kpi{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
 .kpi div{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:10px}
 .kpi b{display:block;font-size:22px}.kpi span{color:var(--sub);font-size:12px}
-.row{display:flex;gap:8px;margin-top:12px}
+.row{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
 input{flex:1;background:var(--card);border:1px solid var(--line);border-radius:8px;color:var(--tx);padding:10px;font-size:15px;min-width:0}
 button{background:var(--acc);border:0;border-radius:8px;color:#fff;font-weight:700;padding:10px 14px;font-size:14px}
 button.ghost{background:var(--card);border:1px solid var(--line);color:var(--tx)}
@@ -27,15 +27,16 @@ h2{font-size:14px;margin:18px 0 6px;color:var(--sub)}
 .hit{border-color:var(--warn)}mark{background:#5a430f;color:#ffe2a6}
 .dup{color:var(--bad);font-size:13px;padding:3px 0}
 </style></head><body>
-<header><h1>존 스캔 현황</h1><span class="sub">v1.0 · 2026-11-17 · 11-16 15시 이후 기록 기준</span></header>
+<header><h1>존 스캔 현황</h1><span class="sub">v1.1 · 2026-11-17 · 11-16 15시 이후 기록 기준</span></header>
 <main>
 <div class="kpi"><div><b id="k1">-</b><span>유효 스캔</span></div><div><b id="k2">-</b><span>존</span></div><div><b id="k3">-</b><span>중복 운송장</span></div><div><b id="k4">-</b><span>오늘 스캔</span></div></div>
-<div class="row"><input id="q" placeholder="운송장번호 또는 존코드 검색 (일부만 넣어도 됨)" autocomplete="off"><button id="re">새로고침</button><button class="ghost" id="csv">CSV 복사</button></div>
+<div class="row"><input id="q" placeholder="운송장번호 또는 존코드 검색 (일부만 넣어도 됨)" autocomplete="off"><button id="re">새로고침</button><button id="xls">엑셀 받기</button><button class="ghost" id="csv">CSV 복사</button></div>
 <div id="stat">불러오는 중…</div>
 <div id="dupbox"></div>
 <h2 id="zh">존별 목록 (누르면 운송장 표시)</h2>
 <div id="zones"></div>
 </main>
+<script src="xlsx.mini.min.js"></script>
 <script>
 var BASE_T = Date.parse('2026-11-16T06:00:00Z');
 var API = ''; try { API = localStorage.getItem('zonescan.api') || ''; } catch (e) {}
@@ -99,6 +100,29 @@ $('csv').onclick = function () {
   DATA.zones.forEach(function (z) { DATA.by[z].forEach(function (r) { out.push([z, r.wb, new Date(r.t + 9 * 3600e3).toISOString().slice(0, 19).replace('T', ' '), r.worker, DATA.memo[z] || ''].map(function (v) { return /[",\n]/.test(v) ? '"' + String(v).replace(/"/g, '""') + '"' : v; }).join(',')); }); });
   var t = out.join('\n');
   (navigator.clipboard ? navigator.clipboard.writeText(t) : Promise.reject()).then(function () { $('stat').textContent = 'CSV ' + (out.length - 1) + '건을 복사했습니다.'; }, function () { $('stat').textContent = '복사를 지원하지 않는 브라우저입니다.'; });
+};
+function ktime(t) { return new Date(t + 9 * 3600e3).toISOString().slice(0, 19).replace('T', ' '); }
+$('xls').onclick = function () {
+  if (!DATA) { $('stat').textContent = '아직 불러온 기록이 없습니다.'; return; }
+  var D = DATA, stamp = new Date(Date.now() + 9 * 3600e3).toISOString();
+  var a1 = [['No', '존코드', '건수', '중복 건수', '작업자', '마지막 스캔(한국)', '존 메모']];
+  D.zones.forEach(function (z, i) { var l = D.by[z], ws = {}; l.forEach(function (r) { if (r.worker) ws[r.worker] = 1; });
+    a1.push([i + 1, z, l.length, l.filter(function (r) { return D.cnt[r.wb] > 1; }).length, Object.keys(ws).join(','), ktime(Math.max.apply(null, l.map(function (r) { return r.t; }))), D.memo[z] || '']); });
+  a1.push(['', '합계', D.rows.length, '', '', '', '']);
+  var a2 = [['No', '존코드', '존 내 순번', '운송장번호', '스캔시각(한국)', '작업자', '중복(다른 위치)', '존 메모']], n = 0;
+  D.zones.forEach(function (z) { D.by[z].forEach(function (r, i) { n++;
+    a2.push([n, z, i + 1, r.wb, ktime(r.t), r.worker, D.cnt[r.wb] > 1 ? D.where[r.wb].join(', ') : '', D.memo[z] || '']); }); });
+  var a3 = [['No', '운송장번호', '스캔 건수', '존코드']];
+  D.dups.forEach(function (w, i) { a3.push([i + 1, w, D.cnt[w], D.where[w].join(', ')]); });
+  if (!D.dups.length) a3.push(['', '중복 없음', '', '']);
+  var a4 = [['항목', '값'], ['받은 시각(한국)', stamp.slice(0, 19).replace('T', ' ')], ['유효 스캔', D.rows.length], ['존 수', D.zones.length], ['중복 운송장', D.dups.length], ['기준', '2026-11-16 15시 이후 기록, 삭제된 스캔 제외']];
+  try {
+    var wb = XLSX.utils.book_new();
+    [['존별 건수', a1, [6, 16, 8, 10, 12, 20, 30]], ['전체 목록', a2, [6, 16, 10, 18, 20, 12, 26, 30]], ['중복 운송장', a3, [6, 18, 10, 40]], ['정보', a4, [18, 44]]].forEach(function (x) {
+      var ws = XLSX.utils.aoa_to_sheet(x[1]); ws['!cols'] = x[2].map(function (w) { return { wch: w }; }); XLSX.utils.book_append_sheet(wb, ws, x[0]); });
+    var name = '존스캔_현황_' + stamp.slice(0, 10) + '_' + stamp.slice(11, 16).replace(':', '') + '.xlsx';
+    XLSX.writeFile(wb, name); $('stat').textContent = name + ' 를 받았습니다 (' + D.rows.length + '건).';
+  } catch (e) { $('stat').className = 'bad'; $('stat').textContent = '엑셀 파일을 만들지 못했습니다: ' + String(e && e.message || e); }
 };
 loadData(); setInterval(loadData, 30000);
 </script></body></html>
