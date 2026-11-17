@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="ko"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>존 스캔 현황</title>
+<style>
+:root{--bg:#0f1216;--card:#171b21;--line:#2a313b;--tx:#e8ecf1;--sub:#93a0b0;--acc:#4f8cff;--bad:#ff8f8f;--warn:#f2a531}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--tx);font:15px/1.45 -apple-system,"Malgun Gothic",sans-serif}
+header{padding:14px 16px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:baseline;gap:8px;flex-wrap:wrap}
+h1{font-size:18px;margin:0}.sub{color:var(--sub);font-size:12px}
+main{padding:12px 16px 40px;max-width:900px;margin:0 auto}
+.kpi{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.kpi div{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:10px}
+.kpi b{display:block;font-size:22px}.kpi span{color:var(--sub);font-size:12px}
+.row{display:flex;gap:8px;margin-top:12px}
+input{flex:1;background:var(--card);border:1px solid var(--line);border-radius:8px;color:var(--tx);padding:10px;font-size:15px;min-width:0}
+button{background:var(--acc);border:0;border-radius:8px;color:#fff;font-weight:700;padding:10px 14px;font-size:14px}
+button.ghost{background:var(--card);border:1px solid var(--line);color:var(--tx)}
+#stat{margin-top:8px;font-size:12px;color:var(--sub)}#stat.bad{color:var(--bad)}
+h2{font-size:14px;margin:18px 0 6px;color:var(--sub)}
+.z{background:var(--card);border:1px solid var(--line);border-radius:8px;margin-top:6px;overflow:hidden}
+.zh{display:flex;justify-content:space-between;gap:8px;padding:10px 12px;cursor:pointer;align-items:center}
+.zh .n{font-weight:800}.zh .m{color:var(--sub);font-size:12px;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.zh .t{color:var(--sub);font-size:12px;white-space:nowrap}
+.zd{display:none;border-top:1px solid var(--line);padding:8px 12px;font-family:ui-monospace,Menlo,monospace;font-size:14px}
+.z.open .zd{display:block}.zd div{display:flex;justify-content:space-between;padding:2px 0}
+.zd .d{color:var(--bad)}.zd .w{color:var(--sub);font-family:inherit;font-size:12px}
+.hit{border-color:var(--warn)}mark{background:#5a430f;color:#ffe2a6}
+.dup{color:var(--bad);font-size:13px;padding:3px 0}
+</style></head><body>
+<header><h1>존 스캔 현황</h1><span class="sub">v1.0 · 2026-11-17 · 11-16 15시 이후 기록 기준</span></header>
+<main>
+<div class="kpi"><div><b id="k1">-</b><span>유효 스캔</span></div><div><b id="k2">-</b><span>존</span></div><div><b id="k3">-</b><span>중복 운송장</span></div><div><b id="k4">-</b><span>오늘 스캔</span></div></div>
+<div class="row"><input id="q" placeholder="운송장번호 또는 존코드 검색 (일부만 넣어도 됨)" autocomplete="off"><button id="re">새로고침</button><button class="ghost" id="csv">CSV 복사</button></div>
+<div id="stat">불러오는 중…</div>
+<div id="dupbox"></div>
+<h2 id="zh">존별 목록 (누르면 운송장 표시)</h2>
+<div id="zones"></div>
+</main>
+<script>
+var BASE_T = Date.parse('2026-11-16T06:00:00Z');
+var API = ''; try { API = localStorage.getItem('zonescan.api') || ''; } catch (e) {}
+(function () { var m = location.hash.match(/api=([^&]+)/); if (m) { try { API = decodeURIComponent(m[1]); localStorage.setItem('zonescan.api', API); } catch (e) {} } })();
+var $ = function (id) { return document.getElementById(id); };
+function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+function normZone(z) { var m = String(z).match(/(?:^|:)z:([^:]+)$/i); return m ? m[1].toUpperCase() : String(z); }
+function zkey(z) { var m = z.match(/^001-R(\d+)-([BF])$/); return m ? [0, +m[1], m[2]] : [1, 0, z]; }
+function zcmp(a, b) { var x = zkey(a), y = zkey(b); return x[0] - y[0] || x[1] - y[1] || (x[2] < y[2] ? -1 : x[2] > y[2] ? 1 : 0); }
+function kst(t, full) { var d = new Date(t + 9 * 3600e3).toISOString(); return full ? d.slice(5, 16).replace('T', ' ') : d.slice(11, 16); }
+var DATA = null, open = {};
+function build(list) {
+  var del = {}, rows = [], memo = {};
+  list.forEach(function (r) { if (r[5] === 'DEL') { var m = String(r[6] || '').match(/^삭제:([A-Za-z0-9]+)/); if (m) del[m[1]] = 1; } });
+  list.forEach(function (r) {
+    var t = Date.parse(r[1]); if (isNaN(t) || t < BASE_T) return;
+    var z = normZone(r[2]);
+    if (r[5] === 'MEMO') { memo[z] = String(r[6] || ''); return; }
+    if (r[5] !== 'SCAN' || del[r[0]]) return;
+    rows.push({ t: t, zone: z, wb: String(r[3]), worker: String(r[4] || '') });
+  });
+  var cnt = {}, where = {}, by = {};
+  rows.forEach(function (r) { cnt[r.wb] = (cnt[r.wb] || 0) + 1; (where[r.wb] = where[r.wb] || []).push(r.zone); (by[r.zone] = by[r.zone] || []).push(r); });
+  var today = new Date(Date.now() + 9 * 3600e3).toISOString().slice(0, 10);
+  return { rows: rows, memo: memo, cnt: cnt, where: where, by: by, zones: Object.keys(by).sort(zcmp),
+    dups: Object.keys(cnt).filter(function (w) { return cnt[w] > 1; }).sort(),
+    today: rows.filter(function (r) { return new Date(r.t + 9 * 3600e3).toISOString().slice(0, 10) === today; }).length };
+}
+function render() {
+  var D = DATA; if (!D) return; var q = $('q').value.trim().toUpperCase();
+  $('k1').textContent = D.rows.length; $('k2').textContent = D.zones.length; $('k3').textContent = D.dups.length; $('k4').textContent = D.today;
+  $('dupbox').innerHTML = D.dups.length ? '<h2>중복 운송장 ' + D.dups.length + '개</h2>' + D.dups.slice(0, 200).map(function (w) { return '<div class="dup">' + esc(w) + ' — ' + esc(D.where[w].join(', ')) + '</div>'; }).join('') : '';
+  var shown = 0;
+  $('zones').innerHTML = D.zones.map(function (z) {
+    var l = D.by[z], zhit = q && z.toUpperCase().indexOf(q) >= 0, whit = q && l.some(function (r) { return r.wb.indexOf(q) >= 0; });
+    if (q && !zhit && !whit) return '';
+    shown++;
+    var last = Math.max.apply(null, l.map(function (r) { return r.t; })), ws = {}; l.forEach(function (r) { if (r.worker) ws[r.worker] = 1; });
+    var isOpen = open[z] || whit;
+    return '<div class="z' + (isOpen ? ' open' : '') + (q ? ' hit' : '') + '" data-z="' + esc(z) + '"><div class="zh"><span class="n">' + esc(z) + '</span><span class="m">' + esc(D.memo[z] || '') + '</span><span class="t">' + esc(Object.keys(ws).join(',')) + ' ' + kst(last, true) + '</span><b>' + l.length + '</b></div><div class="zd">' +
+      l.map(function (r) { var w = esc(r.wb); if (q && r.wb.indexOf(q) >= 0) w = '<mark>' + w + '</mark>'; return '<div' + (D.cnt[r.wb] > 1 ? ' class="d"' : '') + '><span>' + w + '</span><span class="w">' + esc(r.worker) + ' ' + kst(r.t) + '</span></div>'; }).join('') + '</div></div>';
+  }).join('') || '<div class="sub">해당하는 기록이 없습니다.</div>';
+  $('zh').textContent = q ? ('검색 결과 — 존 ' + shown + '개') : '존별 목록 (누르면 운송장 표시)';
+}
+function loadData() {
+  if (!API) { $('stat').className = 'bad'; $('stat').textContent = '시트 주소가 없습니다. 주소가 포함된 링크로 열어 주세요.'; return; }
+  $('stat').className = ''; $('stat').textContent = '불러오는 중…';
+  fetch(API + (API.indexOf('?') >= 0 ? '&' : '?') + 'action=rows', { redirect: 'follow' }).then(function (r) { return r.json(); }).then(function (j) {
+    if (!j || !j.ok) throw new Error(j && j.error || '불러오기 실패');
+    DATA = build(j.rows || []); render();
+    $('stat').textContent = '시트 기준 ' + kst(Date.now()) + ' 갱신 · 30초마다 자동 갱신';
+  }).catch(function (e) {
+    $('stat').className = 'bad';
+    $('stat').textContent = '시트 기록을 불러오지 못했습니다' + (/JSON|token/i.test(String(e && e.message)) ? ' — Apps Script가 예전 버전입니다. 새 버전으로 배포해 주세요.' : ': ' + String(e && e.message || e));
+  });
+}
+$('re').onclick = loadData; $('q').oninput = render;
+$('zones').onclick = function (e) { var z = e.target.closest('.z'); if (!z) return; var k = z.getAttribute('data-z'); open[k] = !z.classList.contains('open'); z.classList.toggle('open'); };
+$('csv').onclick = function () {
+  if (!DATA) return; var out = ['존코드,운송장번호,스캔시각(한국),작업자,존메모'];
+  DATA.zones.forEach(function (z) { DATA.by[z].forEach(function (r) { out.push([z, r.wb, new Date(r.t + 9 * 3600e3).toISOString().slice(0, 19).replace('T', ' '), r.worker, DATA.memo[z] || ''].map(function (v) { return /[",\n]/.test(v) ? '"' + String(v).replace(/"/g, '""') + '"' : v; }).join(',')); }); });
+  var t = out.join('\n');
+  (navigator.clipboard ? navigator.clipboard.writeText(t) : Promise.reject()).then(function () { $('stat').textContent = 'CSV ' + (out.length - 1) + '건을 복사했습니다.'; }, function () { $('stat').textContent = '복사를 지원하지 않는 브라우저입니다.'; });
+};
+loadData(); setInterval(loadData, 30000);
+</script></body></html>
