@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>피킹지시서</title>
+<style>
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{margin:0;background:#eef1f5;color:#10223a;font:16px/1.45 -apple-system,"Apple SD Gothic Neo","Malgun Gothic","Noto Sans KR",sans-serif}
+header{position:sticky;top:0;z-index:5;background:#10223a;color:#fff;padding:10px 14px 8px}
+.r1{display:flex;justify-content:space-between;align-items:flex-end;gap:8px}
+.dt{font-size:24px;font-weight:800;line-height:1.1}.dt small{font-size:13px;font-weight:600;opacity:.8;display:block;margin-bottom:2px}
+.pc{text-align:right;font-weight:800;font-size:20px}.pc small{display:block;font-size:12px;font-weight:500;opacity:.8}
+.sub{font-size:13px;opacity:.85;margin-top:4px}
+.pb{height:7px;background:#ffffff33;border-radius:4px;margin-top:8px;overflow:hidden}.pb i{display:block;height:100%;width:0;background:#ff7a1a;transition:width .2s}
+nav{display:flex;gap:6px;margin-top:8px}nav button{flex:1;height:38px;border:0;border-radius:8px;background:#ffffff22;color:#fff;font:700 15px inherit}nav button.on{background:#fff;color:#10223a}
+main{padding:10px 10px 40px}
+.card{background:#fff;border-radius:12px;padding:12px;margin-bottom:10px}
+.zh{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:4px}.zc{font-size:22px;font-weight:800}.cnt{font-weight:800}
+.it{border-top:1px solid #eef0f4;padding:9px 0}.it:first-of-type{border-top:0}
+.v{font-size:18px;font-weight:800}.mu{color:#667;font-size:13px}.p{font-size:14px;margin:2px 0 4px}
+.chip{display:inline-block;color:#fff;border-radius:6px;padding:1px 8px;font-size:14px;font-weight:700;vertical-align:2px}
+.wbs{display:flex;flex-wrap:wrap;gap:6px;margin-top:4px}
+.wb{border:1.5px solid #c5ccd6;background:#fff;border-radius:8px;padding:6px 10px;font-size:15px;font-variant-numeric:tabular-nums;color:#10223a}
+.wb.d{background:#2e9e5b;border-color:#2e9e5b;color:#fff}.wb.d:before{content:"✓ "}
+.done{opacity:.5}.tag{display:inline-block;font-size:12px;font-weight:700;color:#2a6fb0;border:1px solid #2a6fb0;border-radius:4px;padding:0 4px;margin-left:4px}
+.row{display:flex;justify-content:space-between;gap:8px;border-top:1px solid #eef0f4;padding:8px 0}.row:first-of-type{border-top:0}
+.ex{color:#b45309}.err{text-align:center;padding:40px 16px}
+.ft{font-size:12px;color:#889;text-align:center;margin-top:14px}
+button.l{border:1px solid #c5ccd6;background:#fff;border-radius:8px;height:40px;padding:0 14px;font:600 14px inherit;color:#10223a}
+</style>
+</head>
+<body>
+<header id="hd" hidden><div class="r1"><div class="dt"><small id="no"></small><span id="dt"></span></div><div class="pc"><span id="pc"></span><small>꺼낸 수 / 전체</small></div></div>
+<div class="sub" id="sb"></div><div class="pb"><i id="pbi"></i></div>
+<nav><button data-v="z" class="on">존 순서로 꺼내기</button><button data-v="d">기사별로 모으기</button></nav></header>
+<main id="m"><div class="err">지시서를 여는 중…</div></main>
+<script>
+{
+const PAL=['#e4572e','#2a6fb0','#2e9e5b','#8e44ad','#d4a017','#0f8b8d','#c2185b','#5d4037','#455a64','#ef6c00'];
+const $=s=>document.querySelector(s),esc=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const zc=(a,b)=>(a||'￿').localeCompare(b||'￿','ko',{numeric:true}),kc=(a,b)=>String(a).localeCompare(String(b),'ko');
+const dow=s=>'일월화수목금토'[new Date(s+'T00:00:00').getDay()];
+let O,K,done={},view='z';
+const LS=(k,v)=>{try{if(v===undefined)return JSON.parse(localStorage.getItem(k)||'null');localStorage.setItem(k,JSON.stringify(v))}catch(e){return null}};
+async function dec(h){const z=h[0],b=atob(h.slice(1).replace(/-/g,'+').replace(/_/g,'/')),u=new Uint8Array(b.length);for(let i=0;i<b.length;i++)u[i]=b.charCodeAt(i);
+ let out=u;if(z==='1'){if(!window.DecompressionStream)throw new Error('이 브라우저는 지원하지 않습니다. 크롬으로 열어 주세요.');out=new Uint8Array(await new Response(new Blob([u]).stream().pipeThrough(new DecompressionStream('deflate-raw'))).arrayBuffer())}
+ return JSON.parse(new TextDecoder().decode(out))}
+const col=i=>PAL[i%PAL.length],chip=i=>`<span class="chip" style="background:${col(i)}">${esc(O.D[i])}</span>`;
+function lines(){return O.L.map(a=>({zone:a[0],sup:O.P[a[1]],veh:a[2],model:a[3],pn:a[4],di:a[5],w:a[6],on:a[7],ri:a[8]}))}
+function prog(){const L=lines(),t=L.reduce((s,g)=>s+g.w.length,0),d=L.reduce((s,g)=>s+g.w.filter(w=>done[w]).length,0);$('#pc').textContent=d+' / '+t;$('#pbi').style.width=(t?d/t*100:0)+'%'}
+function render(){const L=lines();let h='';
+ if(view==='z'){const Z=new Map();L.forEach(g=>{const z=g.zone||'';if(!Z.has(z))Z.set(z,[]);Z.get(z).push(g)});
+  h=[...Z.keys()].sort(zc).map(z=>{const a=Z.get(z),t=a.reduce((s,g)=>s+g.w.length,0),d=a.reduce((s,g)=>s+g.w.filter(w=>done[w]).length,0);
+   return `<div class="card${d===t?' done':''}"><div class="zh"><span class="zc">${esc(z||'(존 미지정)')}</span><span class="cnt">${d}/${t}${d===t?' ✓':''}</span></div>${a.map(g=>`<div class="it"><div><span class="v">${esc(g.veh)}</span> ${chip(g.di)}</div><div class="p">${esc(g.pn)} · <b>${g.w.length}본</b>${g.ri?'<span class="tag">접수확정</span>':''}</div><div class="mu">${esc(g.sup)}${g.model?' · '+esc(g.model):''}</div><div class="wbs">${g.w.map(w=>`<button class="wb${done[w]?' d':''}" data-w="${esc(w)}">${esc(w)}</button>`).join('')}</div></div>`).join('')}</div>`}).join('')}
+ else{h=O.D.map((n,i)=>{const a=L.filter(g=>g.di===i).sort((x,y)=>kc(x.veh,y.veh)||zc(x.zone,y.zone)),t=a.reduce((s,g)=>s+g.w.length,0),d=a.reduce((s,g)=>s+g.w.filter(w=>done[w]).length,0),cars=new Set(a.map(g=>g.on)).size;
+   return `<div class="card"><div class="zh"><span>${chip(i)} <b>${cars}대 · ${t}본</b></span><span class="cnt">${d}/${t}${d===t&&t?' ✓':''}</span></div>${a.map(g=>{const k=g.w.filter(w=>done[w]).length;return `<div class="row"><div><span class="v" style="font-size:16px">${esc(g.veh)}</span> <span class="mu">${esc(g.sup)}</span><div class="p">${esc(g.pn)}</div><div class="mu">존 ${esc(g.zone||'-')}</div></div><b style="white-space:nowrap;color:${k===g.w.length?'#2e9e5b':'#10223a'}">${k}/${g.w.length}</b></div>`}).join('')}</div>`}).join('')}
+ if(O.X&&O.X.length)h+=`<div class="card ex"><b>꺼낼 수 없는 건 (참고)</b>${O.X.map(x=>`<div class="row"><span>${esc(x[0])} · ${esc(x[2])} · ${esc(x[1])}</span><b>${x[4]}본</b></div>`).join('')}</div>`;
+ h+=`<div class="ft">${esc(O.no)} · ${O.n}차 · 발행 ${esc(O.i)}${O.w?' · '+esc(O.w):''}<br>발행 시점 기준 화면입니다. 이후 루티 변경은 반영되지 않습니다.<br><button class="l" id="rs" style="margin-top:8px">체크 모두 지우기</button></div>`;
+ $('#m').innerHTML=h;prog()}
+document.addEventListener('click',e=>{const t=e.target;
+ if(t.dataset.w){const w=t.dataset.w;if(done[w])delete done[w];else done[w]=1;LS(K,done);t.classList.toggle('d',!!done[w]);prog();if(navigator.vibrate)navigator.vibrate(20);
+  const c=t.closest('.card');if(c&&view==='z'){const b=[...c.querySelectorAll('[data-w]')],d=b.filter(x=>done[x.dataset.w]).length;c.querySelector('.cnt').textContent=d+'/'+b.length+(d===b.length?' ✓':'');c.classList.toggle('done',d===b.length)}return}
+ if(t.dataset.v){view=t.dataset.v;document.querySelectorAll('nav button').forEach(b=>b.classList.toggle('on',b===t));render();scrollTo(0,0);return}
+ if(t.id==='rs'&&confirm('이 지시서의 체크를 모두 지울까요?')){done={};LS(K,done);render()}});
+(async()=>{try{const h=location.hash.slice(1);if(!h)throw new Error('지시서 링크가 아닙니다. PC의 [전달하기]로 받은 링크를 열어 주세요.');
+ O=await dec(h);K='pk_'+O.no+'_'+O.n+'_'+O.f;done=LS(K)||{};document.title=O.d.slice(5)+' 피킹 · '+O.f;
+ $('#no').textContent=O.no+' · '+O.n+'차 · 출고예정일';$('#dt').textContent=O.d+' ('+dow(O.d)+')';
+ const L=lines();$('#sb').textContent=O.c+' · '+O.f+' · 차량 '+new Set(L.map(g=>g.on)).size+'대'+(O.u?' · 마감 '+O.u:'');$('#hd').hidden=false;render()}
+ catch(e){$('#m').innerHTML='<div class="err">지시서를 열 수 없습니다.<br><small>'+esc(e.message)+'</small></div>'}})();
+}
+</script>
+</body>
+</html>
