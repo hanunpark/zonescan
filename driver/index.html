@@ -7,7 +7,7 @@
 <meta name="apple-mobile-web-app-title" content="기사앱">
 <meta name="theme-color" content="#1f2a44">
 <title>타이어케어 기사앱</title>
-<!-- 타이어케어 기사앱 (아이폰용) 화면 · v2 · 2026-11-19 — GitHub Pages 화면 + Apps Script 저장 -->
+<!-- 타이어케어 기사앱 (아이폰용) 화면 · v2.1 · 2026-11-19 — GitHub Pages 화면 + Apps Script 저장 -->
 <style>
   :root{
     --bg:#f3f4f7; --card:#fff; --ink:#1b2130; --sub:#6b7385; --line:#e3e6ec;
@@ -141,7 +141,7 @@
 </div>
 <div class="chips" id="chips"></div>
 <main id="list"><div class="empty">불러오는 중…</div></main>
-<div class="ver">기사앱 v2 · 2026-11-19</div>
+<div class="ver">기사앱 v2.1 · 2026-11-19</div>
 
 <div class="panel" id="detail">
   <div class="phead"><button id="detailBack">‹ 목록</button><h2 id="detailTitle"></h2></div>
@@ -188,15 +188,27 @@ const FILTERS = [['today','오늘·지연'],['confirm','약속필요'],['ship','
 
 /* ── 서버 호출 ── */
 async function API(fn, ...args){
-  let res, j;
-  try {
-    // text/plain 으로 보내야 브라우저 사전확인(preflight) 없이 Apps Script로 바로 전달된다
-    res = await fetch(API_URL, { method:'POST', headers:{ 'Content-Type':'text/plain;charset=utf-8' },
-      body: JSON.stringify({ fn, token: TOKEN, args }) });
-  } catch(e) { throw new Error('서버에 연결하지 못했습니다. 인터넷 연결을 확인하고 다시 시도하세요.'); }
-  try { j = await res.json(); } catch(e) { throw new Error('서버 응답을 읽지 못했습니다 ('+res.status+'). 잠시 후 다시 시도하세요.'); }
-  if(!j.ok) throw new Error(j.error || '처리하지 못했습니다.');
-  return j.data;
+  // 응답이 멈추는 경우(가끔 발생)를 대비해 시간 제한. 조회(apiList)만 자동으로 한 번 더 시도한다.
+  const tries = fn==='apiList' ? 2 : 1, limit = fn==='apiUploadPhoto' ? 60000 : 25000;
+  for(let a=1; a<=tries; a++){
+    const ctl = new AbortController(), tm = setTimeout(()=>ctl.abort(), limit);
+    let res, j;
+    try {
+      // text/plain 으로 보내야 브라우저 사전확인(preflight) 없이 Apps Script로 바로 전달된다
+      res = await fetch(API_URL, { method:'POST', headers:{ 'Content-Type':'text/plain;charset=utf-8' },
+        body: JSON.stringify({ fn, token: TOKEN, args }), signal: ctl.signal });
+      j = await res.json();
+    } catch(e) {
+      clearTimeout(tm);
+      if(a < tries) continue;
+      if(e && e.name==='AbortError') throw new Error(fn==='apiList' ? '서버 응답이 늦습니다. [새로고침]을 눌러 주세요.'
+        : '서버 응답이 늦습니다. 저장됐을 수 있으니 [새로고침]으로 확인한 뒤 필요하면 다시 하세요.');
+      throw new Error(res ? '서버 응답을 읽지 못했습니다 ('+res.status+'). 잠시 후 다시 시도하세요.' : '서버에 연결하지 못했습니다. 인터넷 연결을 확인하고 다시 시도하세요.');
+    }
+    clearTimeout(tm);
+    if(!j.ok) throw new Error(j.error || '처리하지 못했습니다.');
+    return j.data;
+  }
 }
 function busy(on, msg){ $('#busyMsg').textContent = msg || '처리 중…'; $('#busy').classList.toggle('on', !!on); }
 let toastT;
