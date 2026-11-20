@@ -48,17 +48,17 @@ const LS=(k,v)=>{try{if(v===undefined)return JSON.parse(localStorage.getItem(k)|
 async function dec(h){const z=h[0],b=atob(h.slice(1).replace(/-/g,'+').replace(/_/g,'/')),u=new Uint8Array(b.length);for(let i=0;i<b.length;i++)u[i]=b.charCodeAt(i);
  let out=u;if(z==='1'){if(!window.DecompressionStream)throw new Error('이 브라우저는 지원하지 않습니다. 크롬으로 열어 주세요.');out=new Uint8Array(await new Response(new Blob([u]).stream().pipeThrough(new DecompressionStream('deflate-raw'))).arrayBuffer())}
  return JSON.parse(new TextDecoder().decode(out))}
-const col=i=>PAL[i%PAL.length],chip=i=>`<span class="chip" style="background:${col(i)}">${esc(O.D[i])}</span>`;
-function lines(){return O.L.map(a=>({zone:a[0],sup:O.P[a[1]],veh:a[2],model:a[3],pn:a[4],di:a[5],w:a[6],on:a[7],ri:a[8],sub:a[9]}))}
+const col=i=>PAL[i%PAL.length],chip=i=>`<span class="chip" style="background:${col(i)}">${esc(O.D[i]||'미배정')}</span>`;
+function lines(){return O.L.map(a=>({zone:a[0],sup:O.P[a[1]],veh:a[2],model:a[3],pn:a[4],di:a[5],w:a[6],on:a[7],ri:a[8],sub:a[9],ot:a[10]}))}
 function prog(){const L=lines(),t=L.reduce((s,g)=>s+g.w.length,0),d=L.reduce((s,g)=>s+g.w.filter(w=>done[w]).length,0);$('#pc').textContent=d+' / '+t;$('#pbi').style.width=(t?d/t*100:0)+'%'}
 function render(){const L=lines();let h='';
  if(view==='z'){const Z=new Map();L.forEach(g=>{const z=g.zone||'';if(!Z.has(z))Z.set(z,[]);Z.get(z).push(g)});
   h=[...Z.keys()].sort(zc).map(z=>{const a=Z.get(z),t=a.reduce((s,g)=>s+g.w.length,0),d=a.reduce((s,g)=>s+g.w.filter(w=>done[w]).length,0);
-   return `<div class="card${d===t?' done':''}"><div class="zh"><span class="zc">${esc(z||'(존 미지정)')}</span><span class="cnt">${d}/${t}${d===t?' ✓':''}</span></div>${a.map(g=>`<div class="it"><div><span class="v">${esc(g.veh)}</span> ${chip(g.di)}${g.sub?'<span class="tag">서브 Y</span>':''}</div><div class="p">${esc(g.pn)} · <b>${g.w.length}본</b>${g.ri?'<span class="tag">접수확정</span>':''}</div><div class="mu">${esc(g.sup)}${g.model?' · '+esc(g.model):''}</div><div class="wbs">${g.w.map(w=>`<button class="wb${done[w]?' d':''}" data-w="${esc(w)}">${esc(w)}</button>`).join('')}</div></div>`).join('')}</div>`}).join('')}
+   return `<div class="card${d===t?' done':''}"><div class="zh"><span class="zc">${esc(z||'(존 미지정)')}</span><span class="cnt">${d}/${t}${d===t?' ✓':''}</span></div>${a.map(g=>`<div class="it"><div><span class="v">${esc(g.veh)}</span> ${chip(g.di)}${g.sub?'<span class="tag">서브 Y</span>':''}</div><div class="p">${esc(g.pn)} · <b>${g.w.length}본</b>${g.ri?'<span class="tag">접수확정</span>':''}${g.ot?'<span class="tag" style="background:#c2410c;color:#fff;border-color:#c2410c">출고건·'+esc(g.ot)+'</span>':''}</div><div class="mu">${esc(g.sup)}${g.model?' · '+esc(g.model):''}</div><div class="wbs">${g.w.map(w=>`<button class="wb${done[w]?' d':''}" data-w="${esc(w)}">${esc(w)}</button>`).join('')}</div></div>`).join('')}</div>`}).join('')}
  else{h=O.D.map((n,i)=>{const a=L.filter(g=>g.di===i).sort((x,y)=>kc(x.veh,y.veh)||zc(x.zone,y.zone)),t=a.reduce((s,g)=>s+g.w.length,0),d=a.reduce((s,g)=>s+g.w.filter(w=>done[w]).length,0),cars=new Set(a.map(g=>g.on)).size;
    return `<div class="card"><div class="zh"><span>${chip(i)} <b>${cars}대 · ${t}본</b></span><span class="cnt">${d}/${t}${d===t&&t?' ✓':''}</span></div>${a.map(g=>{const k=g.w.filter(w=>done[w]).length;return `<div class="row"><div><span class="v" style="font-size:16px">${esc(g.veh)}</span>${g.sub?'<span class="tag">서브 Y</span>':''} <span class="mu">${esc(g.sup)}</span><div class="p">${esc(g.pn)}</div><div class="mu">존 ${esc(g.zone||'-')}</div></div><b style="white-space:nowrap;color:${k===g.w.length?'#2e9e5b':'#10223a'}">${k}/${g.w.length}</b></div>`}).join('')}</div>`}).join('')}
  if(O.X&&O.X.length)h+=`<div class="card ex"><b>꺼낼 수 없는 건 (참고)</b>${O.X.map(x=>`<div class="row"><span>${esc(x[0])} · ${esc(x[2])} · ${esc(x[1])}</span><b>${x[4]}본</b></div>`).join('')}</div>`;
- h+=`<div class="ft">${esc(O.no)} · ${O.n}차 · 발행 ${esc(O.i)}${O.w?' · '+esc(O.w):''}<br>발행 시점 기준 화면입니다. 이후 루티 변경은 반영되지 않습니다.${LK?'<br>체크는 같은 지시서를 받은 사람끼리 공유됩니다.':''}<br>${LK?'<button class="l" id="rf" style="margin-top:8px">다른 사람 체크 불러오기</button> ':''}<button class="l" id="rs" style="margin-top:8px">체크 모두 지우기</button></div>`;
+ h+=`<div class="ft">${esc(O.no)} · ${O.t?'임시':O.n+'차'} · 발행 ${esc(O.i)}${O.w?' · '+esc(O.w):''}<br>발행 시점 기준 화면입니다. 이후 루티 변경은 반영되지 않습니다.${LK?'<br>체크는 같은 지시서를 받은 사람끼리 공유됩니다.':''}<br>${LK?'<button class="l" id="rf" style="margin-top:8px">다른 사람 체크 불러오기</button> ':''}<button class="l" id="rs" style="margin-top:8px">체크 모두 지우기</button></div>`;
  $('#m').innerHTML=h;prog()}
 document.addEventListener('click',e=>{const t=e.target;
  if(t.dataset.w){const w=t.dataset.w;if(done[w])delete done[w];else done[w]=1;LS(K,done);push(w,done[w]?1:0);t.classList.toggle('d',!!done[w]);prog();if(navigator.vibrate)navigator.vibrate(20);
@@ -75,7 +75,7 @@ async function pull(){if(!LK)return;try{const j=await (await fetch(GAS+'?a=get&k
   O=j.o;LK=k;KEY=j.key;K='pk_'+O.no+'_'+O.n+'_'+O.f;done={};(j.checked||[]).forEach(w=>done[w]=1);LS(K,done)}
  else if(h){O=await dec(h);K='pk_'+O.no+'_'+O.n+'_'+O.f;done=LS(K)||{}}
  else throw new Error('지시서 링크가 아닙니다. PC의 [전달하기]로 받은 링크를 열어 주세요.');document.title=O.d.slice(5)+' 피킹 · '+O.f;
- $('#no').textContent=O.no+' · '+O.n+'차 · 출고예정일';$('#dt').textContent=O.d+' ('+dow(O.d)+')';
+ $('#no').textContent=(O.t?'[임시] ':'')+O.no+(O.t?'':' · '+O.n+'차')+' · 출고예정일';$('#dt').textContent=O.d+' ('+dow(O.d)+')';
  const L=lines();$('#sb').textContent=O.c+' · '+O.f+' · 차량 '+new Set(L.map(g=>g.on)).size+'대'+(O.u?' · 마감 '+O.u:'');$('#hd').hidden=false;render()}
  catch(e){$('#m').innerHTML='<div class="err">지시서를 열 수 없습니다.<br><small>'+esc(e.message)+'</small></div>'}})();
 }
