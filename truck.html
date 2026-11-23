@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>용차출고</title>
+<style>
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{margin:0;background:#eef1f5;color:#10223a;font:16px/1.45 -apple-system,"Apple SD Gothic Neo","Malgun Gothic","Noto Sans KR",sans-serif}
+header{position:sticky;top:0;z-index:5;background:#10223a;color:#fff;padding:10px 14px}
+header small{opacity:.8;font-size:13px;display:block}.id{font-size:20px;font-weight:800}.bd{float:right;background:#ff7a1a;border-radius:999px;padding:2px 10px;font-size:13px;font-weight:700}
+main{padding:10px 10px 50px}.card{background:#fff;border-radius:12px;padding:12px;margin-bottom:10px}
+.kv{display:grid;grid-template-columns:92px 1fr;gap:4px 8px;font-size:15px}.kv span{color:#667;font-size:13px}.kv b{font-size:16px}
+h3{margin:0 0 8px;font-size:15px}
+.st{display:flex;justify-content:space-between;align-items:center;gap:10px;width:100%;min-height:56px;border:1.5px solid #c5ccd6;border-radius:10px;background:#fff;padding:8px 12px;margin-bottom:8px;font:700 17px inherit;color:#10223a;text-align:left}
+.st small{font-weight:500;font-size:13px;color:#667}.st.on{background:#2e9e5b;border-color:#2e9e5b;color:#fff}.st.on small{color:#fff}
+.v{display:flex;gap:10px;align-items:flex-start;border-top:1px solid #eef0f4;padding:9px 0}.v:first-of-type{border-top:0}
+.v input{width:26px;height:26px;margin-top:2px;flex:none}.v b{font-size:17px}.v .p{font-size:14px}.v .mu,.mu{color:#667;font-size:13px}.v.on{opacity:.55}
+.tag{display:inline-block;font-size:12px;font-weight:700;background:#c2410c;color:#fff;border-radius:4px;padding:0 5px;margin-left:4px}
+input.t{width:100%;height:44px;border:1px solid #c5ccd6;border-radius:8px;padding:0 10px;font:inherit}
+.err{text-align:center;padding:40px 16px}button.l{border:1px solid #c5ccd6;background:#fff;border-radius:8px;height:40px;padding:0 14px;font:600 14px inherit;color:#10223a}
+</style>
+</head>
+<body>
+<header id="hd" hidden><span class="bd" id="bd"></span><span class="id" id="id"></span><small id="sb"></small></header>
+<main id="m"><div class="err">용차 정보를 여는 중…</div></main>
+<script>
+{
+const GAS='https://script.google.com/macros/s/AKfycby33E3x2WOVkZd_Kh4LSumPMT-KKbNa292E9WNKKTdx40WjCxsVgpSTq2R7oJby6XDF/exec';
+const TST=[['arrive','용차 도착'],['load','상차 완료'],['doc1','명세서 전달'],['doc2','회수운송장 전달'],['depart','출발'],['unload','하차지 도착'],['hand','인계 완료']];
+const $=s=>document.querySelector(s),esc=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const dt=v=>v?String(v).replace('T',' ').slice(5,16).replace('-','/'):'-';
+const SZ=/(\d{3}\/\d{2}Z?R\d{2})/,size=p=>{const m=String(p||'').match(SZ);return m?m[1]:String(p||'').split('_')[0]};
+const K=new URLSearchParams(location.search).get('k');let X=null,busy=false;
+let who='';try{who=localStorage.getItem('trk_who')||''}catch(e){}
+const now=()=>{const d=new Date(),p=n=>String(n).padStart(2,'0');return d.getFullYear()+'-'+p(d.getMonth()+1)+'-'+p(d.getDate())+' '+p(d.getHours())+':'+p(d.getMinutes())};
+async function post(b){if(busy)return;busy=true;document.body.style.opacity=.6;try{b.a='trk_set';b.k=K;const j=await (await fetch(GAS,{method:'POST',body:JSON.stringify(b)})).json();if(!j.ok)throw new Error(j.err);X=j.item;render()}catch(e){alert('저장하지 못했습니다. 통신 상태를 확인하고 다시 눌러 주세요.\n'+(e.message||''))}busy=false;document.body.style.opacity=1}
+async function load(){const j=await (await fetch(GAS+'?a=trk_get&k='+encodeURIComponent(K))).json();if(!j.ok)throw new Error(j.err||'용차 정보를 찾지 못했습니다');X=j.item;render()}
+function render(){const p=X.st.steps||{},ld=X.st.ld||{},V=new Map();
+ X.lines.forEach(g=>{let a=V.get(g.on);if(!a)V.set(g.on,a={veh:g.veh,sup:g.sup,drv:g.drv,n:0,pn:[],z:[],ot:g.ot});a.n+=g.w.length;const s=size(g.pn);if(a.pn.indexOf(s)<0)a.pn.push(s);if(a.z.indexOf(g.zone||'-')<0)a.z.push(g.zone||'-')});
+ const lc=[...V.keys()].filter(k=>ld[k]).length;
+ $('#hd').hidden=false;$('#id').textContent=X.id;$('#bd').textContent=X.status;$('#sb').textContent=X.center+' · 차량 '+X.cars+'대 · '+X.cnt+'본';document.title='용차 '+X.id;
+ $('#m').innerHTML=(X.st.cancel?'<div class="card" style="color:#b91c1c;font-weight:700">이 용차는 취소되었습니다.</div>':'')+`<div class="card"><div class="kv">
+ <span>용차</span><b>${esc(X.plate||'미배정')}</b><span>기사·연락처</span><div>${esc(X.driver||'-')} ${X.phone?`<a href="tel:${esc(X.phone)}">${esc(X.phone)}</a>`:''}</div>
+ <span>상차 예정</span><b>${dt(X.loadAt)}</b><span>하차 예정</span><b>${dt(X.unloadAt)}</b><span>하차지</span><div>${esc(X.dest||'-')}</div><span>받는 기사</span><div>${esc(X.recv||'-')}</div>${X.memo?`<span>메모</span><div>${esc(X.memo)}</div>`:''}</div></div>
+ <div class="card"><h3>작업자 이름</h3><input class="t" id="who" value="${esc(who)}" placeholder="체크한 사람 이름"></div>
+ <div class="card"><h3>진행 체크 — 누르면 지금 시각으로 기록</h3>${TST.map(([k,l])=>`<button class="st${p[k]?' on':''}" data-st="${k}"><span>${l}</span><small>${p[k]?esc(dt(p[k].at))+' '+esc(p[k].by||''):'미체크'}</small></button>`).join('')}</div>
+ <div class="card"><h3>싣는 물건 — 상차 확인 ${lc}/${V.size}대</h3>${[...V.entries()].map(([k,a])=>`<label class="v${ld[k]?' on':''}"><input type="checkbox" data-ld="${esc(k)}"${ld[k]?' checked':''}><div><b>${esc(a.veh)}</b> <span class="mu">${esc(a.sup)}</span>${a.ot?`<span class="tag">${esc(a.ot.split('·')[0])}</span>`:''}<div class="p">${esc(a.pn.join(', '))} · <b>${a.n}본</b> · 기사 ${esc(a.drv||'미배정')}</div><div class="mu">존 ${esc(a.z.join(', '))}</div></div></label>`).join('')}</div>
+ <div style="text-align:center"><button class="l" id="rf">새로 불러오기</button></div>`;
+ $('#who').onchange=e=>{who=e.target.value.trim();try{localStorage.setItem('trk_who',who)}catch(_){}};$('#rf').onclick=()=>load().catch(()=>{})}
+document.addEventListener('click',e=>{const t=e.target.closest('[data-st]');if(!t||!X)return;const k=t.dataset.st,cur=(X.st.steps||{})[k];
+ if(cur){if(confirm('이미 체크된 단계입니다. 체크를 풀까요?'))post({step:{name:k,on:0}});return}post({step:{name:k,on:1,at:now(),by:who}})});
+document.addEventListener('change',e=>{const t=e.target;if(t.dataset&&t.dataset.ld!==undefined)post({load:{on:t.dataset.ld,v:t.checked?1:0,by:who}})});
+(async()=>{try{if(!K)throw new Error('용차 링크가 아닙니다.');if(GAS.indexOf('%%')===0)throw new Error('공유 저장소 주소가 설정되지 않은 페이지입니다.');await load()}catch(e){$('#m').innerHTML='<div class="err">용차 정보를 열 수 없습니다.<br><small>'+esc(e.message)+'</small></div>'}})();
+}
+</script>
+</body>
+</html>
