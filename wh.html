@@ -34,15 +34,16 @@ details{margin-top:8px}summary{font-weight:700;font-size:13.5px;padding:6px 0}.v
 .dvs{display:flex;flex-wrap:wrap;gap:6px;margin-top:7px}.dvs span{background:#f0f5fc;border-radius:6px;padding:3px 9px;font-size:13px}
 #dlg{position:fixed;inset:0;background:#0007;z-index:20;display:flex;align-items:flex-end;justify-content:center}#dlg>div{background:#fff;width:100%;max-width:560px;max-height:92vh;overflow:auto;border-radius:14px 14px 0 0;padding:14px 14px 18px}
 @media(min-width:700px){#dlg{align-items:center}#dlg>div{border-radius:14px}}
-#dlg h3{margin:0 0 6px;font-size:17px}#dlg label{display:block;font-size:12.5px;color:#556;margin-top:9px}#dlg input[type=text],#dlg input[type=tel],#dlg input[type=datetime-local],#dlg input:not([type]){width:100%;height:42px;border:1px solid #c5ccd6;border-radius:8px;padding:0 10px;font-size:15px}
+#dlg h3{margin:0 0 6px;font-size:17px}#dlg label{display:block;font-size:12.5px;color:#556;margin-top:9px}#dlg input[type=text],#dlg input[type=tel],#dlg .dti input[type=date],#dlg input:not([type]){width:100%;height:42px;border:1px solid #c5ccd6;border-radius:8px;padding:0 10px;font-size:15px}
+.dti{display:flex;gap:5px;align-items:center}.dti input{flex:1;min-width:0;height:42px;border:1px solid #c5ccd6;border-radius:8px;padding:0 8px;font-size:15px}.dti select{height:42px;border:1px solid #c5ccd6;border-radius:8px;font-size:15px;padding:0 4px;background:#fff}
 .er{color:#d92d20;font-size:13px;margin-top:6px;min-height:18px}.msg{text-align:center;padding:40px 16px;color:#556}
 #busy{position:fixed;right:10px;bottom:10px;background:#10223a;color:#fff;border-radius:999px;padding:5px 12px;font-size:12px;z-index:9}
 </style>
 </head>
 <body>
-<header><div class="h1"><b>타이어케어 출고 관리</b><small>v1.3 · 2026-11-23</small><button id="whoB"></button></div>
+<header><div class="h1"><b>타이어케어 출고 관리</b><small>v1.4 · 2026-11-23</small><button id="whoB"></button></div>
 <div class="tabs"><button data-tab="list">지시서 목록</button><button data-tab="out">출고 관리</button></div></header>
-<div id="flt" hidden>거점 <select id="fc"></select><input type="date" id="ff"><span>~</span><input type="date" id="ft"><button class="b p" id="fg">조회</button><button class="b" id="fr">새로고침</button></div>
+<div id="flt" hidden>거점 <select id="fc"></select><input type="date" id="ff"><span>~</span><input type="date" id="ft"><button class="b p" id="fg">조회</button><button class="b" id="fr">새로고침</button><button class="b s" data-q="0">오늘</button><button class="b s" data-q="1">내일</button><button class="b s" data-q="14">±14일</button></div>
 <main id="m"><div class="msg">여는 중…</div></main><div id="busy" hidden>최신 내용 확인 중…</div>
 <script>
 {
@@ -58,8 +59,11 @@ const dt=v=>v?String(v).replace('T',' ').slice(5,16).replace('-','/'):'-';
 const SZ=/(\d{3}\/\d{2}Z?R\d{2})/,size=p=>{const m=String(p||'').match(SZ);return m?m[1]:String(p||'').split('_')[0]};
 const ls=(k,v)=>{try{if(v===undefined)return JSON.parse(localStorage.getItem('wh_'+k)||'null');localStorage.setItem('wh_'+k,JSON.stringify(v))}catch(e){return null}};
 let KEY=ls('key')||'',WHO=ls('who')||'',TAB=ls('tab')||'list',KIND='trk',TYPE='';
-const T0=ymd(new Date()),F={from:addD(T0,-3),to:addD(T0,14),center:ls('center')||''};
-let D={srv:[],trk:[]},LOADED=false,PEND=0,SEQ=0,FOCUS='';
+const T0=ymd(new Date()),F={from:T0,to:T0,center:ls('center')||''};
+/* 고른 기간은 같은 날 같은 탭 안에서만 유지 (지시서를 열었다 돌아와도 그대로) */
+try{const r=JSON.parse(sessionStorage.getItem('wh_range')||'null');if(r&&r.day===T0){F.from=r.from;F.to=r.to}}catch(e){}
+function keepRange(){try{sessionStorage.setItem('wh_range',JSON.stringify({day:T0,from:F.from,to:F.to}))}catch(e){}}
+let D={srv:[],trk:[]},LOADED=false,PEND=0,SEQ=0,FOCUS='',WIDE=false;
 {const q=new URLSearchParams(location.search),t=q.get('tab');if(t==='list'||t==='out'){TAB=t;if(q.get('trk')){KIND='trk';FOCUS=q.get('trk')}else if(q.get('no')){FOCUS=q.get('no');if(t==='out')KIND='drv'}}else if(q.get('no')){TAB='list';FOCUS=q.get('no')}if(location.search)history.replaceState(null,'',location.pathname+location.hash)}
 {const h=location.hash.slice(1);if(h){KEY=decodeURIComponent(h);ls('key',KEY);history.replaceState(null,'',location.pathname+location.search)}}
 async function get(q){const j=await (await fetch(GAS+'?'+q+'&t='+encodeURIComponent(KEY))).json();if(!j.ok)throw new Error(j.err||'오류');return j}
@@ -121,19 +125,23 @@ function draw(){head();$('#flt').hidden=false;const cs=[...new Set(D.srv.map(r=>
   else{const n=k=>DV.filter(d=>d.st===k).length;h+=`<div class="chips"><span>피킹 전 <b>${n(0)}</b></span><span>피킹 중 <b>${n(1)}</b></span><span class="mu">종결 ${n(2)}</span></div>`;
    DV.slice().sort((a,b)=>(a.st===2?1:0)-(b.st===2?1:0)||kc(a.M.date,b.M.date)||kc(a.M.no,b.M.no)).forEach(d=>{const g=d.st===2?'피킹 완료 (종결)':'출고예정일 '+d.M.date+' ('+dow(d.M.date)+')';if(g!==pd){h+=`<div class="dh">${g}</div>`;pd=g}h+=drvCard(d)});
    if(!DV.length)h+='<div class="msg">이 조건에 기사출고 대상 지시서가 없습니다.</div>'}}
- $('#m').innerHTML=h;window.scrollTo(0,sc);if(FOCUS){const el=[...document.querySelectorAll('[data-f]')].find(e=>e.dataset.f===FOCUS);if(el){FOCUS='';el.style.outline='3px solid #ff7a1a';el.scrollIntoView({block:'center'});setTimeout(()=>{el.style.outline=''},4000)}}}
+ $('#m').innerHTML=h;window.scrollTo(0,sc);if(FOCUS){const el=[...document.querySelectorAll('[data-f]')].find(e=>e.dataset.f===FOCUS);if(!el&&LOADED&&!WIDE&&$('#busy').hidden){WIDE=true;const t=ymd(new Date());F.from=addD(t,-14);F.to=addD(t,14);keepRange();LOADED=false;load();return}if(el){FOCUS='';el.style.outline='3px solid #ff7a1a';el.scrollIntoView({block:'center'});setTimeout(()=>{el.style.outline=''},4000)}}}
 function toObj(M){const L=M.lines,Dr=[...new Set(L.map(g=>g.drv))].sort(kc),P=[...new Set(L.map(g=>g.sup))];
  return{v:1,no:M.no,n:M.n,d:M.date,c:M.center,i:M.issued,w:M.who,u:M.due,t:M.tmp?1:0,f:M.drvLabel,D:Dr,P,L:L.map(g=>[g.zone,P.indexOf(g.sup),g.veh,g.model,g.pn,Dr.indexOf(g.drv),g.w,g.on,g.ri||0,g.sub?1:0,g.ot||'']),X:(M.ex||[]).map(x=>[x[0],x[1],x[3],x[4],x[6]])}}
 async function openSheet(r){const lk=ls('lnk')||{};let k=lk[r.M.no];try{if(!k){$('#busy').hidden=false;$('#busy').textContent='지시서 여는 중…';k=(await post({a:'link',key:r.M.no,target:'전체',reuse:1,o:toObj(r.M)},true)).id;lk[r.M.no]=k;ls('lnk',lk)}location.href=PICK+'?k='+k}catch(e){alert('지시서를 열지 못했습니다.\n'+e.message)}finally{$('#busy').hidden=true;$('#busy').textContent='최신 내용 확인 중…'}}
 const FIELDS=['loadAt','unloadAt','plate','driver','phone','dest','recv','memo'];
+function dtIn(id,val){const d=String(val||'').slice(0,10),h=String(val||'').slice(11,13),m=String(val||'').slice(14,16),ms=['00','10','20','30','40','50'];if(m&&ms.indexOf(m)<0)ms.push(m);
+ return `<div class="dti"><input type="date" id="${id}_d" value="${esc(d)}"><select id="${id}_h">${Array.from({length:24},(_,i)=>pad(i)).map(x=>`<option${x===(h||'08')?' selected':''}>${x}</option>`).join('')}</select>시<select id="${id}_m">${ms.sort().map(x=>`<option${x===(m||'00')?' selected':''}>${x}</option>`).join('')}</select>분</div>`}
+function dtVal(id){const d=$('#'+id+'_d').value;return d?d+'T'+$('#'+id+'_h').value+':'+$('#'+id+'_m').value:''}
+function nowSlot(){const d=new Date(Date.now()+3600000);return ymd(d)+'T'+pad(d.getHours())+':00'}
 function trkForm(title,T,note,cars){const v=k=>esc(T[k]||'');
  dlg(`<h3>${title}</h3><div class="mu">${note||''}</div>
- <label>상차 예정</label><input type="datetime-local" id="f_loadAt" value="${v('loadAt')}"><label>하차(도착) 예정 — 상차일과 달라도 됩니다</label><input type="datetime-local" id="f_unloadAt" value="${v('unloadAt')}">
+ <label>상차 예정</label>${dtIn('f_loadAt',T.loadAt)}<label>하차(도착) 예정 — 상차일과 달라도 됩니다</label>${dtIn('f_unloadAt',T.unloadAt)}
  <label>용차 차량번호 (배정 전이면 비워 두세요)</label><input id="f_plate" value="${v('plate')}"><label>용차 기사</label><input id="f_driver" value="${v('driver')}"><label>연락처</label><input type="tel" id="f_phone" value="${v('phone')}">
  <label>하차지</label><input id="f_dest" value="${v('dest')}"><label>받는 기사 (인수자)</label><input id="f_recv" value="${v('recv')}"><label>메모</label><input id="f_memo" value="${v('memo')}">
  ${cars?`<label>실을 차량 (${cars.length}대) — 빼려면 체크를 푸세요</label>${cars.map(c=>`<label class="v" style="margin:0"><input type="checkbox" data-car="${esc(c.on)}"${c.used?'':' checked'}><div><b>${esc(c.veh)}</b> <span class="mu">${esc(c.sup)}</span> · ${c.n}본 · 기사 ${esc(c.drv||'미배정')}${c.used?' <span class="mu">(이미 '+esc(c.used)+'에 있음 — 체크하면 옮김)</span>':''}</div></label>`).join('')}`:''}
  <div class="er" id="f_e"></div><div class="act" style="justify-content:flex-end"><button class="b" data-x>닫기</button><button class="b p" id="f_ok">저장</button></div>`);
- return new Promise(res=>{$('#f_ok').onclick=()=>{const o={};FIELDS.forEach(k=>o[k]=$('#f_'+k).value.trim());if(!o.loadAt){$('#f_e').textContent='상차 예정 일시를 넣어 주세요.';return}if(o.unloadAt&&o.unloadAt<o.loadAt){$('#f_e').textContent='하차 예정이 상차 예정보다 빠릅니다.';return}
+ return new Promise(res=>{$('#f_ok').onclick=()=>{const o={};FIELDS.slice(2).forEach(k=>o[k]=$('#f_'+k).value.trim());o.loadAt=dtVal('f_loadAt');o.unloadAt=dtVal('f_unloadAt');if(!o.loadAt){$('#f_e').textContent='상차 예정 일시를 넣어 주세요.';return}if(o.unloadAt&&o.unloadAt<o.loadAt){$('#f_e').textContent='하차 예정이 상차 예정보다 빠릅니다.';return}
   const sel=cars?[...document.querySelectorAll('[data-car]')].filter(c=>c.checked).map(c=>c.dataset.car):null;if(cars&&!sel.length){$('#f_e').textContent='실을 차량을 하나 이상 고르세요.';return}close();res({o,sel})}})}
 function askMode(M,ex){return new Promise(res=>{const n=tot(M);dlg(`<h3>용차 배정 — ${esc(M.no)}</h3><div class="mu">이 지시서에는 이미 용차가 등록되어 있습니다. 무엇을 하시겠습니까?</div>
  ${ex.map(({t,n:c})=>`<div class="tl" style="margin-top:8px"><b>${esc(t.id)}</b><span class="bd${t.plate?'':' o'}">${esc(t.status)}</span> ${esc(t.plate||'차량 미배정')} ${esc(t.driver||'')}<br>상차 ${dt(t.loadAt)} → 하차 ${dt(t.unloadAt)}<br>하차지 ${esc(t.dest||'-')} · 받는 기사 ${esc(t.recv||'-')} · ${c}/${n}본</div>`).join('')}
@@ -145,7 +153,7 @@ async function regTruck(r){if(!needWho())return;const M=r.M,ex=trkOf(M).filter(e
  const used=new Map();D.trk.filter(t=>!t.st.cancel).forEach(t=>t.lines.forEach(g=>used.set(g.on,t.id)));
  const C=new Map();M.lines.forEach(g=>{let a=C.get(g.on);if(!a)C.set(g.on,a={on:g.on,veh:g.veh,sup:g.sup,drv:g.drv,n:0,used:used.get(g.on)});a.n+=g.w.length});
  const drv=[...new Set(M.lines.map(g=>g.drv).filter(Boolean))];
- const x=await trkForm((ex.length?'용차 추가 배정 — ':'용차 등록 — ')+esc(M.no),{loadAt:M.date+'T08:00',recv:drv.join(', ')},`${esc(M.center)} · 출고예정일 ${M.date}. 체크한 차량 묶음이 용차 1건이 됩니다.${ex.length?' 이미 다른 용차에 있는 차량을 체크하면 새 용차로 옮겨집니다.':''}`,[...C.values()]);if(!x)return;
+ const x=await trkForm((ex.length?'용차 추가 배정 — ':'용차 등록 — ')+esc(M.no),{loadAt:nowSlot(),recv:drv.join(', ')},`${esc(M.center)} · 출고예정일 ${M.date}. 체크한 차량 묶음이 용차 1건이 됩니다.${ex.length?' 이미 다른 용차에 있는 차량을 체크하면 새 용차로 옮겨집니다.':''}`,[...C.values()]);if(!x)return;
  const lines=M.lines.filter(g=>x.sel.indexOf(g.on)>=0).map(g=>({zone:g.zone,sup:g.sup,veh:g.veh,model:g.model,pn:g.pn,drv:g.drv,w:g.w,on:g.on,ot:g.ot||''})),T=Object.assign(x.o,{center:M.center,src:M.no,who:WHO,lines});
  try{$('#busy').hidden=false;const res=await post({a:'trk_add',T,move:1});alert('용차 '+res.id+' 을(를) 등록했습니다.'+(res.moved&&res.moved.length?'\n기존 용차 '+res.moved.join(', ')+' 에서 해당 차량을 옮겼습니다.':''));await load()}catch(e){alert('등록하지 못했습니다.\n'+e.message)}finally{$('#busy').hidden=true}}
 async function editTruck(x){if(!needWho())return;const r=await trkForm('용차 정보 수정 — '+esc(x.id),x,'차량·시각·받는 기사는 배정 후에도 바꿀 수 있습니다. 바꾼 칸만 저장됩니다.');if(!r)return;const df={};FIELDS.forEach(f=>{if(String(r.o[f]||'')!==String(x[f]||''))df[f]=r.o[f]});if(!Object.keys(df).length)return;
@@ -164,7 +172,8 @@ document.addEventListener('click',e=>{const t=e.target.closest('[data-a],[data-t
 document.addEventListener('change',e=>{const t=e.target;if(t.dataset&&t.dataset.a==='ld'){const card=t.closest('[data-id]'),x=D.trk.find(y=>y.id===card.dataset.id);if(!x)return;{const P=x.st.steps||{};if(P.load||P.depart||P.unload||P.hand){t.checked=!t.checked;return}}if(!WHO){t.checked=!t.checked;askWho();return}x._open=true;const k=t.dataset.k,v=t.checked;save(()=>{x.st.ld=x.st.ld||{};if(v)x.st.ld[k]={at:now(),by:WHO};else delete x.st.ld[k]},{a:'trk_set',id:x.id,load:{on:k,v:v?1:0,by:WHO}},true)}
  if(t.id==='fc'){F.center=t.value;ls('center',F.center);draw()}});
 document.addEventListener('toggle',e=>{const c=e.target.closest&&e.target.closest('[data-id]');if(c){const x=D.trk.find(y=>y.id===c.dataset.id);if(x)x._open=e.target.open}},true);
-$('#whoB').onclick=askWho;$('#fr').onclick=()=>load();$('#fg').onclick=()=>{const a=$('#ff').value,b=$('#ft').value;if(!a||!b||a>b){alert('날짜 구간을 확인해 주세요.');return}F.from=a;F.to=b;LOADED=false;load()};
+document.querySelectorAll('[data-q]').forEach(b=>b.onclick=()=>{const t=ymd(new Date()),q=+b.dataset.q;F.from=q===14?addD(t,-14):addD(t,q);F.to=q===14?addD(t,14):addD(t,q);keepRange();LOADED=false;load()});
+$('#whoB').onclick=askWho;$('#fr').onclick=()=>load();$('#fg').onclick=()=>{const a=$('#ff').value,b=$('#ft').value;if(!a||!b||a>b){alert('날짜 구간을 확인해 주세요.');return}F.from=a;F.to=b;keepRange();LOADED=false;load()};
 function poll(){if(!KEY||document.hidden||$('#dlg')||PEND||!LOADED)return;const a=document.activeElement;if(a&&/INPUT|SELECT/.test(a.tagName)&&a.type!=='checkbox')return;load(true)}
 setInterval(poll,30000);document.addEventListener('visibilitychange',()=>{if(!document.hidden)poll()});window.addEventListener('pageshow',e=>{if(e.persisted)poll()});
 head();
