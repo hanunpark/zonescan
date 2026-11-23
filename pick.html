@@ -32,7 +32,7 @@ button.l{border:1px solid #c5ccd6;background:#fff;border-radius:8px;height:40px;
 </style>
 </head>
 <body>
-<header id="hd" hidden><div class="r1"><div class="dt"><small id="no"></small><span id="dt"></span></div><div class="pc"><span id="pc"></span><small>꺼낸 수 / 전체</small></div></div>
+<div id="nav" hidden style="background:#0b1829;display:flex;gap:6px;padding:6px 10px"><a id="n1" style="flex:1;text-align:center;color:#fff;text-decoration:none;font-weight:700;font-size:14px;border:1px solid #ffffff55;border-radius:8px;padding:7px 4px">‹ 지시서 목록</a><a id="n2" style="flex:1;text-align:center;color:#fff;text-decoration:none;font-weight:700;font-size:14px;border:1px solid #ffffff55;border-radius:8px;padding:7px 4px">출고 관리</a></div><header id="hd" hidden><div class="r1"><div class="dt"><small id="no"></small><span id="dt"></span></div><div class="pc"><span id="pc"></span><small>꺼낸 수 / 전체</small></div></div>
 <div class="sub" id="sb"></div><div class="pb"><i id="pbi"></i></div>
 <nav><button data-v="z" class="on">존 순서로 꺼내기</button><button data-v="d">기사별로 모으기</button></nav></header>
 <main id="m"><div class="err">지시서를 여는 중…</div></main>
@@ -80,6 +80,7 @@ async function pull(){if(!LK)return;try{const j=await (await fetch(GAS+'?a=get&k
  else if(h){O=await dec(h);K='pk_'+O.no+'_'+O.n+'_'+O.f;done=LS(K)||{}}
  else throw new Error('지시서 링크가 아닙니다. PC의 [전달하기]로 받은 링크를 열어 주세요.');document.title=O.d.slice(5)+' 피킹 · '+O.f;
  $('#no').textContent=(O.t?'[임시] ':'')+O.no+(O.t?'':' · '+O.n+'차')+' · 출고예정일';$('#dt').textContent=O.d+' ('+dow(O.d)+')';
+ try{if(localStorage.getItem('wh_key')){$('#nav').hidden=false;$('#n1').href='wh.html?tab=list&no='+encodeURIComponent(O.no);$('#n2').href='wh.html?tab=out&no='+encodeURIComponent(O.no)}}catch(_){}
  const L=lines();$('#sb').textContent=O.c+' · '+O.f+' · 차량 '+new Set(L.map(g=>g.on)).size+'대'+(O.u?' · 마감 '+O.u:'');$('#hd').hidden=false;render()}
  catch(e){$('#m').innerHTML='<div class="err">지시서를 열 수 없습니다.<br><small>'+esc(e.message)+'</small></div>'}})();
 }

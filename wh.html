@@ -40,7 +40,7 @@ details{margin-top:8px}summary{font-weight:700;font-size:13.5px;padding:6px 0}.v
 </style>
 </head>
 <body>
-<header><div class="h1"><b>타이어케어 출고 관리</b><small>v1.2 · 2026-11-23</small><button id="whoB"></button></div>
+<header><div class="h1"><b>타이어케어 출고 관리</b><small>v1.3 · 2026-11-23</small><button id="whoB"></button></div>
 <div class="tabs"><button data-tab="list">지시서 목록</button><button data-tab="out">출고 관리</button></div></header>
 <div id="flt" hidden>거점 <select id="fc"></select><input type="date" id="ff"><span>~</span><input type="date" id="ft"><button class="b p" id="fg">조회</button><button class="b" id="fr">새로고침</button></div>
 <main id="m"><div class="msg">여는 중…</div></main><div id="busy" hidden>최신 내용 확인 중…</div>
@@ -59,7 +59,8 @@ const SZ=/(\d{3}\/\d{2}Z?R\d{2})/,size=p=>{const m=String(p||'').match(SZ);retur
 const ls=(k,v)=>{try{if(v===undefined)return JSON.parse(localStorage.getItem('wh_'+k)||'null');localStorage.setItem('wh_'+k,JSON.stringify(v))}catch(e){return null}};
 let KEY=ls('key')||'',WHO=ls('who')||'',TAB=ls('tab')||'list',KIND='trk',TYPE='';
 const T0=ymd(new Date()),F={from:addD(T0,-3),to:addD(T0,14),center:ls('center')||''};
-let D={srv:[],trk:[]},LOADED=false,PEND=0,SEQ=0;
+let D={srv:[],trk:[]},LOADED=false,PEND=0,SEQ=0,FOCUS='';
+{const q=new URLSearchParams(location.search),t=q.get('tab');if(t==='list'||t==='out'){TAB=t;if(q.get('trk')){KIND='trk';FOCUS=q.get('trk')}else if(q.get('no')){FOCUS=q.get('no');if(t==='out')KIND='drv'}}else if(q.get('no')){TAB='list';FOCUS=q.get('no')}if(location.search)history.replaceState(null,'',location.pathname+location.hash)}
 {const h=location.hash.slice(1);if(h){KEY=decodeURIComponent(h);ls('key',KEY);history.replaceState(null,'',location.pathname+location.search)}}
 async function get(q){const j=await (await fetch(GAS+'?'+q+'&t='+encodeURIComponent(KEY))).json();if(!j.ok)throw new Error(j.err||'오류');return j}
 async function post(b,safe){b.t=KEY;for(let n=0;;n++){let j;try{j=await (await fetch(GAS,{method:'POST',body:JSON.stringify(b)})).json()}catch(e){if(safe&&n<1){await new Promise(r=>setTimeout(r,1200));continue}throw new Error('통신 실패 — 저장되지 않았을 수 있습니다.')}if(j.busy&&safe&&n<1){await new Promise(r=>setTimeout(r,1500));continue}if(!j.ok)throw new Error(j.err||'오류');return j}}
@@ -83,14 +84,14 @@ function trkOf(M){const w=new Set(M.lines.flatMap(g=>g.w));return D.trk.filter(t
 function tstatus(x){const st=x.st||{},p=st.steps||{};if(st.cancel)return '취소';if(p.hand)return '인계완료';if(p.unload)return '하차지 도착';if(p.depart)return '운행중';if(p.load)return '상차완료';if(p.arrive)return '용차 도착';return x.plate?'배정':'용차 미배정'}
 function flHtml(r,i){return FL.map(([k,l])=>{const f=(r.fl||{})[k];return `<button class="fl${f?' on':''}" data-a="fl" data-i="${i}" data-k="${k}">${f?'✓':'☐'} ${l}${f?` <small>${esc(at(f.at))} ${esc(f.by||'')}</small>`:''}</button>`}).join('')}
 function sheetCard(r,i){const M=r.M,n=tot(M),cars=new Set(M.lines.map(g=>g.on)).size,T=trkOf(M),chk=r.checked||0,pc=n?Math.round(chk/n*100):0,done=(r.fl||{}).pick||(n&&chk>=n);
- return `<div class="c${M.tmp?' tmp':''}"><div class="r1"><span class="ty">${M.tmp?'임시':'정식'}</span><span class="no">${esc(M.no)}</span><span class="mu">${M.n}차</span>${done?'<span class="bd g">피킹 완료</span>':''}<span class="qty"><b>${cars}</b>대 · <b>${n}</b>본</span></div>
+ return `<div class="c${M.tmp?' tmp':''}" data-f="${esc(M.no)}"><div class="r1" data-a="open" data-i="${i}" style="cursor:pointer"><span class="ty">${M.tmp?'임시':'정식'}</span><span class="no">${esc(M.no)} ›</span><span class="mu">${M.n}차</span>${done?'<span class="bd g">피킹 완료</span>':''}<span class="qty"><b>${cars}</b>대 · <b>${n}</b>본</span></div>
  <div class="r2">${esc(M.center)} · ${esc(M.drvLabel||'')} · 발행 ${esc(at(M.issued||r.at))} · 발행자 ${r.who?'<b>'+esc(r.who)+'</b>':'<i>기록 없음</i>'} · <span class="pg"><i><u style="width:${pc}%"></u></i>폰 체크 ${chk}/${n}</span></div>
  <div class="row"><span>출력</span><div class="fls">${flHtml(r,i)}</div></div>
  <div class="row"><span>용차</span><div>${T.map(({t,n:tn})=>`<div class="tl${t.st.cancel?' cx':''}"><b>${esc(t.id)}</b><span class="bd${t.plate?'':' o'}">${esc(t.status)}</span> ${esc(t.plate||'차량 미배정')} ${esc(t.driver)}<br>상차 <b>${dt(t.loadAt)}</b> → 하차 <b>${dt(t.unloadAt)}</b><br>하차지 <b>${esc(t.dest||'-')}</b><br>받는 기사 <b>${esc(t.recv||'-')}</b> · ${tn}/${n}본 <button class="b s" data-a="tedit" data-id="${esc(t.id)}">수정</button></div>`).join('')||'<span class="mu">등록 없음 (기사출고)</span>'}</div></div>
- <div class="act"><button class="b p" data-a="open" data-i="${i}">피킹지시서 열기</button><button class="b" data-a="treg" data-i="${i}">${T.length?'용차 추가·변경':'용차 등록'}</button></div></div>`}
+ <div class="act"><button class="b p" data-a="open" data-i="${i}">피킹지시서 열기 · 꺼낸 것 체크</button><button class="b" data-a="treg" data-i="${i}">${T.length?'용차 추가·변경':'용차 등록'}</button></div></div>`}
 function trkCard(x){const p=x.st.steps||{},ld=x.st.ld||{},V=new Map();x.lines.forEach(g=>{let a=V.get(g.on);if(!a)V.set(g.on,a={veh:g.veh,sup:g.sup,drv:g.drv,n:0,pn:[],z:[]});a.n+=g.w.length;const s=size(g.pn);if(a.pn.indexOf(s)<0)a.pn.push(s);if(a.z.indexOf(g.zone||'-')<0)a.z.push(g.zone||'-')});
  const lc=[...V.keys()].filter(k=>ld[k]).length,lock=!!(p.load||p.depart||p.unload||p.hand),late=!x.st.cancel&&!p.load&&x.loadAt&&x.loadAt.replace('T',' ')<now();
- return `<div class="c${x.st.cancel?' cx':p.hand?' done':x.plate?'':' warn'}" data-id="${esc(x.id)}"><div class="r1"><span class="no">${esc(x.id)}</span><span class="bd${p.hand?' g':x.plate?'':' o'}">${esc(x.status)}</span>${late?'<span class="bd o">상차 예정 지남</span>':''}<span class="qty"><b>${x.cars}</b>대 · <b>${x.cnt}</b>본</span></div>
+ return `<div class="c${x.st.cancel?' cx':p.hand?' done':x.plate?'':' warn'}" data-id="${esc(x.id)}" data-f="${esc(x.id)}"><div class="r1"><span class="no">${esc(x.id)}</span><span class="bd${p.hand?' g':x.plate?'':' o'}">${esc(x.status)}</span>${late?'<span class="bd o">상차 예정 지남</span>':''}<span class="qty"><b>${x.cars}</b>대 · <b>${x.cnt}</b>본</span></div>
  <div class="kv"><span>용차</span><div><b>${esc(x.plate||'미배정')}</b> ${esc(x.driver||'')} ${x.phone?`<a href="tel:${esc(x.phone)}">${esc(x.phone)}</a>`:''}</div><span>상차 예정</span><b>${dt(x.loadAt)}</b><span>하차 예정</span><b>${dt(x.unloadAt)}</b><span>하차지</span><b>${esc(x.dest||'-')}</b><span>받는 기사</span><b>${esc(x.recv||'-')}</b>${x.memo?`<span>메모</span><div>${esc(x.memo)}</div>`:''}<span>출처</span><div class="mu">${esc(x.center)} · ${esc(x.src||'')} · 등록 ${esc(at(x.at))} ${esc(x.who||'')}${x.st.upd?` · 수정 ${esc(x.st.upd.at.slice(5))} ${esc(x.st.upd.by||'')}`:''}</div></div>
  <div class="stp">${TST.map(([k,l])=>`<button data-a="st" data-k="${k}" class="${p[k]?'on':''}">${l}<small>${p[k]?esc(dt(p[k].at))+' '+esc(p[k].by||''):'미체크'}</small></button>`).join('')}</div>
  <details${x._open?' open':''}><summary>싣는 물건 · 상차 확인 ${lc}/${V.size}대${lock?' 🔒 상차 완료 뒤 변경 불가':''}</summary>${[...V.entries()].map(([k,a])=>`<label class="v${ld[k]?' on':''}"><input type="checkbox" data-a="ld" data-k="${esc(k)}"${ld[k]?' checked':''}${lock?' disabled':''}><div><b>${esc(a.veh)}</b> <span class="mu">${esc(a.sup)}</span><div>${esc(a.pn.join(', '))} · <b>${a.n}본</b> · 기사 ${esc(a.drv||'미배정')}</div><div class="mu">존 ${esc(a.z.join(', '))}</div></div></label>`).join('')}</details>
@@ -99,7 +100,7 @@ function drvOut(){const on=new Set();D.trk.filter(x=>!x.st.cancel).forEach(t=>t.
  return D.srv.map((r,i)=>{const M=r.M,P=new Map();let n=0,t=0;M.lines.forEach(g=>{t+=g.w.length;const c=g.w.filter(w=>!on.has(w)).length;if(!c)return;n+=c;const k=g.drv||'미배정';let a=P.get(k);if(!a)P.set(k,a={cars:new Set(),n:0});a.cars.add(g.on);a.n+=c});
   const fl=r.fl||{},chk=r.checked||0;return{r,i,M,P,n,tot:t,chk,fl,st:fl.pick||(t&&chk>=t)?2:chk>0?1:0}}).filter(d=>d.n&&inC(d.M.center))}
 function drvCard(d){const M=d.M,pc=d.tot?Math.round(d.chk/d.tot*100):0,f=d.fl.pick;
- return `<div class="c${d.st===2?' done':d.st===0?' warn':''}"><div class="r1"><span class="ty"${M.tmp?' style="background:#e08a00"':''}>${M.tmp?'임시':'정식'}</span><span class="no">${esc(M.no)}</span><span class="bd${d.st===2?' g':d.st===0?' o':''}">${['피킹 전','피킹 중','피킹 완료 · 종결'][d.st]}</span><span class="qty">기사출고 <b>${d.n}</b>본</span></div>
+ return `<div class="c${d.st===2?' done':d.st===0?' warn':''}" data-f="${esc(M.no)}"><div class="r1"><span class="ty"${M.tmp?' style="background:#e08a00"':''}>${M.tmp?'임시':'정식'}</span><span class="no">${esc(M.no)}</span><span class="bd${d.st===2?' g':d.st===0?' o':''}">${['피킹 전','피킹 중','피킹 완료 · 종결'][d.st]}</span><span class="qty">기사출고 <b>${d.n}</b>본</span></div>
  <div class="r2">${esc(M.center)} · 발행 ${esc(at(M.issued||d.r.at))} ${esc(d.r.who||'')}${d.tot>d.n?` · 용차 ${d.tot-d.n}본 별도`:''} · <span class="pg"><i><u style="width:${pc}%"></u></i>폰 체크 ${d.chk}/${d.tot}</span>${f?` · 완료 체크 ${esc(at(f.at))} ${esc(f.by||'')}`:''}</div>
  <div class="dvs">${[...d.P.entries()].sort((a,b)=>kc(a[0],b[0])).map(([k,a])=>`<span><b>${esc(k)}</b> ${a.cars.size}대 · ${a.n}본</span>`).join('')}</div>
  <div class="act"><button class="b${f?'':' p'}" data-a="dp" data-i="${d.i}">${f?'✓ 피킹 완료 (누르면 해제)':'피킹 완료 체크'}</button><button class="b" data-a="open" data-i="${d.i}">피킹지시서 열기</button></div>
@@ -120,7 +121,7 @@ function draw(){head();$('#flt').hidden=false;const cs=[...new Set(D.srv.map(r=>
   else{const n=k=>DV.filter(d=>d.st===k).length;h+=`<div class="chips"><span>피킹 전 <b>${n(0)}</b></span><span>피킹 중 <b>${n(1)}</b></span><span class="mu">종결 ${n(2)}</span></div>`;
    DV.slice().sort((a,b)=>(a.st===2?1:0)-(b.st===2?1:0)||kc(a.M.date,b.M.date)||kc(a.M.no,b.M.no)).forEach(d=>{const g=d.st===2?'피킹 완료 (종결)':'출고예정일 '+d.M.date+' ('+dow(d.M.date)+')';if(g!==pd){h+=`<div class="dh">${g}</div>`;pd=g}h+=drvCard(d)});
    if(!DV.length)h+='<div class="msg">이 조건에 기사출고 대상 지시서가 없습니다.</div>'}}
- $('#m').innerHTML=h;window.scrollTo(0,sc)}
+ $('#m').innerHTML=h;window.scrollTo(0,sc);if(FOCUS){const el=[...document.querySelectorAll('[data-f]')].find(e=>e.dataset.f===FOCUS);if(el){FOCUS='';el.style.outline='3px solid #ff7a1a';el.scrollIntoView({block:'center'});setTimeout(()=>{el.style.outline=''},4000)}}}
 function toObj(M){const L=M.lines,Dr=[...new Set(L.map(g=>g.drv))].sort(kc),P=[...new Set(L.map(g=>g.sup))];
  return{v:1,no:M.no,n:M.n,d:M.date,c:M.center,i:M.issued,w:M.who,u:M.due,t:M.tmp?1:0,f:M.drvLabel,D:Dr,P,L:L.map(g=>[g.zone,P.indexOf(g.sup),g.veh,g.model,g.pn,Dr.indexOf(g.drv),g.w,g.on,g.ri||0,g.sub?1:0,g.ot||'']),X:(M.ex||[]).map(x=>[x[0],x[1],x[3],x[4],x[6]])}}
 async function openSheet(r){const lk=ls('lnk')||{};let k=lk[r.M.no];try{if(!k){$('#busy').hidden=false;$('#busy').textContent='지시서 여는 중…';k=(await post({a:'link',key:r.M.no,target:'전체',reuse:1,o:toObj(r.M)},true)).id;lk[r.M.no]=k;ls('lnk',lk)}location.href=PICK+'?k='+k}catch(e){alert('지시서를 열지 못했습니다.\n'+e.message)}finally{$('#busy').hidden=true;$('#busy').textContent='최신 내용 확인 중…'}}
