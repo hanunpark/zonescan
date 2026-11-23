@@ -7,14 +7,14 @@
 <meta name="referrer" content="no-referrer">
 <title>타이어케어 출고 관리</title>
 <style>
-*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}[hidden]{display:none!important}
 body{margin:0;background:#eef1f5;color:#10223a;font:15px/1.45 -apple-system,"Apple SD Gothic Neo","Malgun Gothic","Noto Sans KR",sans-serif}
 button,input,select{font:inherit;color:inherit}
 header{position:sticky;top:0;z-index:5;background:#10223a;color:#fff;padding:8px 12px 0}
-.h1{display:flex;align-items:center;gap:8px}.h1 b{font-size:17px}.h1 small{opacity:.7;font-size:11px}.h1 button{margin-left:auto;background:transparent;border:1px solid #ffffff66;color:#fff;border-radius:999px;height:30px;padding:0 12px;font-size:13px}
+.h1{display:flex;align-items:center;gap:8px}.h1 b{font-size:17px}.h1 small{opacity:.7;font-size:11px}.h1 button{margin-left:auto;border:0;border-radius:999px;height:32px;padding:0 14px;font-size:13.5px;font-weight:800;background:#2e9e5b;color:#fff}.h1 button.need{background:#ff7a1a;animation:nb 1.2s ease-in-out infinite alternate}@keyframes nb{to{box-shadow:0 0 0 4px #ff7a1a55}}
 .tabs{display:flex;margin-top:8px}.tabs button{flex:1;height:42px;border:0;background:transparent;color:#b9c4d6;font-weight:800;font-size:15px;border-bottom:3px solid transparent}.tabs button.on{color:#fff;border-bottom-color:#ff7a1a}
-#flt{background:#fff;border-bottom:1px solid #d5dbe5;padding:8px 12px;display:flex;flex-wrap:wrap;gap:6px;align-items:center;font-size:13px}
-#flt select,#flt input{height:36px;border:1px solid #c5ccd6;border-radius:8px;padding:0 6px;background:#fff;font-size:14px;max-width:150px}
+#flt{background:#fff;border-bottom:1px solid #d5dbe5;padding:8px 12px;font-size:13px}#flt>div{display:grid;gap:6px;align-items:center;max-width:980px;margin:0 auto}#flt .f1{grid-template-columns:44px minmax(0,1fr)}#flt .f2{grid-template-columns:44px minmax(0,1fr) 14px minmax(0,1fr);margin-top:6px}#flt .f3{grid-template-columns:repeat(4,minmax(0,1fr));margin-top:6px}
+#flt select,#flt input{height:38px;width:100%;min-width:0;border:1px solid #c5ccd6;border-radius:8px;padding:0 6px;background:#fff;font-size:14px}#flt label{color:#556;font-weight:700}#flt .b{padding:0 4px}
 .b{height:36px;border:1px solid #c5ccd6;background:#fff;border-radius:8px;padding:0 12px;font-weight:700;font-size:14px}.b.p{background:#ff7a1a;border-color:#ff7a1a;color:#fff}.b.s{height:32px;font-size:13px;padding:0 10px}
 main{padding:10px 10px 70px;max-width:980px;margin:0 auto}
 .kind{display:flex;gap:8px;margin-bottom:10px}.kind button{flex:1;border:1px solid #c5ccd6;background:#fff;border-radius:10px;padding:8px 10px;text-align:left;font-weight:800;font-size:15px}.kind button small{display:block;font-weight:500;font-size:11.5px;color:#667}.kind button.on{background:#10223a;border-color:#10223a;color:#fff}.kind button.on small{color:#cfd8e6}
@@ -41,9 +41,9 @@ details{margin-top:8px}summary{font-weight:700;font-size:13.5px;padding:6px 0}.v
 </style>
 </head>
 <body>
-<header><div class="h1"><b>타이어케어 출고 관리</b><small>v1.4 · 2026-11-23</small><button id="whoB"></button></div>
+<header><div class="h1"><b>타이어케어 출고 관리</b><small>v1.5 · 2026-11-23</small><button id="whoB"></button></div>
 <div class="tabs"><button data-tab="list">지시서 목록</button><button data-tab="out">출고 관리</button></div></header>
-<div id="flt" hidden>거점 <select id="fc"></select><input type="date" id="ff"><span>~</span><input type="date" id="ft"><button class="b p" id="fg">조회</button><button class="b" id="fr">새로고침</button><button class="b s" data-q="0">오늘</button><button class="b s" data-q="1">내일</button><button class="b s" data-q="14">±14일</button></div>
+<div id="flt" hidden><div class="f1"><label>거점</label><select id="fc"></select></div><div class="f2"><label>기간</label><input type="date" id="ff"><span style="text-align:center">~</span><input type="date" id="ft"></div><div class="f3"><button class="b p" id="fg">조회</button><button class="b" data-q="0">오늘</button><button class="b" data-q="1">내일</button><button class="b" id="fr">새로고침</button></div></div>
 <main id="m"><div class="msg">여는 중…</div></main><div id="busy" hidden>최신 내용 확인 중…</div>
 <script>
 {
@@ -66,14 +66,14 @@ function keepRange(){try{sessionStorage.setItem('wh_range',JSON.stringify({day:T
 let D={srv:[],trk:[]},LOADED=false,PEND=0,SEQ=0,FOCUS='',WIDE=false;
 {const q=new URLSearchParams(location.search),t=q.get('tab');if(t==='list'||t==='out'){TAB=t;if(q.get('trk')){KIND='trk';FOCUS=q.get('trk')}else if(q.get('no')){FOCUS=q.get('no');if(t==='out')KIND='drv'}}else if(q.get('no')){TAB='list';FOCUS=q.get('no')}if(location.search)history.replaceState(null,'',location.pathname+location.hash)}
 {const h=location.hash.slice(1);if(h){KEY=decodeURIComponent(h);ls('key',KEY);history.replaceState(null,'',location.pathname+location.search)}}
-async function get(q){const j=await (await fetch(GAS+'?'+q+'&t='+encodeURIComponent(KEY))).json();if(!j.ok)throw new Error(j.err||'오류');return j}
+async function get(q){const j=await (await fetch(GAS+'?'+q+(KEY?'&t='+encodeURIComponent(KEY):''))).json();if(!j.ok)throw new Error(j.err||'오류');return j}
 async function post(b,safe){b.t=KEY;for(let n=0;;n++){let j;try{j=await (await fetch(GAS,{method:'POST',body:JSON.stringify(b)})).json()}catch(e){if(safe&&n<1){await new Promise(r=>setTimeout(r,1200));continue}throw new Error('통신 실패 — 저장되지 않았을 수 있습니다.')}if(j.busy&&safe&&n<1){await new Promise(r=>setTimeout(r,1500));continue}if(!j.ok)throw new Error(j.err||'오류');return j}}
 function fkey(){return F.from+'|'+F.to}
 function fetchAll(){const k=fkey();return Promise.all([get('a=list&from='+F.from+'&to='+F.to).then(r=>r.items),get('a=trk_list&from='+addD(F.from,-10)+'&to='+addD(F.to,10)).then(r=>r.items)]).then(([srv,trk])=>({k,srv:srv.filter(x=>x.M),trk}))}
 async function load(quiet){const seq=++SEQ,key=fkey();if(!LOADED){const c=ls('cache');if(c&&c.k===key){D=c;LOADED=true;draw()}}
  if(!LOADED)$('#m').innerHTML='<div class="msg">불러오는 중…</div>';else if(!quiet)$('#busy').hidden=false;
  try{const n=await fetchAll();if(seq!==SEQ||key!==fkey())return;$('#busy').hidden=true;ls('cache',n);if(PEND||$('#dlg'))return;const same=LOADED&&JSON.stringify([D.srv,D.trk])===JSON.stringify([n.srv,n.trk]);D=n;LOADED=true;if(!same)draw()}
- catch(e){$('#busy').hidden=true;if(seq!==SEQ)return;if(!LOADED)$('#m').innerHTML='<div class="msg">불러오지 못했습니다.<br><small>'+esc(e.message)+'</small><br><br><button class="b" onclick="location.reload()">다시 시도</button>'+(/키가 맞지/.test(e.message)?'<br><br><button class="b" id="rk">링크(키) 다시 넣기</button>':'')+'</div>';const rk=$('#rk');if(rk)rk.onclick=()=>{ls('key','');location.reload()}}}
+ catch(e){$('#busy').hidden=true;if(seq!==SEQ)return;if(!LOADED)$('#m').innerHTML='<div class="msg">불러오지 못했습니다.<br><small>'+esc(e.message)+'</small><br><br><button class="b" onclick="location.reload()">다시 시도</button>'+(/키가 맞지/.test(e.message)?'<br><br><small>이 페이지를 키 없이 쓰려면 Apps Script 코드를 v2.0으로 갱신·재배포해야 합니다.<br>그 전에는 PC의 [관리 페이지 링크]로 받은 링크로 열어 주세요.</small>':'')+'</div>';const rk=$('#rk');if(rk)rk.onclick=()=>{ls('key','');location.reload()}}}
 /* 저장: 화면을 먼저 바꾸고 뒤에서 저장. 실패하면 서버 내용으로 되돌린다. 같은 건은 누른 순서대로 처리 */
 let Q=Promise.resolve();
 function save(apply,body,safe,done){apply();draw();PEND++;Q=Q.then(()=>post(body,safe)).then(r=>{PEND--;if(done)done(r);if(!PEND)ls('cache',D)}).catch(e=>{PEND--;alert('저장하지 못했습니다 — 최신 내용으로 되돌립니다.\n'+e.message);LOADED=true;load()})}
@@ -82,7 +82,7 @@ function askWho(){dlg(`<h3>이름</h3><div class="mu">체크·수정한 사람�
  $('#d_ok').onclick=()=>{const v=$('#d_who').value.trim();if(!v){$('#d_e').textContent='이름을 넣어 주세요.';return}WHO=v;ls('who',v);close();head()}}
 function dlg(h){close();const d=document.createElement('div');d.id='dlg';d.innerHTML='<div>'+h+'</div>';document.body.appendChild(d);d.addEventListener('click',e=>{if(e.target===d||e.target.hasAttribute('data-x'))close()})}
 function close(){const d=$('#dlg');if(d)d.remove()}
-function head(){$('#whoB').textContent=WHO?WHO+' ▾':'이름 입력';document.querySelectorAll('[data-tab]').forEach(b=>b.classList.toggle('on',b.dataset.tab===TAB))}
+function head(){$('#whoB').textContent=WHO?'👤 '+WHO:'이름 입력 ✎';$('#whoB').classList.toggle('need',!WHO);document.querySelectorAll('[data-tab]').forEach(b=>b.classList.toggle('on',b.dataset.tab===TAB))}
 const inC=c=>!F.center||c===F.center,tot=M=>M.lines.reduce((s,g)=>s+g.w.length,0);
 function trkOf(M){const w=new Set(M.lines.flatMap(g=>g.w));return D.trk.filter(t=>t.lines.some(g=>g.w.some(x=>w.has(x)))).map(t=>({t,n:t.lines.reduce((s,g)=>s+g.w.filter(x=>w.has(x)).length,0)}))}
 function tstatus(x){const st=x.st||{},p=st.steps||{};if(st.cancel)return '취소';if(p.hand)return '인계완료';if(p.unload)return '하차지 도착';if(p.depart)return '운행중';if(p.load)return '상차완료';if(p.arrive)return '용차 도착';return x.plate?'배정':'용차 미배정'}
@@ -109,7 +109,7 @@ function drvCard(d){const M=d.M,pc=d.tot?Math.round(d.chk/d.tot*100):0,f=d.fl.pi
  <div class="dvs">${[...d.P.entries()].sort((a,b)=>kc(a[0],b[0])).map(([k,a])=>`<span><b>${esc(k)}</b> ${a.cars.size}대 · ${a.n}본</span>`).join('')}</div>
  <div class="act"><button class="b${f?'':' p'}" data-a="dp" data-i="${d.i}">${f?'✓ 피킹 완료 (누르면 해제)':'피킹 완료 체크'}</button><button class="b" data-a="open" data-i="${d.i}">피킹지시서 열기</button></div>
  <div class="mu" style="margin-top:6px">${d.st===2?'피킹 완료 — 이후 출고는 기사가 기사 앱에서 처리합니다.':'피킹까지가 창고 업무입니다. 폰 체크가 모두 끝나면 자동으로 종결됩니다.'}</div></div>`}
-function draw(){head();$('#flt').hidden=false;const cs=[...new Set(D.srv.map(r=>r.M.center).concat(D.trk.map(x=>x.center),F.center?[F.center]:[]).filter(Boolean))].sort(kc);
+function draw(){head();$('#flt').hidden=false;const cs=[...new Set(D.srv.map(r=>r.M.center).concat(D.trk.map(x=>x.center),ls('centers')||[],F.center?[F.center]:[]).filter(Boolean))].sort(kc);ls('centers',cs);
  $('#fc').innerHTML='<option value="">전체 거점</option>'+cs.map(c=>`<option${c===F.center?' selected':''}>${esc(c)}</option>`).join('');$('#ff').value=F.from;$('#ft').value=F.to;
  const sc=window.scrollY;let h='',pd='';
  if(TAB==='list'){const B=D.srv.map((r,i)=>({r,i})).filter(x=>inC(x.r.M.center)),inT=x=>!TYPE||(TYPE==='tmp')===!!x.r.M.tmp;
@@ -172,14 +172,14 @@ document.addEventListener('click',e=>{const t=e.target.closest('[data-a],[data-t
 document.addEventListener('change',e=>{const t=e.target;if(t.dataset&&t.dataset.a==='ld'){const card=t.closest('[data-id]'),x=D.trk.find(y=>y.id===card.dataset.id);if(!x)return;{const P=x.st.steps||{};if(P.load||P.depart||P.unload||P.hand){t.checked=!t.checked;return}}if(!WHO){t.checked=!t.checked;askWho();return}x._open=true;const k=t.dataset.k,v=t.checked;save(()=>{x.st.ld=x.st.ld||{};if(v)x.st.ld[k]={at:now(),by:WHO};else delete x.st.ld[k]},{a:'trk_set',id:x.id,load:{on:k,v:v?1:0,by:WHO}},true)}
  if(t.id==='fc'){F.center=t.value;ls('center',F.center);draw()}});
 document.addEventListener('toggle',e=>{const c=e.target.closest&&e.target.closest('[data-id]');if(c){const x=D.trk.find(y=>y.id===c.dataset.id);if(x)x._open=e.target.open}},true);
-document.querySelectorAll('[data-q]').forEach(b=>b.onclick=()=>{const t=ymd(new Date()),q=+b.dataset.q;F.from=q===14?addD(t,-14):addD(t,q);F.to=q===14?addD(t,14):addD(t,q);keepRange();LOADED=false;load()});
+document.querySelectorAll('[data-q]').forEach(b=>b.onclick=()=>{const t=ymd(new Date()),q=+b.dataset.q;F.from=addD(t,q);F.to=addD(t,q);keepRange();LOADED=false;load()});
 $('#whoB').onclick=askWho;$('#fr').onclick=()=>load();$('#fg').onclick=()=>{const a=$('#ff').value,b=$('#ft').value;if(!a||!b||a>b){alert('날짜 구간을 확인해 주세요.');return}F.from=a;F.to=b;keepRange();LOADED=false;load()};
-function poll(){if(!KEY||document.hidden||$('#dlg')||PEND||!LOADED)return;const a=document.activeElement;if(a&&/INPUT|SELECT/.test(a.tagName)&&a.type!=='checkbox')return;load(true)}
+function poll(){if(document.hidden||$('#dlg')||PEND||!LOADED)return;const a=document.activeElement;if(a&&/INPUT|SELECT/.test(a.tagName)&&a.type!=='checkbox')return;load(true)}
 setInterval(poll,30000);document.addEventListener('visibilitychange',()=>{if(!document.hidden)poll()});window.addEventListener('pageshow',e=>{if(e.persisted)poll()});
 head();
 if(GAS.indexOf('%%')===0)$('#m').innerHTML='<div class="msg">공유 저장소 주소가 설정되지 않은 페이지입니다.</div>';
-else if(!KEY){$('#m').innerHTML='<div class="msg"><b>관리 페이지 링크로 열어 주세요.</b><br><small>PC 피킹지시서의 [관리 페이지 링크]에서 받은 링크를 한 번 열면 이 기기에서 계속 쓸 수 있습니다.<br>키를 따로 받았다면 아래에 넣으세요.</small><br><br><input id="k_in" style="height:42px;border:1px solid #c5ccd6;border-radius:8px;padding:0 10px;width:220px" placeholder="관리 키"> <button class="b p" id="k_ok">확인</button></div>';$('#k_ok').onclick=()=>{const v=$('#k_in').value.trim();if(v){ls('key',v);location.reload()}}}
-else load();
+else{load();/* 거점 목록은 오늘 자료가 없어도 고를 수 있게 하루 한 번 넓은 기간에서 받아 둔다 */
+ if(ls('centersDay')!==T0)setTimeout(()=>{Promise.all([get('a=list&from='+addD(T0,-14)+'&to='+addD(T0,14)).then(r=>r.items.map(x=>x.center)),get('a=trk_list&from='+addD(T0,-14)+'&to='+addD(T0,14)).then(r=>r.items.map(x=>x.center))]).then(a=>{ls('centers',[...new Set((ls('centers')||[]).concat(a[0],a[1]).filter(Boolean))]);ls('centersDay',T0);if(LOADED&&!$('#dlg')&&!PEND)draw()}).catch(()=>{})},1500)}
 }
 </script>
 </body>
