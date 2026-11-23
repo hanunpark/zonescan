@@ -7,7 +7,7 @@
 <meta name="referrer" content="no-referrer">
 <title>타이어케어 출고 관리</title>
 <style>
-*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}[hidden]{display:none!important}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}html.br .h1{display:none}html.br header{padding-top:0}[hidden]{display:none!important}
 body{margin:0;background:#eef1f5;color:#10223a;font:15px/1.45 -apple-system,"Apple SD Gothic Neo","Malgun Gothic","Noto Sans KR",sans-serif}
 button,input,select{font:inherit;color:inherit}
 header{position:sticky;top:0;z-index:5;background:#10223a;color:#fff;padding:8px 12px 0}
@@ -25,7 +25,8 @@ main{padding:10px 10px 70px;max-width:980px;margin:0 auto}
 .r2{font-size:12.5px;color:#445;margin-top:3px}.r2 i{font-style:normal;color:#d92d20}
 .pg i{display:inline-block;width:54px;height:6px;background:#e3e7ee;border-radius:3px;margin-right:5px;vertical-align:middle;overflow:hidden}.pg u{display:block;height:100%;background:#2e9e5b}
 .row{display:grid;grid-template-columns:38px minmax(0,1fr);border-top:1px solid #edf0f4;margin-top:8px;padding-top:8px}.row>span{font-size:11px;font-weight:800;color:#778;padding-top:8px}
-.fls{display:flex;flex-wrap:wrap;gap:6px}.fl{min-height:38px;border:1px solid #c5ccd6;background:#fff;border-radius:999px;padding:0 12px;font-size:13.5px}.fl.on{background:#2e9e5b;border-color:#2e9e5b;color:#fff;font-weight:700}.fl small{opacity:.9;font-size:11px}
+.fls{display:flex;flex-wrap:wrap;gap:6px 8px}.pr{display:inline-flex}.pb{min-height:38px;border:1px solid #c5ccd6;border-right:0;background:#fff;border-radius:8px 0 0 8px;padding:0 10px;font-size:13.5px;font-weight:700}.ck{width:34px;min-height:38px;border:1px solid #c5ccd6;background:#fff;border-radius:0 8px 8px 0;font-size:17px;font-weight:900;color:#fff;padding:0}.ck.on{background:#2e9e5b;border-color:#2e9e5b}
+.stp.one{grid-template-columns:1fr}.ldh{display:flex;flex-wrap:wrap;align-items:center;gap:6px 8px;margin-top:10px;font-weight:800;font-size:14px}.ldh .b{margin-left:auto}.fl{min-height:38px;border:1px solid #c5ccd6;background:#fff;border-radius:999px;padding:0 12px;font-size:13.5px}.fl.on{background:#2e9e5b;border-color:#2e9e5b;color:#fff;font-weight:700}.fl small{opacity:.9;font-size:11px}
 .tl{background:#f0f5fc;border-radius:8px;padding:6px 9px;margin-bottom:6px;font-size:13px}.tl b{margin-right:4px}.tl.cx{opacity:.5;text-decoration:line-through}
 .act{display:flex;flex-wrap:wrap;gap:6px;margin-top:9px}
 .kv{display:grid;grid-template-columns:76px 1fr;gap:3px 8px;font-size:14px;margin-top:6px}.kv span{color:#667;font-size:12.5px;padding-top:1px}
@@ -42,15 +43,16 @@ details{margin-top:8px}summary{font-weight:700;font-size:13.5px;padding:6px 0}.v
 </style>
 </head>
 <body>
-<header><div class="h1"><b>타이어케어 출고 관리</b><small>v1.9 · 2026-11-23</small><button id="whoB"></button></div>
+<header><div class="h1"><b>타이어케어 출고 관리</b><small>v2.0 · 2026-11-23</small><button id="whoB"></button></div>
 <div class="tabs"><button data-tab="list">지시서 목록</button><button data-tab="out">출고 관리</button></div></header>
 <div id="flt" hidden><div class="f1"><label>거점</label><select id="fc"></select></div><div class="f2"><label>기간</label><input type="date" id="ff"><span style="text-align:center">~</span><input type="date" id="ft"></div><div class="f3"><button class="b p" id="fg">조회</button><button class="b" data-q="0">오늘</button><button class="b" data-q="1">내일</button><button class="b" id="fr">새로고침</button></div></div>
 <main id="m"><div class="msg">여는 중…</div></main><div id="busy" hidden>최신 내용 확인 중…</div>
 <script>
 {
 const GAS='https://script.google.com/macros/s/AKfycby33E3x2WOVkZd_Kh4LSumPMT-KKbNa292E9WNKKTdx40WjCxsVgpSTq2R7oJby6XDF/exec',PICK='pick.html',TRUCK='truck.html';
-const TST=[['arrive','용차 도착'],['load','상차 완료'],['depart','용차 출발']];
-const FL=[['print','지시서 출력'],['wo','출고 운송장 출력'],['wr','회수 운송장 출력']];
+const TST=[['arrive','용차 도착'],['depart','출고 처리']];
+const FL=[['print','지시서'],['wo','출고 운송장'],['wr','회수 운송장']];
+let BR=null;/* PC 피킹지시서 도구 안에서 열렸을 때: 루티 연결(운송장 인쇄) 통로 */
 const $=s=>document.querySelector(s),esc=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const pad=n=>String(n).padStart(2,'0'),ymd=d=>d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate()),addD=(s,n)=>{const d=new Date(s+'T00:00:00');d.setDate(d.getDate()+n);return ymd(d)};
 const now=()=>{const d=new Date();return ymd(d)+' '+pad(d.getHours())+':'+pad(d.getMinutes())},dow=s=>'일월화수목금토'[new Date(s+'T00:00:00').getDay()];
@@ -93,20 +95,21 @@ function close(){const d=$('#dlg');if(d)d.remove()}
 function head(){$('#whoB').textContent=WHO?'👤 '+WHO:'이름 입력 ✎';$('#whoB').classList.toggle('need',!WHO);document.querySelectorAll('[data-tab]').forEach(b=>b.classList.toggle('on',b.dataset.tab===TAB))}
 const inC=c=>!F.center||c===F.center,tot=M=>M.lines.reduce((s,g)=>s+g.w.length,0);
 function trkOf(M){const w=new Set(M.lines.flatMap(g=>g.w));return D.trk.filter(t=>!t.st.cancel&&t.lines.some(g=>g.w.some(x=>w.has(x)))).map(t=>({t,n:t.lines.reduce((s,g)=>s+g.w.filter(x=>w.has(x)).length,0)}))}
-function tstatus(x){const st=x.st||{},p=st.steps||{};if(st.cancel)return '취소';if(p.depart||p.unload||p.hand)return '출발 완료';if(p.load)return '상차완료';if(p.arrive)return '용차 도착';return x.plate?'배정':'용차 미배정'}
-function flHtml(r,i){return FL.map(([k,l])=>{const f=(r.fl||{})[k];return `<button class="fl${f?' on':''}" data-a="fl" data-i="${i}" data-k="${k}">${f?'✓':'☐'} ${l}${f?` <small>${esc(at(f.at))} ${esc(f.by||'')}</small>`:''}</button>`}).join('')}
+function tstatus(x){const st=x.st||{},p=st.steps||{};if(st.cancel)return '취소';if(p.depart||p.unload||p.hand)return '출고 완료';if(p.load)return '상차 완료';if(p.load)return '상차완료';if(p.arrive)return '용차 도착';return x.plate?'배정':'용차 미배정'}
+function flHtml(r,i){return FL.map(([k,l])=>{const f=(r.fl||{})[k];return `<span class="pr"><button class="pb" data-a="prt" data-i="${i}" data-k="${k}">🖨 ${l}</button><button class="ck${f?' on':''}" data-a="fl" data-i="${i}" data-k="${k}" title="${f?esc('출력함 · '+at(f.at)+' '+(f.by||''))+' — 누르면 해제':'출력했으면 눌러 표시'}">${f?'✓':''}</button></span>`}).join('')}
 function sheetCard(r,i){const M=r.M,n=tot(M),cars=new Set(M.lines.map(g=>g.on)).size,T=trkOf(M),chk=r.checked||0,pc=n?Math.round(chk/n*100):0,done=(r.fl||{}).pick||(n&&chk>=n);
  return `<div class="c${M.tmp?' tmp':''}" data-f="${esc(M.no)}"><div class="r1" data-a="open" data-i="${i}" style="cursor:pointer"><span class="ty">${M.tmp?'임시':'정식'}</span><span class="no">${esc(M.no)} ›</span><span class="mu">${M.n}차</span>${done?'<span class="bd g">피킹 완료</span>':''}<span class="qty"><b>${cars}</b>대 · <b>${n}</b>본</span></div>
  <div class="r2">${esc(M.center)} · ${esc(M.drvLabel||'')} · 발행 ${esc(at(M.issued||r.at))} · 발행자 ${r.who?'<b>'+esc(r.who)+'</b>':'<i>기록 없음</i>'} · <span class="pg"><i><u style="width:${pc}%"></u></i>폰 체크 ${chk}/${n}</span></div>
- <div class="row"><span>출력</span><div class="fls">${flHtml(r,i)}</div></div>
+ <div class="row"><span>인쇄</span><div class="fls">${flHtml(r,i)}</div></div>
  <div class="row"><span>용차</span><div>${T.map(({t,n:tn})=>`<div class="tl${t.st.cancel?' cx':''}"><b>${esc(t.id)}</b><span class="bd${t.plate?'':' o'}">${esc(t.status)}</span> ${esc(t.plate||'차량 미배정')} ${esc(t.driver)}<br>상차 <b>${dt(t.loadAt)}</b> → 하차 <b>${dt(t.unloadAt)}</b><br>하차지 <b>${esc(t.dest||'-')}</b><br>받는 기사 <b>${esc(t.recv||'-')}</b> · ${tn}/${n}본 <button class="b s" data-a="tedit" data-id="${esc(t.id)}">수정</button> <button class="b s" style="color:#c2410c" data-a="tdel" data-id="${esc(t.id)}" data-i="${i}">삭제</button></div>`).join('')||'<span class="mu">등록 없음 (기사출고)</span>'}</div></div>
  <div class="act"><button class="b p" data-a="open" data-i="${i}">피킹지시서 열기 · 꺼낸 것 체크</button><button class="b" data-a="treg" data-i="${i}">${T.length?'용차 추가·변경':'용차 등록'}</button></div></div>`}
 function trkCard(x){const p=x.st.steps||{},ld=x.st.ld||{},V=new Map();x.lines.forEach(g=>{let a=V.get(g.on);if(!a)V.set(g.on,a={veh:g.veh,sup:g.sup,drv:g.drv,n:0,pn:[],z:[]});a.n+=g.w.length;const s=size(g.pn);if(a.pn.indexOf(s)<0)a.pn.push(s);if(a.z.indexOf(g.zone||'-')<0)a.z.push(g.zone||'-')});
- const lc=[...V.keys()].filter(k=>ld[k]).length,lock=!!(p.load||p.depart||p.unload||p.hand),late=!x.st.cancel&&!p.load&&x.loadAt&&x.loadAt.replace('T',' ')<now();
+ const lc=[...V.keys()].filter(k=>ld[k]).length,gone=!!(p.depart||p.unload||p.hand),lock=gone||!!x.st.cancel,late=!x.st.cancel&&!p.load&&x.loadAt&&x.loadAt.replace('T',' ')<now();
  return `<div class="c${x.st.cancel?' cx':(p.depart||p.hand)?' done':x.plate?'':' warn'}" data-id="${esc(x.id)}" data-f="${esc(x.id)}"><div class="r1"><span class="no">${esc(x.id)}</span><span class="bd${(p.depart||p.hand)?' g':x.plate?'':' o'}">${esc(x.status)}</span>${late?'<span class="bd o">상차 예정 지남</span>':''}<span class="qty"><b>${x.cars}</b>대 · <b>${x.cnt}</b>본</span></div>
  <div class="kv"><span>용차</span><div><b>${esc(x.plate||'미배정')}</b> ${esc(x.driver||'')} ${x.phone?`<a href="tel:${esc(x.phone)}">${esc(x.phone)}</a>`:''}</div><span>상차 예정</span><b>${dt(x.loadAt)}</b><span>하차 예정</span><b>${dt(x.unloadAt)}</b><span>하차지</span><b>${esc(x.dest||'-')}</b><span>받는 기사</span><b>${esc(x.recv||'-')}</b>${x.memo?`<span>메모</span><div>${esc(x.memo)}</div>`:''}${x.st.cancel&&x.st.del?`<span>삭제</span><div style="color:#c2410c">${esc(x.st.del.at.slice(5))} ${esc(x.st.del.by||'')} · ${esc(x.st.del.why||'-')}${x.st.del.to?' · 물건 '+x.st.del.moved+'본 → '+esc(x.st.del.to):' · 물건은 기사출고로'}</div>`:''}${(()=>{const w=new Set(x.lines.flatMap(g=>g.w)),sh=D.srv.filter(r=>r.M.lines.some(g=>g.w.some(v=>w.has(v)))).map(r=>r.M.no).sort(kc).reverse(),du=x.st.cancel?[]:D.trk.filter(t=>t.id!==x.id&&!t.st.cancel&&t.lines.some(g=>g.w.some(v=>w.has(v)))).map(t=>t.id);return `<span>관련 지시서</span><div>${sh.length?sh.map(esc).join(', '):'<span class="mu">조회 기간 안에 없음</span>'}${du.length?`<div style="color:#c2410c;font-weight:700">⚠ 같은 물건이 ${du.map(esc).join(', ')}에도 등록됨 — 한쪽을 수정하거나 취소해 주세요</div>`:''}</div>`})()}<span>출처</span><div class="mu">${esc(x.center)} · ${esc(x.src||'')} · 등록 ${esc(at(x.at))} ${esc(x.who||'')}${x.st.upd?` · 수정 ${esc(x.st.upd.at.slice(5))} ${esc(x.st.upd.by||'')}`:''}</div></div>
- <div class="stp">${TST.map(([k,l])=>`<button data-a="st" data-k="${k}" class="${p[k]?'on':''}">${l}<small>${p[k]?esc(dt(p[k].at))+' '+esc(p[k].by||''):'미체크'}</small></button>`).join('')}</div>
- <details${x._open?' open':''}><summary>싣는 물건 · 상차 확인 ${lc}/${V.size}대${lock?' 🔒 상차 완료 뒤 변경 불가':''}</summary>${[...V.entries()].map(([k,a])=>`<label class="v${ld[k]?' on':''}"><input type="checkbox" data-a="ld" data-k="${esc(k)}"${ld[k]?' checked':''}${lock?' disabled':''}><div><b>${esc(a.veh)}</b> <span class="mu">${esc(a.sup)}</span><div>${esc(a.pn.join(', '))} · <b>${a.n}본</b> · 기사 ${esc(a.drv||'미배정')}</div><div class="mu">존 ${esc(a.z.join(', '))}</div></div></label>`).join('')}</details>
+${x.st.cancel?'':`<div class="stp one"><button data-a="st" data-k="arrive" class="${p.arrive?'on':''}">① 용차 도착<small>${p.arrive?esc(dt(p.arrive.at))+' '+esc(p.arrive.by||''):'미체크'}</small></button></div>`}
+ <div class="ldh"><span style="white-space:nowrap">② 실을 차량 ${lc}/${V.size}대</span> ${p.load?`<span class="bd g">상차 완료 ${esc(dt(p.load.at))}</span>`:''}${gone?'<span class="mu">🔒 출고 뒤 변경 불가</span>':lc<V.size&&!x.st.cancel?'<button class="b s" data-a="ldall">전부 실음</button>':''}</div><div>${[...V.entries()].map(([k,a])=>`<label class="v${ld[k]?' on':''}"><input type="checkbox" data-a="ld" data-k="${esc(k)}"${ld[k]?' checked':''}${lock?' disabled':''}><div><b>${esc(a.veh)}</b> <span class="mu">${esc(a.sup)}</span><div>${esc(a.pn.join(', '))} · <b>${a.n}본</b> · 기사 ${esc(a.drv||'미배정')}</div><div class="mu">존 ${esc(a.z.join(', '))}</div></div></label>`).join('')}</div>
+ ${x.st.cancel?'':`<div class="stp one"><button data-a="st" data-k="depart" class="${p.depart?'on':''}"${!p.depart&&!p.load?' style="opacity:.65"':''}>③ 출고 처리<small>${p.depart?esc(dt(p.depart.at))+' '+esc(p.depart.by||''):p.load?'다 실었으면 누르세요':'아직 다 싣지 않았습니다'}</small></button></div>`}
  <div class="act"><button class="b p" data-a="tedit" data-id="${esc(x.id)}">용차 정보 수정</button><button class="b" data-a="tcancel"${x.st.cancel?'':' style="color:#c2410c"'}>${x.st.cancel?'취소 되돌리기':'용차 삭제'}</button></div></div>`}
 function drvOut(){const on=new Set();D.trk.filter(x=>!x.st.cancel).forEach(t=>t.lines.forEach(g=>g.w.forEach(w=>on.add(w))));
  return D.srv.map((r,i)=>{const M=r.M,P=new Map();let n=0,t=0;M.lines.forEach(g=>{t+=g.w.length;const c=g.w.filter(w=>!on.has(w)).length;if(!c)return;n+=c;const k=g.drv||'미배정';let a=P.get(k);if(!a)P.set(k,a={cars:new Set(),n:0});a.cars.add(g.on);a.n+=c});
@@ -127,8 +130,8 @@ function draw(){head();$('#flt').hidden=false;const cs=[...new Set(D.srv.map(r=>
   if(!L.length)h+='<div class="msg">이 조건에 발행된 지시서가 없습니다.</div>'}
  else{const p=x=>x.st.steps||{},T=D.trk.filter(x=>inC(x.center)&&String(x.loadAt).slice(0,10)>=F.from&&String(x.loadAt).slice(0,10)<=F.to),DV=drvOut(),act=T.filter(x=>!x.st.cancel);
   h+=`<div class="kind"><button data-a="kind" data-k="trk" class="${KIND==='trk'?'on':''}">용차출고 <b>${act.filter(x=>!(p(x).depart||p(x).hand)).length}</b><small>용차에 실어 보내는 건</small></button><button data-a="kind" data-k="drv" class="${KIND==='drv'?'on':''}">기사출고 <b>${DV.filter(d=>d.st<2).length}</b><small>기사가 직접 · 피킹까지</small></button></div>`;
-  if(KIND==='trk'){h+=`<div class="chips"><span>용차 미배정 <b>${act.filter(x=>!x.plate).length}</b></span><span>상차 전 <b>${act.filter(x=>!p(x).load).length}</b></span><span class="mu">출발 완료 ${act.filter(x=>(p(x).depart||p(x).hand)).length}</span></div>`;
-   T.slice().sort((a,b)=>(a.st.cancel?1:0)-(b.st.cancel?1:0)||(((p(a).depart||p(a).hand)?1:0)-((p(b).depart||p(b).hand)?1:0))||kc(a.loadAt,b.loadAt)).forEach(x=>{const d=x.st.cancel?'취소':(p(x).depart||p(x).hand)?'출발 완료':'상차 '+x.loadAt.slice(0,10)+' ('+dow(x.loadAt.slice(0,10))+')';if(d!==pd){h+=`<div class="dh">${d}</div>`;pd=d}h+=trkCard(x)});
+  if(KIND==='trk'){h+=`<div class="chips"><span>용차 미배정 <b>${act.filter(x=>!x.plate).length}</b></span><span>상차 전 <b>${act.filter(x=>!p(x).load).length}</b></span><span class="mu">출고 완료 ${act.filter(x=>(p(x).depart||p(x).hand)).length}</span></div>`;
+   T.slice().sort((a,b)=>(a.st.cancel?1:0)-(b.st.cancel?1:0)||(((p(a).depart||p(a).hand)?1:0)-((p(b).depart||p(b).hand)?1:0))||kc(a.loadAt,b.loadAt)).forEach(x=>{const d=x.st.cancel?'취소':(p(x).depart||p(x).hand)?'출고 완료':'상차 '+x.loadAt.slice(0,10)+' ('+dow(x.loadAt.slice(0,10))+')';if(d!==pd){h+=`<div class="dh">${d}</div>`;pd=d}h+=trkCard(x)});
    if(!T.length)h+='<div class="msg">이 조건에 등록된 용차가 없습니다.<br><small>[지시서 목록]에서 지시서를 골라 [용차 등록]을 누르세요.</small></div>'}
   else{const n=k=>DV.filter(d=>d.st===k).length;h+=`<div class="chips"><span>피킹 전 <b>${n(0)}</b></span><span>피킹 중 <b>${n(1)}</b></span><span class="mu">종결 ${n(2)}</span></div>`;
    DV.slice().sort((a,b)=>(a.st===2?1:0)-(b.st===2?1:0)||kc(a.M.date,b.M.date)||kc(a.M.no,b.M.no)).forEach(d=>{const g=d.st===2?'피킹 완료 (종결)':'출고예정일 '+d.M.date+' ('+dow(d.M.date)+')';if(g!==pd){h+=`<div class="dh">${g}</div>`;pd=g}h+=drvCard(d)});
@@ -183,6 +186,22 @@ function departAsk(x){return new Promise(res=>{const S0=x.st.steps||{},cars=new 
  const d=$('#dlg'),upd=()=>{$('#dp_o').disabled=[...d.querySelectorAll('[data-dc]')].some(c=>!c.checked)};upd();d.addEventListener('change',upd);
  let done=false;const fin=v=>{if(done)return;done=true;close();res(v)};$('#dp_x').onclick=()=>fin(null);$('#dp_o').onclick=()=>fin(items.map(i=>i[0]).filter(k=>!S0[k]));
  d.addEventListener('click',e=>{if(e.target===d)fin(null)})})}
+/* 인쇄: 지시서는 이 페이지에서 A4로 그려 인쇄, 운송장은 루티에 로그인된 PC의 피킹지시서 도구를 통해 루티에서 출력 */
+function loadSheet(){return window.TCSheet?Promise.resolve():new Promise((ok,no)=>{const s=document.createElement('script');s.src='sheet.js?v=2';s.onload=ok;s.onerror=()=>no(new Error('지시서 모듈을 불러오지 못했습니다'));document.head.appendChild(s)})}
+function markPrinted(r,k){if(!WHO||(r.fl||{})[k])return;save(()=>{r.fl=Object.assign({},r.fl||{});r.fl[k]={at:now(),by:WHO}},{a:'iss_set',no:r.M.no,key:k,on:1,by:WHO},true)}
+async function printDoc(r,k){if(!needWho())return;
+ if(k==='print'){const pw=window.open('','tcsheet');if(!pw){alert('팝업이 막혔습니다. 브라우저에서 이 사이트의 팝업을 허용해 주세요.');return}pw.document.write('<p style="font:15px sans-serif;padding:20px">지시서를 준비하는 중…</p>');
+  try{await loadSheet();const M=Object.assign({},r.M);M.tk=TCSheet.tkInfo(M,D.trk);pw.document.open();pw.document.write('<!DOCTYPE html><html lang="ko"><head><meta charset="utf-8"><title>'+esc(M.no)+'</title><style>'+TCSheet.css+'@media screen{body{background:#eef1f5}}</style></head><body>'+TCSheet.sheet(M)+'<script>setTimeout(function(){print()},300)<\/script></body></html>');pw.document.close();markPrinted(r,'print')}
+  catch(e){pw.close();alert(e.message)}return}
+ const kind=k==='wo'?'출고':'회수';
+ if(!BR){dlg(`<h3>${kind} 운송장 인쇄</h3><div class="mu" style="margin-top:6px">운송장은 루티에서 출력합니다. <b>루티에 로그인된 PC</b>에서 루티 화면의 <b>피킹지시서 도구 → [관리 페이지]</b>로 이 화면을 열면 [${kind} 운송장] 버튼으로 바로 출력됩니다.</div><div class="act" style="justify-content:flex-end"><button class="b p" data-x>확인</button></div>`);return}
+ const id='w'+Date.now();BR.pend[id]={r,k};$('#busy').hidden=false;$('#busy').textContent=kind+' 운송장을 루티에서 불러오는 중…';
+ BR.win.postMessage({t:'tc-wb',id,kind:k,no:r.M.no,date:r.M.date,center:r.M.center,w:r.M.lines.flatMap(g=>g.w),cars:[...new Set(r.M.lines.map(g=>g.on))]},'*')}
+window.addEventListener('message',e=>{const d=e.data||{};
+ if(d.t==='tc-hello'&&e.source===window.parent&&window.parent!==window){BR={win:e.source,pend:{}};if(d.key){KEY=d.key}if(d.who&&!WHO){WHO=d.who;ls('who',WHO);head()}document.documentElement.classList.add('br');if(!LOADED){LOADED=false;load()}return}
+ if(d.t==='tc-tab'&&BR){TAB=d.tab;draw();return}
+ if(d.t==='tc-reload'&&BR){load(true);return}
+ if(d.t==='tc-wb-done'&&BR&&BR.pend[d.id]){const p=BR.pend[d.id];delete BR.pend[d.id];$('#busy').hidden=true;$('#busy').textContent='최신 내용 확인 중…';if(d.ok)markPrinted(p.r,p.k);else alert('운송장을 출력하지 못했습니다.\n'+(d.err||''))}});
 async function editTruck(x){if(!needWho())return;const r=await trkForm('용차 정보 수정 — '+esc(x.id),x,'차량·시각·받는 기사는 배정 후에도 바꿀 수 있습니다. 바꾼 칸만 저장됩니다.');if(!r)return;const df={};FIELDS.forEach(f=>{if(String(r.o[f]||'')!==String(x[f]||''))df[f]=r.o[f]});if(!Object.keys(df).length)return;
  save(()=>{Object.assign(x,df);x.status=tstatus(x)},{a:'trk_set',id:x.id,info:df,rev:(x.st||{}).rev||0,by:WHO},false,res=>{const i=D.trk.findIndex(y=>y.id===x.id);if(i>=0){res.item._open=x._open;D.trk[i]=res.item}})}
 document.addEventListener('click',e=>{const t=e.target.closest('[data-a],[data-tab]');if(!t)return;if(t.dataset.tab){TAB=t.dataset.tab;ls('tab',TAB);window.scrollTo(0,0);if(LOADED)draw();return}
@@ -193,13 +212,17 @@ document.addEventListener('click',e=>{const t=e.target.closest('[data-a],[data-t
  if(a==='tdel'){const y=D.trk.find(z=>z.id===t.dataset.id);if(y&&r)delTruck(y,trkOf(r.M).map(e=>e.t));return}
  if(a==='fl'&&r){if(!needWho())return;const k=t.dataset.k,on=!(r.fl||{})[k];save(()=>{r.fl=Object.assign({},r.fl||{});if(on)r.fl[k]={at:now(),by:WHO};else delete r.fl[k]},{a:'iss_set',no:r.M.no,key:k,on:on?1:0,by:WHO},true);return}
  if(a==='dp'&&r){if(!needWho())return;const on=!(r.fl||{}).pick;save(()=>{r.fl=Object.assign({},r.fl||{});if(on)r.fl.pick={at:now(),by:WHO};else delete r.fl.pick},{a:'iss_set',no:r.M.no,key:'pick',on:on?1:0,by:WHO},true);return}
- if(a==='st'&&x){if(!needWho())return;const k=t.dataset.k,st=x.st,P=st.steps||{},on=!P[k];if(!on&&k==='load'&&(P.depart||P.unload||P.hand)){alert('이미 출발한 용차입니다. [상차 완료]를 풀려면 [출발] 이후 체크를 먼저 풀어 주세요.');return}if(!on&&!confirm('이미 체크된 단계입니다. 체크를 풀까요?'))return;
-  if(on&&k==='depart'){departAsk(x).then(need=>{if(!need)return;const at=now();save(()=>{st.steps=st.steps||{};need.forEach(d=>st.steps[d]={at,by:WHO});st.steps.depart={at,by:WHO};x.status=tstatus(x)},{a:'trk_set',id:x.id,step:{name:'depart',on:1,at,by:WHO}},true,null,need.map(d=>({a:'trk_set',id:x.id,step:{name:d,on:1,at,by:WHO}})))});return}
-  if(on&&k==='load'){const cars=new Set(x.lines.map(g=>g.on)),n=[...cars].filter(c=>(st.ld||{})[c]).length;if(n<cars.size&&!confirm('차량별 상차 확인이 '+n+'/'+cars.size+'대입니다.\n확인하지 않은 차량이 있는데 그래도 체크할까요?\n(체크 뒤에는 차량별 상차 확인을 바꿀 수 없습니다)'))return}
-  save(()=>{st.steps=st.steps||{};if(on)st.steps[k]={at:now(),by:WHO};else delete st.steps[k];x.status=tstatus(x)},{a:'trk_set',id:x.id,step:{name:k,on:on?1:0,at:now(),by:WHO}},true);return}
+ if(a==='st'&&x){if(!needWho())return;const k=t.dataset.k,st=x.st,P=st.steps||{},on=!P[k];
+  if(!on){if(!confirm(k==='depart'?x.id+' 출고 처리를 풀까요?':'이미 체크된 단계입니다. 체크를 풀까요?'))return;save(()=>{delete st.steps[k];x.status=tstatus(x)},{a:'trk_set',id:x.id,step:{name:k,on:0}},true);return}
+  if(k==='depart'){const cars=new Set(x.lines.map(g=>g.on)),n=[...cars].filter(c=>(st.ld||{})[c]).length;
+   dlg(`<h3>출고 처리하시겠습니까?</h3><div class="tl" style="margin-top:6px"><b>${esc(x.id)}</b> · ${esc(x.plate||'차량 미배정')} ${esc(x.driver||'')}<br>실은 차량 <b>${n}/${cars.size}</b>대${n<cars.size?' <b style="color:#c2410c">— 다 싣지 않았습니다</b>':''}</div><div class="mu" style="margin-top:8px">명세서·운송장 등 용차 기사에게 넘길 서류를 확인하세요.<br>출고 처리 뒤에는 이 용차를 더 체크하지 않습니다.</div><div class="act" style="justify-content:flex-end"><button class="b" data-x>취소</button><button class="b p" id="dp_o">출고 처리</button></div>`);
+   $('#dp_o').onclick=()=>{close();const at=now();save(()=>{st.steps=st.steps||{};st.steps.depart={at,by:WHO};x.status=tstatus(x)},{a:'trk_set',id:x.id,step:{name:'depart',on:1,at,by:WHO}},true)};return}
+  save(()=>{st.steps=st.steps||{};st.steps[k]={at:now(),by:WHO};x.status=tstatus(x)},{a:'trk_set',id:x.id,step:{name:k,on:1,at:now(),by:WHO}},true);return}
+ if(a==='ldall'&&x){if(!needWho())return;const at=now();save(()=>{const st=x.st;st.ld=st.ld||{};st.steps=st.steps||{};new Set(x.lines.map(g=>g.on)).forEach(c=>{if(!st.ld[c])st.ld[c]={at,by:WHO}});st.steps.load={at,by:WHO};x.status=tstatus(x)},{a:'trk_set',id:x.id,loadAll:1,by:WHO},true);return}
+ if(a==='prt'&&r){printDoc(r,t.dataset.k);return}
  if(a==='tcancel'&&x&&!x.st.cancel){const w=new Set(x.lines.flatMap(g=>g.w));delTruck(x,D.trk.filter(t=>t.lines.some(g=>g.w.some(v=>w.has(v)))));return}
  if(a==='tcancel'&&x){if(!needWho())return;const on=!x.st.cancel;if(!on&&!confirm(x.id+' 삭제(취소)를 되돌릴까요?'))return;save(()=>{if(on)x.st.cancel=now();else delete x.st.cancel;x.status=tstatus(x)},{a:'trk_set',id:x.id,cancel:on?1:0},true)}});
-document.addEventListener('change',e=>{const t=e.target;if(t.dataset&&t.dataset.a==='ld'){const card=t.closest('[data-id]'),x=D.trk.find(y=>y.id===card.dataset.id);if(!x)return;{const P=x.st.steps||{};if(P.load||P.depart||P.unload||P.hand){t.checked=!t.checked;return}}if(!WHO){t.checked=!t.checked;askWho();return}x._open=true;const k=t.dataset.k,v=t.checked;save(()=>{x.st.ld=x.st.ld||{};if(v)x.st.ld[k]={at:now(),by:WHO};else delete x.st.ld[k]},{a:'trk_set',id:x.id,load:{on:k,v:v?1:0,by:WHO}},true)}
+document.addEventListener('change',e=>{const t=e.target;if(t.dataset&&t.dataset.a==='ld'){const card=t.closest('[data-id]'),x=D.trk.find(y=>y.id===card.dataset.id);if(!x)return;{const P=x.st.steps||{};if(P.depart||P.unload||P.hand){t.checked=!t.checked;return}}if(!WHO){t.checked=!t.checked;askWho();return}x._open=true;const k=t.dataset.k,v=t.checked;save(()=>{const st=x.st;st.ld=st.ld||{};st.steps=st.steps||{};if(v)st.ld[k]={at:now(),by:WHO};else delete st.ld[k];const all=[...new Set(x.lines.map(g=>g.on))].every(c=>st.ld[c]);if(all&&!st.steps.load)st.steps.load={at:now(),by:WHO};if(!all)delete st.steps.load;x.status=tstatus(x)},{a:'trk_set',id:x.id,load:{on:k,v:v?1:0,by:WHO}},true)}
  if(t.id==='fc'){F.center=t.value;ls('center',F.center);draw()}});
 document.addEventListener('toggle',e=>{const c=e.target.closest&&e.target.closest('[data-id]');if(c){const x=D.trk.find(y=>y.id===c.dataset.id);if(x)x._open=e.target.open}},true);
 document.querySelectorAll('[data-q]').forEach(b=>b.onclick=()=>{const t=ymd(new Date()),q=+b.dataset.q;F.from=addD(t,q);F.to=addD(t,q);keepRange();LOADED=false;load()});
@@ -208,6 +231,7 @@ function poll(){if(!KEY||document.hidden||$('#dlg')||PEND||!LOADED)return;const 
 setInterval(poll,30000);document.addEventListener('visibilitychange',()=>{if(!document.hidden)poll()});window.addEventListener('pageshow',e=>{if(e.persisted)poll()});
 head();
 if(GAS.indexOf('%%')===0)$('#m').innerHTML='<div class="msg">공유 저장소 주소가 설정되지 않은 페이지입니다.</div>';
+else if(!KEY&&window.parent!==window){$('#m').innerHTML='<div class="msg">피킹지시서 도구와 연결하는 중…</div>';setTimeout(()=>{if(!KEY)pinPad('')},2500)}
 else if(!KEY)pinPad('');
 else{load();/* 거점 목록은 오늘 자료가 없어도 고를 수 있게 하루 한 번 넓은 기간에서 받아 둔다 */
  if(ls('centersDay')!==T0)setTimeout(()=>{Promise.all([get('a=list&from='+addD(T0,-14)+'&to='+addD(T0,14)).then(r=>r.items.map(x=>x.center)),get('a=trk_list&from='+addD(T0,-14)+'&to='+addD(T0,14)).then(r=>r.items.map(x=>x.center))]).then(a=>{ls('centers',[...new Set((ls('centers')||[]).concat(a[0],a[1]).filter(Boolean))]);ls('centersDay',T0);if(LOADED&&!$('#dlg')&&!PEND)draw()}).catch(()=>{})},1500)}

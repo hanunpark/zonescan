@@ -37,7 +37,7 @@ let who='';try{who=localStorage.getItem('trk_who')||''}catch(e){}
 const now=()=>{const d=new Date(),p=n=>String(n).padStart(2,'0');return d.getFullYear()+'-'+p(d.getMonth()+1)+'-'+p(d.getDate())+' '+p(d.getHours())+':'+p(d.getMinutes())};
 /* 누르면 화면을 바로 바꾸고 저장은 뒤에서 한다. 실패하면 서버 내용으로 되돌린다 */
 let PEND=0,QQ=Promise.resolve();
-function tstatus(x){const st=x.st||{},p=st.steps||{};if(st.cancel)return '취소';if(p.depart||p.unload||p.hand)return '출발 완료';if(p.load)return '상차완료';if(p.arrive)return '용차 도착';return x.plate?'배정':'용차 미배정'}
+function tstatus(x){const st=x.st||{},p=st.steps||{};if(st.cancel)return '취소';if(p.depart||p.unload||p.hand)return '출고 완료';if(p.load)return '상차 완료';if(p.arrive)return '용차 도착';return x.plate?'배정':'용차 미배정'}
 async function send(b){for(let n=0;;n++){let j;try{j=await (await fetch(GAS,{method:'POST',body:JSON.stringify(b)})).json()}catch(e){if(n<1){await new Promise(r=>setTimeout(r,1200));continue}throw new Error('통신 상태를 확인해 주세요.')}if(j.busy&&n<1){await new Promise(r=>setTimeout(r,1500));continue}if(!j.ok)throw new Error(j.err||'오류');return j}}
 function post(apply,b,pre){X.st.steps=X.st.steps||{};X.st.ld=X.st.ld||{};apply();X.status=tstatus(X);render();PEND++;$('#sv').hidden=false;b.a='trk_set';b.k=K;(pre||[]).forEach(x=>{x.a='trk_set';x.k=K});
  QQ=QQ.then(async()=>{for(const x of pre||[])await send(x);return send(b)}).then(j=>{PEND--;if(!PEND){$('#sv').hidden=true;const ch=JSON.stringify([j.item.st,j.item.status])!==JSON.stringify([X.st,X.status]);X=j.item;if(ch)render()}}).catch(e=>{PEND--;if(!PEND)$('#sv').hidden=true;alert('저장하지 못했습니다 — 최신 내용으로 되돌립니다.\n'+(e.message||''));load().catch(()=>{})})}
