@@ -45,7 +45,7 @@ async function load(){const j=await (await fetch(GAS+'?a=trk_get&k='+encodeURICo
 function render(){const p=X.st.steps||{},ld=X.st.ld||{},V=new Map();
  X.lines.forEach(g=>{let a=V.get(g.on);if(!a)V.set(g.on,a={veh:g.veh,sup:g.sup,drv:g.drv,n:0,pn:[],z:[],ot:g.ot});a.n+=g.w.length;const s=size(g.pn);if(a.pn.indexOf(s)<0)a.pn.push(s);if(a.z.indexOf(g.zone||'-')<0)a.z.push(g.zone||'-')});
  const lc=[...V.keys()].filter(k=>ld[k]).length,lock=!!(p.load||p.depart||p.unload||p.hand);
- try{{$('#nav').hidden=false;$('#n1').href='wh.html?tab=list';$('#n2').href='wh.html?tab=out&trk='+encodeURIComponent(X.id)}}catch(_){}
+ try{if(localStorage.getItem('wh_key')){$('#nav').hidden=false;$('#n1').href='wh.html?tab=list';$('#n2').href='wh.html?tab=out&trk='+encodeURIComponent(X.id)}}catch(_){}
  $('#hd').hidden=false;$('#id').textContent=X.id;$('#bd').textContent=X.status;$('#sb').textContent=X.center+' · 차량 '+X.cars+'대 · '+X.cnt+'본';document.title='용차 '+X.id;
  $('#m').innerHTML=(X.st.cancel?'<div class="card" style="color:#b91c1c;font-weight:700">이 용차는 취소되었습니다.</div>':'')+`<div class="card"><div class="kv">
  <span>용차</span><b>${esc(X.plate||'미배정')}</b><span>기사·연락처</span><div>${esc(X.driver||'-')} ${X.phone?`<a href="tel:${esc(X.phone)}">${esc(X.phone)}</a>`:''}</div>

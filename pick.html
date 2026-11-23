@@ -80,7 +80,7 @@ async function pull(){if(!LK)return;try{const j=await (await fetch(GAS+'?a=get&k
  else if(h){O=await dec(h);K='pk_'+O.no+'_'+O.n+'_'+O.f;done=LS(K)||{}}
  else throw new Error('지시서 링크가 아닙니다. PC의 [전달하기]로 받은 링크를 열어 주세요.');document.title=O.d.slice(5)+' 피킹 · '+O.f;
  $('#no').textContent=(O.t?'[임시] ':'')+O.no+(O.t?'':' · '+O.n+'차')+' · 출고예정일';$('#dt').textContent=O.d+' ('+dow(O.d)+')';
- try{{$('#nav').hidden=false;$('#n1').href='wh.html?tab=list&no='+encodeURIComponent(O.no);$('#n2').href='wh.html?tab=out&no='+encodeURIComponent(O.no)}}catch(_){}
+ try{if(localStorage.getItem('wh_key')){$('#nav').hidden=false;$('#n1').href='wh.html?tab=list&no='+encodeURIComponent(O.no);$('#n2').href='wh.html?tab=out&no='+encodeURIComponent(O.no)}}catch(_){}
  const L=lines();$('#sb').textContent=O.c+' · '+O.f+' · 차량 '+new Set(L.map(g=>g.on)).size+'대'+(O.u?' · 마감 '+O.u:'');$('#hd').hidden=false;render()}
  catch(e){$('#m').innerHTML='<div class="err">지시서를 열 수 없습니다.<br><small>'+esc(e.message)+'</small></div>'}})();
 }
