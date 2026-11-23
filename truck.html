@@ -24,7 +24,7 @@ input.t{width:100%;height:44px;border:1px solid #c5ccd6;border-radius:8px;paddin
 </head>
 <body>
 <header id="hd" hidden><span class="bd" id="bd"></span><span class="id" id="id"></span><small id="sb"></small></header>
-<main id="m"><div class="err">용차 정보를 여는 중…</div></main>
+<div id="sv" hidden style="position:fixed;right:10px;bottom:10px;background:#10223a;color:#fff;border-radius:999px;padding:5px 12px;font-size:12px;z-index:9">저장 중…</div><main id="m"><div class="err">용차 정보를 여는 중…</div></main>
 <script>
 {
 const GAS='https://script.google.com/macros/s/AKfycby33E3x2WOVkZd_Kh4LSumPMT-KKbNa292E9WNKKTdx40WjCxsVgpSTq2R7oJby6XDF/exec';
@@ -35,23 +35,33 @@ const SZ=/(\d{3}\/\d{2}Z?R\d{2})/,size=p=>{const m=String(p||'').match(SZ);retur
 const K=new URLSearchParams(location.search).get('k');let X=null,busy=false;
 let who='';try{who=localStorage.getItem('trk_who')||''}catch(e){}
 const now=()=>{const d=new Date(),p=n=>String(n).padStart(2,'0');return d.getFullYear()+'-'+p(d.getMonth()+1)+'-'+p(d.getDate())+' '+p(d.getHours())+':'+p(d.getMinutes())};
-async function post(b){if(busy)return;busy=true;document.body.style.opacity=.6;try{b.a='trk_set';b.k=K;const j=await (await fetch(GAS,{method:'POST',body:JSON.stringify(b)})).json();if(!j.ok)throw new Error(j.err);X=j.item;render()}catch(e){alert('저장하지 못했습니다. 통신 상태를 확인하고 다시 눌러 주세요.\n'+(e.message||''))}busy=false;document.body.style.opacity=1}
+/* 누르면 화면을 바로 바꾸고 저장은 뒤에서 한다. 실패하면 서버 내용으로 되돌린다 */
+let PEND=0,QQ=Promise.resolve();
+function tstatus(x){const st=x.st||{},p=st.steps||{};if(st.cancel)return '취소';if(p.hand)return '인계완료';if(p.unload)return '하차지 도착';if(p.depart)return '운행중';if(p.load)return '상차완료';if(p.arrive)return '용차 도착';return x.plate?'배정':'용차 미배정'}
+async function send(b){for(let n=0;;n++){let j;try{j=await (await fetch(GAS,{method:'POST',body:JSON.stringify(b)})).json()}catch(e){if(n<1){await new Promise(r=>setTimeout(r,1200));continue}throw new Error('통신 상태를 확인해 주세요.')}if(j.busy&&n<1){await new Promise(r=>setTimeout(r,1500));continue}if(!j.ok)throw new Error(j.err||'오류');return j}}
+function post(apply,b){X.st.steps=X.st.steps||{};X.st.ld=X.st.ld||{};apply();X.status=tstatus(X);render();PEND++;$('#sv').hidden=false;b.a='trk_set';b.k=K;
+ QQ=QQ.then(()=>send(b)).then(j=>{PEND--;if(!PEND){$('#sv').hidden=true;const ch=JSON.stringify([j.item.st,j.item.status])!==JSON.stringify([X.st,X.status]);X=j.item;if(ch)render()}}).catch(e=>{PEND--;if(!PEND)$('#sv').hidden=true;alert('저장하지 못했습니다 — 최신 내용으로 되돌립니다.\n'+(e.message||''));load().catch(()=>{})})}
 async function load(){const j=await (await fetch(GAS+'?a=trk_get&k='+encodeURIComponent(K))).json();if(!j.ok)throw new Error(j.err||'용차 정보를 찾지 못했습니다');X=j.item;render()}
 function render(){const p=X.st.steps||{},ld=X.st.ld||{},V=new Map();
  X.lines.forEach(g=>{let a=V.get(g.on);if(!a)V.set(g.on,a={veh:g.veh,sup:g.sup,drv:g.drv,n:0,pn:[],z:[],ot:g.ot});a.n+=g.w.length;const s=size(g.pn);if(a.pn.indexOf(s)<0)a.pn.push(s);if(a.z.indexOf(g.zone||'-')<0)a.z.push(g.zone||'-')});
- const lc=[...V.keys()].filter(k=>ld[k]).length;
+ const lc=[...V.keys()].filter(k=>ld[k]).length,lock=!!(p.load||p.depart||p.unload||p.hand);
  $('#hd').hidden=false;$('#id').textContent=X.id;$('#bd').textContent=X.status;$('#sb').textContent=X.center+' · 차량 '+X.cars+'대 · '+X.cnt+'본';document.title='용차 '+X.id;
  $('#m').innerHTML=(X.st.cancel?'<div class="card" style="color:#b91c1c;font-weight:700">이 용차는 취소되었습니다.</div>':'')+`<div class="card"><div class="kv">
  <span>용차</span><b>${esc(X.plate||'미배정')}</b><span>기사·연락처</span><div>${esc(X.driver||'-')} ${X.phone?`<a href="tel:${esc(X.phone)}">${esc(X.phone)}</a>`:''}</div>
  <span>상차 예정</span><b>${dt(X.loadAt)}</b><span>하차 예정</span><b>${dt(X.unloadAt)}</b><span>하차지</span><div>${esc(X.dest||'-')}</div><span>받는 기사</span><div>${esc(X.recv||'-')}</div>${X.memo?`<span>메모</span><div>${esc(X.memo)}</div>`:''}</div></div>
  <div class="card"><h3>작업자 이름</h3><input class="t" id="who" value="${esc(who)}" placeholder="체크한 사람 이름"></div>
  <div class="card"><h3>진행 체크 — 누르면 지금 시각으로 기록</h3>${TST.map(([k,l])=>`<button class="st${p[k]?' on':''}" data-st="${k}"><span>${l}</span><small>${p[k]?esc(dt(p[k].at))+' '+esc(p[k].by||''):'미체크'}</small></button>`).join('')}</div>
- <div class="card"><h3>싣는 물건 — 상차 확인 ${lc}/${V.size}대</h3>${[...V.entries()].map(([k,a])=>`<label class="v${ld[k]?' on':''}"><input type="checkbox" data-ld="${esc(k)}"${ld[k]?' checked':''}><div><b>${esc(a.veh)}</b> <span class="mu">${esc(a.sup)}</span>${a.ot?`<span class="tag">${esc(a.ot.split('·')[0])}</span>`:''}<div class="p">${esc(a.pn.join(', '))} · <b>${a.n}본</b> · 기사 ${esc(a.drv||'미배정')}</div><div class="mu">존 ${esc(a.z.join(', '))}</div></div></label>`).join('')}</div>
+ <div class="card"><h3>싣는 물건 — 상차 확인 ${lc}/${V.size}대${lock?' 🔒':''}</h3>${lock?'<div class="mu" style="margin-bottom:6px">상차 완료 뒤에는 바꿀 수 없습니다. 고치려면 [상차 완료] 체크를 먼저 푸세요.</div>':''}${[...V.entries()].map(([k,a])=>`<label class="v${ld[k]?' on':''}"><input type="checkbox" data-ld="${esc(k)}"${ld[k]?' checked':''}${lock?' disabled':''}><div><b>${esc(a.veh)}</b> <span class="mu">${esc(a.sup)}</span>${a.ot?`<span class="tag">${esc(a.ot.split('·')[0])}</span>`:''}<div class="p">${esc(a.pn.join(', '))} · <b>${a.n}본</b> · 기사 ${esc(a.drv||'미배정')}</div><div class="mu">존 ${esc(a.z.join(', '))}</div></div></label>`).join('')}</div>
  <div style="text-align:center"><button class="l" id="rf">새로 불러오기</button></div>`;
  $('#who').onchange=e=>{who=e.target.value.trim();try{localStorage.setItem('trk_who',who)}catch(_){}};$('#rf').onclick=()=>load().catch(()=>{})}
-document.addEventListener('click',e=>{const t=e.target.closest('[data-st]');if(!t||!X)return;const k=t.dataset.st,cur=(X.st.steps||{})[k];
- if(cur){if(confirm('이미 체크된 단계입니다. 체크를 풀까요?'))post({step:{name:k,on:0}});return}post({step:{name:k,on:1,at:now(),by:who}})});
-document.addEventListener('change',e=>{const t=e.target;if(t.dataset&&t.dataset.ld!==undefined)post({load:{on:t.dataset.ld,v:t.checked?1:0,by:who}})});
+function needWho(){if(who)return true;const v=(prompt('체크한 사람 이름을 넣어 주세요.')||'').trim();if(!v)return false;who=v;try{localStorage.setItem('trk_who',who)}catch(_){}return true}
+document.addEventListener('click',e=>{const t=e.target.closest('[data-st]');if(!t||!X)return;const k=t.dataset.st,p=X.st.steps||{},cur=p[k];
+ if(cur){if(k==='load'&&(p.depart||p.unload||p.hand)){alert('이미 출발한 용차입니다. [상차 완료]를 풀려면 [출발] 이후 체크를 먼저 풀어 주세요.');return}if(confirm('이미 체크된 단계입니다. 체크를 풀까요?'))post(()=>{delete X.st.steps[k]},{step:{name:k,on:0}});return}
+ if(!needWho())return;
+ if(k==='load'||k==='depart'){const cars=new Set(X.lines.map(g=>g.on)),n=[...cars].filter(c=>(X.st.ld||{})[c]).length;if(n<cars.size&&!confirm('차량별 상차 확인이 '+n+'/'+cars.size+'대입니다.\n확인하지 않은 차량이 있는데 그래도 체크할까요?\n(체크 뒤에는 차량별 상차 확인을 바꿀 수 없습니다)'))return}
+ const at=now();post(()=>{X.st.steps[k]={at,by:who}},{step:{name:k,on:1,at,by:who}})});
+document.addEventListener('change',e=>{const t=e.target;if(!t.dataset||t.dataset.ld===undefined)return;const p=X.st.steps||{};if(p.load||p.depart||p.unload||p.hand){t.checked=!t.checked;return}if(!who&&!needWho()){t.checked=!t.checked;return}const k=t.dataset.ld,v=t.checked;post(()=>{if(v)X.st.ld[k]={at:now(),by:who};else delete X.st.ld[k]},{load:{on:k,v:v?1:0,by:who}})});
+setInterval(()=>{if(!document.hidden&&!PEND&&X&&document.activeElement.id!=='who')load().catch(()=>{})},30000);document.addEventListener('visibilitychange',()=>{if(!document.hidden&&!PEND&&X)load().catch(()=>{})});
 (async()=>{try{if(!K)throw new Error('용차 링크가 아닙니다.');if(GAS.indexOf('%%')===0)throw new Error('공유 저장소 주소가 설정되지 않은 페이지입니다.');await load()}catch(e){$('#m').innerHTML='<div class="err">용차 정보를 열 수 없습니다.<br><small>'+esc(e.message)+'</small></div>'}})();
 }
 </script>
