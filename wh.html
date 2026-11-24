@@ -43,9 +43,9 @@ details{margin-top:8px}summary{font-weight:700;font-size:13.5px;padding:6px 0}.v
 </style>
 </head>
 <body>
-<header><div class="h1"><b>타이어케어 출고 관리</b><small>v2.1 · 2026-11-24</small><button id="whoB"></button></div>
+<header><div class="h1"><b>타이어케어 출고 관리</b><small>v2.2 · 2026-11-24</small><button id="whoB"></button></div>
 <div class="tabs"><button data-tab="list">지시서 목록</button><button data-tab="out">출고 관리</button></div></header>
-<div id="flt" hidden><div class="f1"><label>거점</label><select id="fc"></select></div><div class="f2"><label>기간</label><input type="date" id="ff"><span style="text-align:center">~</span><input type="date" id="ft"></div><div class="f3"><button class="b p" id="fg">조회</button><button class="b" data-q="0">오늘</button><button class="b" data-q="1">내일</button><button class="b" id="fr">새로고침</button></div></div>
+<div id="flt" hidden><div class="f1"><label>거점</label><select id="fc"></select></div><div class="f2"><label title="출고예정일 또는 발행일">기간</label><input type="date" id="ff"><span style="text-align:center">~</span><input type="date" id="ft"></div><div class="f3"><button class="b p" id="fg">조회</button><button class="b" data-q="0">오늘</button><button class="b" data-q="1">내일</button><button class="b" id="fr">새로고침</button></div></div>
 <main id="m"><div class="msg">여는 중…</div></main><div id="busy" hidden>최신 내용 확인 중…</div>
 <script>
 {
@@ -72,11 +72,17 @@ let D={srv:[],trk:[]},LOADED=false,PEND=0,SEQ=0,FOCUS='',WIDE=false;
 async function get(q){const j=await (await fetch(GAS+'?'+q+(KEY?'&t='+encodeURIComponent(KEY):''))).json();if(!j.ok)throw new Error(j.err||'오류');return j}
 async function post(b,safe){b.t=KEY;for(let n=0;;n++){let j;try{j=await (await fetch(GAS,{method:'POST',body:JSON.stringify(b)})).json()}catch(e){if(safe&&n<1){await new Promise(r=>setTimeout(r,1200));continue}throw new Error('통신 실패 — 저장되지 않았을 수 있습니다.')}if(j.busy&&safe&&n<1){await new Promise(r=>setTimeout(r,1500));continue}if(!j.ok)throw new Error(j.err||'오류');return j}}
 function fkey(){return F.from+'|'+F.to}
-function fetchAll(){const k=fkey();return Promise.all([get('a=list&from='+addD(F.from,-7)+'&to='+addD(F.to,7)).then(r=>r.items),get('a=trk_list&from='+addD(F.from,-10)+'&to='+addD(F.to,10)).then(r=>r.items)]).then(([srv,trk])=>({k,srv:srv.filter(x=>x.M),trk}))}
-async function load(quiet){const seq=++SEQ,key=fkey();if(!LOADED){const c=ls('cache');if(c&&c.k===key){D=c;LOADED=true;draw()}}
+/* 누른 버튼에 바로 표시 */
+let BB=null;function busyBtn(b){if(BB){BB.textContent=BB.dataset.t;BB.disabled=false;BB=null}if(b){BB=b;b.dataset.t=b.textContent;b.textContent='불러오는 중…';b.disabled=true}}
+/* 오늘·내일은 미리 받아 두어 누르면 바로 보이게 */
+let PF=false;function prefetch(){if(PF)return;PF=true;const t=ymd(new Date());[[t,t],[addD(t,1),addD(t,1)]].forEach(([a,b])=>{const k=a+'|'+b;if(MC[k]||k===fkey())return;const sv=[F.from,F.to];F.from=a;F.to=b;fetchAll().then(n=>{MC[n.k]=n}).catch(()=>{});F.from=sv[0];F.to=sv[1]})}
+function fetchAll(){const k=fkey();return Promise.all([get('a=list&from='+addD(F.from,-7)+'&to='+addD(F.to,7)+'&ifrom='+F.from+'&ito='+F.to).then(r=>r.items),get('a=trk_list&from='+addD(F.from,-10)+'&to='+addD(F.to,10)).then(r=>r.items)]).then(([srv,trk])=>({k,srv:srv.filter(x=>x.M),trk}))}
+const MC={};
+async function load(quiet){const seq=++SEQ,key=fkey();if(!LOADED){const c=MC[key]||(()=>{const s=ls('cache');return s&&s.k===key?s:null})();if(c){D=c;LOADED=true;draw()}}
+ if(!LOADED&&$('#m').querySelector('.c,.kind')){$('#m').style.opacity=.45;LOADED=true}
  if(!LOADED)$('#m').innerHTML='<div class="msg">불러오는 중…</div>';else if(!quiet)$('#busy').hidden=false;
- try{const n=await fetchAll();if(seq!==SEQ||key!==fkey())return;$('#busy').hidden=true;ls('cache',n);if(PEND||$('#dlg'))return;const same=LOADED&&JSON.stringify([D.srv,D.trk])===JSON.stringify([n.srv,n.trk]);D=n;LOADED=true;if(!same)draw()}
- catch(e){$('#busy').hidden=true;if(seq!==SEQ)return;if(!LOADED)$('#m').innerHTML='<div class="msg">불러오지 못했습니다.<br><small>'+esc(e.message)+'</small><br><br><button class="b" onclick="location.reload()">다시 시도</button>'+'</div>';if(/키가 맞지/.test(e.message)){KEY='';ls('key','');pinPad(KEY0?'비밀번호가 바뀌었습니다. 새 비밀번호를 눌러 주세요.':'')}}}
+ try{const n=await fetchAll();MC[n.k]=n;if(seq!==SEQ||key!==fkey())return;$('#busy').hidden=true;$('#m').style.opacity='';busyBtn();ls('cache',n);prefetch();if(PEND||$('#dlg'))return;const same=LOADED&&JSON.stringify([D.srv,D.trk])===JSON.stringify([n.srv,n.trk]);D=n;LOADED=true;if(!same)draw()}
+ catch(e){$('#busy').hidden=true;$('#m').style.opacity='';busyBtn();if(seq!==SEQ)return;if(!LOADED)$('#m').innerHTML='<div class="msg">불러오지 못했습니다.<br><small>'+esc(e.message)+'</small><br><br><button class="b" onclick="location.reload()">다시 시도</button>'+'</div>';if(/키가 맞지/.test(e.message)){KEY='';ls('key','');pinPad(KEY0?'비밀번호가 바뀌었습니다. 새 비밀번호를 눌러 주세요.':'')}}}
 const KEY0=KEY;
 function pinPad(note){$('#flt').hidden=true;let v='';const dr=()=>{document.querySelectorAll('.dots i').forEach((d,i)=>d.classList.toggle('on',i<v.length))};
  $('#m').innerHTML=`<div class="pin"><h3>비밀번호 4자리</h3><div class="mu">관리자에게 받은 숫자 4자리를 누르세요.<br>한 번 누르면 이 폰에 저장됩니다.</div><div class="dots"><i></i><i></i><i></i><i></i></div><div class="er" id="p_e">${esc(note||'')}</div><div class="pad">${[1,2,3,4,5,6,7,8,9].map(n=>`<button data-n="${n}">${n}</button>`).join('')}<button class="x" data-n="c">지우기</button><button data-n="0">0</button><button class="x" data-n="b">←</button></div></div>`;
@@ -93,6 +99,7 @@ function askWho(){dlg(`<h3>이름</h3><div class="mu">체크·수정한 사람�
 function dlg(h){close();const d=document.createElement('div');d.id='dlg';d.innerHTML='<div>'+h+'</div>';document.body.appendChild(d);d.addEventListener('click',e=>{if(e.target===d||e.target.hasAttribute('data-x'))close()})}
 function close(){const d=$('#dlg');if(d)d.remove()}
 function head(){$('#whoB').textContent=WHO?'👤 '+WHO:'이름 입력 ✎';$('#whoB').classList.toggle('need',!WHO);document.querySelectorAll('[data-tab]').forEach(b=>b.classList.toggle('on',b.dataset.tab===TAB))}
+const isd=r=>{const s=String(r.M.issued||r.at||'');if(/^\d{4}-\d\d-\d\d/.test(s))return s.slice(0,10);const d=new Date(s);return isNaN(d)?'':ymd(d)},inRng=r=>(r.M.date>=F.from&&r.M.date<=F.to)||(isd(r)>=F.from&&isd(r)<=F.to);
 const inC=c=>!F.center||c===F.center,tot=M=>M.lines.reduce((s,g)=>s+g.w.length,0);
 function trkOf(M){const w=new Set(M.lines.flatMap(g=>g.w));return D.trk.filter(t=>!t.st.cancel&&t.lines.some(g=>g.w.some(x=>w.has(x)))).map(t=>({t,n:t.lines.reduce((s,g)=>s+g.w.filter(x=>w.has(x)).length,0)}))}
 function tstatus(x){const st=x.st||{},p=st.steps||{};if(st.cancel)return '취소';if(p.depart||p.unload||p.hand)return '출고 완료';if(p.load)return '상차 완료';if(p.load)return '상차완료';if(p.arrive)return '용차 도착';return x.plate?'배정':'용차 미배정'}
@@ -113,7 +120,7 @@ ${x.st.cancel?'':`<div class="stp one"><button data-a="st" data-k="arrive" class
  <div class="act"><button class="b p" data-a="tedit" data-id="${esc(x.id)}">용차 정보 수정</button><button class="b" data-a="tcancel"${x.st.cancel?'':' style="color:#c2410c"'}>${x.st.cancel?'취소 되돌리기':'용차 삭제'}</button></div></div>`}
 function drvOut(){const on=new Set();D.trk.filter(x=>!x.st.cancel).forEach(t=>t.lines.forEach(g=>g.w.forEach(w=>on.add(w))));
  return D.srv.map((r,i)=>{const M=r.M,P=new Map();let n=0,t=0;M.lines.forEach(g=>{t+=g.w.length;const c=g.w.filter(w=>!on.has(w)).length;if(!c)return;n+=c;const k=g.drv||'미배정';let a=P.get(k);if(!a)P.set(k,a={cars:new Set(),n:0});a.cars.add(g.on);a.n+=c});
-  const fl=r.fl||{},chk=r.checked||0;return{r,i,M,P,n,tot:t,chk,fl,st:fl.pick||(t&&chk>=t)?2:chk>0?1:0}}).filter(d=>d.n&&inC(d.M.center)&&d.M.date>=F.from&&d.M.date<=F.to)}
+  const fl=r.fl||{},chk=r.checked||0;return{r,i,M,P,n,tot:t,chk,fl,st:fl.pick||(t&&chk>=t)?2:chk>0?1:0}}).filter(d=>d.n&&inC(d.M.center)&&inRng(d.r))}
 function drvCard(d){const M=d.M,pc=d.tot?Math.round(d.chk/d.tot*100):0,f=d.fl.pick;
  return `<div class="c${d.st===2?' done':d.st===0?' warn':''}" data-f="${esc(M.no)}"><div class="r1"><span class="ty"${M.tmp?' style="background:#e08a00"':''}>${M.tmp?'임시':'정식'}</span><span class="no">${esc(M.no)}</span><span class="bd${d.st===2?' g':d.st===0?' o':''}">${['피킹 전','피킹 중','피킹 완료 · 종결'][d.st]}</span><span class="qty">기사출고 <b>${d.n}</b>본</span></div>
  <div class="r2">${esc(M.center)} · 발행 ${esc(at(M.issued||d.r.at))} ${esc(d.r.who||'')}${d.tot>d.n?` · 용차 ${d.tot-d.n}본 별도`:''} · <span class="pg"><i><u style="width:${pc}%"></u></i>폰 체크 ${d.chk}/${d.tot}</span>${f?` · 완료 체크 ${esc(at(f.at))} ${esc(f.by||'')}`:''}</div>
@@ -123,10 +130,10 @@ function drvCard(d){const M=d.M,pc=d.tot?Math.round(d.chk/d.tot*100):0,f=d.fl.pi
 function draw(){head();$('#flt').hidden=false;const cs=[...new Set(D.srv.map(r=>r.M.center).concat(D.trk.map(x=>x.center),ls('centers')||[],F.center?[F.center]:[]).filter(Boolean))].sort(kc);ls('centers',cs);
  $('#fc').innerHTML='<option value="">전체 거점</option>'+cs.map(c=>`<option${c===F.center?' selected':''}>${esc(c)}</option>`).join('');$('#ff').value=F.from;$('#ft').value=F.to;
  const sc=window.scrollY;let h='',pd='';
- if(TAB==='list'){const B=D.srv.map((r,i)=>({r,i})).filter(x=>inC(x.r.M.center)&&x.r.M.date>=F.from&&x.r.M.date<=F.to),inT=x=>!TYPE||(TYPE==='tmp')===!!x.r.M.tmp;
+ if(TAB==='list'){const B=D.srv.map((r,i)=>({r,i})).filter(x=>inC(x.r.M.center)&&inRng(x.r)),inT=x=>!TYPE||(TYPE==='tmp')===!!x.r.M.tmp;
   h+=`<div class="chips">${[['','전체',B.length],['pk','정식',B.filter(x=>!x.r.M.tmp).length],['tmp','임시',B.filter(x=>x.r.M.tmp).length]].map(([k,l,c])=>`<button data-a="type" data-k="${k}" class="${TYPE===k?'on':''}">${l} <b>${c}</b></button>`).join('')}<span class="mu">미출력 <b>${B.filter(x=>!(x.r.fl||{}).print).length}</b> · 용차 없음 <b>${B.filter(x=>!trkOf(x.r.M).length).length}</b></span></div>`;
   const L=B.filter(inT).sort((a,b)=>kc(b.r.M.date,a.r.M.date)||kc(String(b.r.M.issued||''),String(a.r.M.issued||'')));
-  L.forEach(x=>{const d=x.r.M.date;if(d!==pd){h+=`<div class="dh">출고예정일 ${d} (${dow(d)}) <small>${L.filter(y=>y.r.M.date===d).length}건</small></div>`;pd=d}h+=sheetCard(x.r,x.i)});
+  L.forEach(x=>{const d=x.r.M.date;if(d!==pd){h+=`<div class="dh">출고예정일 ${d} (${dow(d)}) <small>${L.filter(y=>y.r.M.date===d).length}건${d<F.from||d>F.to?' · 조회 기간에 발행된 지시서':''}</small></div>`;pd=d}h+=sheetCard(x.r,x.i)});
   if(!L.length)h+='<div class="msg">이 조건에 발행된 지시서가 없습니다.</div>'}
  else{const p=x=>x.st.steps||{},T=D.trk.filter(x=>inC(x.center)&&String(x.loadAt).slice(0,10)>=F.from&&String(x.loadAt).slice(0,10)<=F.to),DV=drvOut(),act=T.filter(x=>!x.st.cancel);
   h+=`<div class="kind"><button data-a="kind" data-k="trk" class="${KIND==='trk'?'on':''}">용차출고 <b>${act.filter(x=>!(p(x).depart||p(x).hand)).length}</b><small>용차에 실어 보내는 건</small></button><button data-a="kind" data-k="drv" class="${KIND==='drv'?'on':''}">기사출고 <b>${DV.filter(d=>d.st<2).length}</b><small>기사가 직접 · 피킹까지</small></button></div>`;
@@ -225,8 +232,8 @@ document.addEventListener('click',e=>{const t=e.target.closest('[data-a],[data-t
 document.addEventListener('change',e=>{const t=e.target;if(t.dataset&&t.dataset.a==='ld'){const card=t.closest('[data-id]'),x=D.trk.find(y=>y.id===card.dataset.id);if(!x)return;{const P=x.st.steps||{};if(P.depart||P.unload||P.hand){t.checked=!t.checked;return}}if(!WHO){t.checked=!t.checked;askWho();return}x._open=true;const k=t.dataset.k,v=t.checked;save(()=>{const st=x.st;st.ld=st.ld||{};st.steps=st.steps||{};if(v)st.ld[k]={at:now(),by:WHO};else delete st.ld[k];const all=[...new Set(x.lines.map(g=>g.on))].every(c=>st.ld[c]);if(all&&!st.steps.load)st.steps.load={at:now(),by:WHO};if(!all)delete st.steps.load;x.status=tstatus(x)},{a:'trk_set',id:x.id,load:{on:k,v:v?1:0,by:WHO}},true)}
  if(t.id==='fc'){F.center=t.value;ls('center',F.center);draw()}});
 document.addEventListener('toggle',e=>{const c=e.target.closest&&e.target.closest('[data-id]');if(c){const x=D.trk.find(y=>y.id===c.dataset.id);if(x)x._open=e.target.open}},true);
-document.querySelectorAll('[data-q]').forEach(b=>b.onclick=()=>{const t=ymd(new Date()),q=+b.dataset.q;F.from=addD(t,q);F.to=addD(t,q);keepRange();LOADED=false;load()});
-$('#whoB').onclick=askWho;$('#fr').onclick=()=>load();$('#fg').onclick=()=>{const a=$('#ff').value,b=$('#ft').value;if(!a||!b||a>b){alert('날짜 구간을 확인해 주세요.');return}F.from=a;F.to=b;keepRange();LOADED=false;load()};
+document.querySelectorAll('[data-q]').forEach(b=>b.onclick=()=>{const t=ymd(new Date()),q=+b.dataset.q;F.from=addD(t,q);F.to=addD(t,q);$('#ff').value=F.from;$('#ft').value=F.to;keepRange();LOADED=false;if(!MC[fkey()])busyBtn(b);$('#busy').hidden=false;load()});
+$('#whoB').onclick=askWho;$('#fr').onclick=e=>{busyBtn(e.target);$('#busy').hidden=false;load()};$('#fg').onclick=()=>{const a=$('#ff').value,b=$('#ft').value;if(!a||!b||a>b){alert('날짜 구간을 확인해 주세요.');return}F.from=a;F.to=b;keepRange();LOADED=false;if(!MC[fkey()])busyBtn($('#fg'));$('#busy').hidden=false;load()};
 function poll(){if(!KEY||document.hidden||$('#dlg')||PEND||!LOADED)return;const a=document.activeElement;if(a&&/INPUT|SELECT/.test(a.tagName)&&a.type!=='checkbox')return;load(true)}
 setInterval(poll,30000);document.addEventListener('visibilitychange',()=>{if(!document.hidden)poll()});window.addEventListener('pageshow',e=>{if(e.persisted)poll()});
 head();
