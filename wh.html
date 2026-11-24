@@ -44,7 +44,7 @@ details{margin-top:8px}summary{font-weight:700;font-size:13.5px;padding:6px 0}.v
 </style>
 </head>
 <body>
-<header><div class="h1"><div class="tt"><b>타이어케어 출고 관리</b><small>v2.5 · 2026-11-24</small></div><button id="ctr" title="거점 바꾸기"></button><button id="whoB"></button></div>
+<header><div class="h1"><div class="tt"><b>타이어케어 출고 관리</b><small>v2.6 · 2026-11-24</small></div><button id="ctr" title="거점 바꾸기"></button><button id="whoB"></button></div>
 <div class="tabs"><button data-tab="list">지시서 목록</button><button data-tab="out">출고 관리</button></div></header>
 <div id="flt" hidden><div class="f1"><label>거점</label><select id="fc"></select></div><div class="f2"><label title="출고예정일 또는 발행일">기간</label><input type="date" id="ff"><span style="text-align:center">~</span><input type="date" id="ft"></div><div class="f3"><button class="b p" id="fg">조회</button><button class="b" data-q="0">오늘</button><button class="b" data-q="1">내일</button><button class="b" id="fr">새로고침</button></div></div>
 <main id="m"><div class="msg">여는 중…</div></main><div id="busy" hidden>최신 내용 확인 중…</div>
@@ -67,7 +67,7 @@ const T0=ymd(new Date()),F={from:T0,to:T0,center:ls('center')||''};
 /* 고른 기간은 같은 날 같은 탭 안에서만 유지 (지시서를 열었다 돌아와도 그대로) */
 try{const r=JSON.parse(sessionStorage.getItem('wh_range')||'null');if(r&&r.day===T0){F.from=r.from;F.to=r.to}}catch(e){}
 function keepRange(){try{sessionStorage.setItem('wh_range',JSON.stringify({day:T0,from:F.from,to:F.to}))}catch(e){}}
-const PV='v2.5';
+const PV='v2.6';
 /* 새 판이 올라왔는데 브라우저가 예전 판을 보여 주면 자동으로 새로 읽는다 (GitHub Pages 캐시 대비) */
 function verCheck(){fetch(location.pathname+'?_='+Date.now(),{cache:'no-store'}).then(r=>r.text()).then(t=>{const m=t.match(/const PV='([^']+)'/);if(m&&m[1]!==PV&&!sessionStorage.getItem('wh_upd_'+m[1])){sessionStorage.setItem('wh_upd_'+m[1],'1');const u=new URL(location.href);u.searchParams.set('v',m[1]);location.replace(u.toString())}}).catch(()=>{})}
 let SHOWCX=false,SHOWCXS=false,D={srv:[],trk:[]},LOADED=false,PEND=0,SEQ=0,FOCUS='',WIDE=false;
@@ -163,7 +163,7 @@ function draw(){head();$('#flt').hidden=false;const cs=[...new Set(D.srv.map(r=>
    if(!DV.length)h+='<div class="msg">이 조건에 기사출고 대상 지시서가 없습니다.</div>'}}
  $('#m').innerHTML=h;window.scrollTo(0,sc);if(FOCUS){const el=[...document.querySelectorAll('[data-f]')].find(e=>e.dataset.f===FOCUS);if(!el&&LOADED&&!WIDE&&$('#busy').hidden){WIDE=true;const t=ymd(new Date());F.from=addD(t,-14);F.to=addD(t,14);keepRange();LOADED=false;load();return}if(el){FOCUS='';el.style.outline='3px solid #ff7a1a';el.scrollIntoView({block:'center'});setTimeout(()=>{el.style.outline=''},4000)}}}
 function toObj(M){const L=M.lines,Dr=[...new Set(L.map(g=>g.drv))].sort(kc),P=[...new Set(L.map(g=>g.sup))];
- return{v:1,no:M.no,n:M.n,d:M.date,c:M.center,i:M.issued,w:M.who,u:M.due,t:M.tmp?1:0,f:M.drvLabel,D:Dr,P,L:L.map(g=>[g.zone,P.indexOf(g.sup),g.veh,g.model,g.pn,Dr.indexOf(g.drv),g.w,g.on,g.ri||0,g.sub?1:0,g.ot||'']),X:(M.ex||[]).map(x=>[x[0],x[1],x[3],x[4],x[6]])}}
+ return{v:1,no:M.no,n:M.n,d:M.date,c:M.center,i:M.issued,w:M.who,u:M.due,t:M.tmp?1:0,f:M.drvLabel,D:Dr,P,L:L.map(g=>[g.zone,P.indexOf(g.sup),g.veh,g.model,g.pn,Dr.indexOf(g.drv),g.w,g.on,g.ri||0,g.sub?1:0,g.ot||'',g.kp?1:0,g.kp?g.xw:0]),X:(M.ex||[]).map(x=>[x[0],x[1],x[3],x[4],x[6]])}}
 async function openSheet(r){const lk=ls('lnk')||{};let k=lk[r.M.no];try{if(!k){$('#busy').hidden=false;$('#busy').textContent='지시서 여는 중…';k=(await post({a:'link',key:r.M.no,target:'전체',reuse:1,o:toObj(r.M)},true)).id;lk[r.M.no]=k;ls('lnk',lk)}location.href=PICK+'?k='+k}catch(e){alert('지시서를 열지 못했습니다.\n'+e.message)}finally{$('#busy').hidden=true;$('#busy').textContent='최신 내용 확인 중…'}}
 const FIELDS=['loadAt','unloadAt','plate','driver','phone','dest','recv','memo'];
 function dtIn(id,val){const d=String(val||'').slice(0,10),h=String(val||'').slice(11,13),m=String(val||'').slice(14,16),ms=['00','10','20','30','40','50'];if(m&&ms.indexOf(m)<0)ms.push(m);
