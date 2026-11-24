@@ -44,6 +44,7 @@ const $=s=>document.querySelector(s),esc=s=>String(s==null?'':s).replace(/[&<>"]
 const zc=(a,b)=>(a||'￿').localeCompare(b||'￿','ko',{numeric:true}),kc=(a,b)=>String(a).localeCompare(String(b),'ko');
 const dow=s=>'일월화수목금토'[new Date(s+'T00:00:00').getDay()];
 let O,K,done={},view='z',LK='',KEY='',TK=null;
+function cxBanner(c){let b=document.getElementById('cxb');if(!c){if(b)b.remove();return}if(!b){b=document.createElement('div');b.id='cxb';b.style.cssText='position:sticky;top:0;z-index:20;background:#c2410c;color:#fff;font-weight:800;padding:10px 12px;font-size:15px';document.body.insertBefore(b,document.body.firstChild)}b.textContent='⛔ 취소된 지시서입니다 — 피킹하지 마세요 ('+(c.why||'사유 없음')+' · '+(c.by||'')+' '+String(c.at||'').slice(5)+')'}
 const dtS=v=>v?String(v).replace('T',' ').slice(5,16).replace('-','/'):'-';
 function tkTag(on){if(!TK||!TK.m[on])return '';const i=TK.L.findIndex(t=>t.id===TK.m[on]);return `<span class="tag" style="background:#10223a;color:#fff;border-color:#10223a">용차${TK.L.length>1?i+1:''}</span>`}
 function shipHtml(L){if(!TK)return '';const C=new Map();L.forEach(g=>{let a=C.get(g.on);if(!a)C.set(g.on,a={n:0,t:TK.m[g.on]});a.n+=g.w.length});const tc=[...C.values()].filter(a=>a.t),dc=[...C.values()].filter(a=>!a.t),sum=a=>a.reduce((s,x)=>s+x.n,0);
@@ -73,10 +74,10 @@ document.addEventListener('click',e=>{const t=e.target;
 const Q=[];let busy=false;
 function push(w,v){if(!LK)return;Q.push({a:'check',id:LK,key:KEY,wb:w,v});flush()}
 async function flush(){if(busy||!Q.length)return;busy=true;const x=Q[0];try{const r=await fetch(GAS,{method:'POST',body:JSON.stringify(x)});const j=await r.json();if(j.ok)Q.shift();else throw 0}catch(e){busy=false;setTimeout(flush,4000);return}busy=false;flush()}
-async function pull(){if(!LK)return;try{const j=await (await fetch(GAS+'?a=get&k='+encodeURIComponent(LK))).json();if(j.ok){if(j.tk!==undefined)TK=j.tk;const s={};(j.checked||[]).forEach(w=>s[w]=1);Q.forEach(q=>{if(q.v)s[q.wb]=1;else delete s[q.wb]});done=s;LS(K,done)}}catch(e){}}
+async function pull(){if(!LK)return;try{const j=await (await fetch(GAS+'?a=get&k='+encodeURIComponent(LK))).json();if(j.ok){if(j.tk!==undefined)TK=j.tk;cxBanner(j.cancel);const s={};(j.checked||[]).forEach(w=>s[w]=1);Q.forEach(q=>{if(q.v)s[q.wb]=1;else delete s[q.wb]});done=s;LS(K,done)}}catch(e){}}
 (async()=>{try{const k=new URLSearchParams(location.search).get('k'),h=location.hash.slice(1);
  if(k){if(GAS.indexOf('%%')===0)throw new Error('공유 저장소 주소가 설정되지 않은 페이지입니다.');const j=await (await fetch(GAS+'?a=get&k='+encodeURIComponent(k))).json();if(!j.ok)throw new Error(j.err||'지시서를 찾지 못했습니다');
-  O=j.o;LK=k;KEY=j.key;TK=j.tk||null;K='pk_'+O.no+'_'+O.n+'_'+O.f;done={};(j.checked||[]).forEach(w=>done[w]=1);LS(K,done)}
+  O=j.o;LK=k;KEY=j.key;TK=j.tk||null;setTimeout(()=>cxBanner(j.cancel),0);K='pk_'+O.no+'_'+O.n+'_'+O.f;done={};(j.checked||[]).forEach(w=>done[w]=1);LS(K,done)}
  else if(h){O=await dec(h);K='pk_'+O.no+'_'+O.n+'_'+O.f;done=LS(K)||{}}
  else throw new Error('지시서 링크가 아닙니다. PC의 [전달하기]로 받은 링크를 열어 주세요.');document.title=O.d.slice(5)+' 피킹 · '+O.f;
  $('#no').textContent=(O.t?'[임시] ':'')+O.no+(O.t?'':' · '+O.n+'차')+' · 출고예정일';$('#dt').textContent=O.d+' ('+dow(O.d)+')';
