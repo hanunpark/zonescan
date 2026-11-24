@@ -7,11 +7,12 @@
 <meta name="referrer" content="no-referrer">
 <title>타이어케어 출고 관리</title>
 <style>
-*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}html.br .h1{display:none}html.br header{padding-top:0}[hidden]{display:none!important}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}html.br .h1 .tt,html.br #whoB{display:none}html.br .h1{padding:6px 0 0}html.br header{padding-top:0}[hidden]{display:none!important}
 body{margin:0;background:#eef1f5;color:#10223a;font:15px/1.45 -apple-system,"Apple SD Gothic Neo","Malgun Gothic","Noto Sans KR",sans-serif}
 button,input,select{font:inherit;color:inherit}
 header{position:sticky;top:0;z-index:5;background:#10223a;color:#fff;padding:8px 12px 0}
-.h1{display:flex;align-items:center;gap:8px}.h1 b{font-size:17px}.h1 small{opacity:.7;font-size:11px}.h1 button{margin-left:auto;border:0;border-radius:999px;height:32px;padding:0 14px;font-size:13.5px;font-weight:800;background:#2e9e5b;color:#fff}.h1 button.need{background:#ff7a1a;animation:nb 1.2s ease-in-out infinite alternate}@keyframes nb{to{box-shadow:0 0 0 4px #ff7a1a55}}
+.h1{display:flex;flex-wrap:wrap;align-items:center;gap:6px 8px}.tt b{white-space:nowrap}.tt{display:flex;flex-direction:column;line-height:1.15}.tt small{margin-top:2px}
+#ctr{order:3;flex-basis:100%;text-align:left;border:0;border-radius:10px;background:#fff;color:#10223a;font-weight:900;font-size:18px;height:40px;padding:0 12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}#ctr::after{content:' ▾';font-size:13px;color:#889}#ctr.all{background:#ff7a1a;color:#fff}#ctr small{font-weight:600;font-size:11px;color:#667;margin-right:4px}#ctr.all small{color:#ffe7d4}html.br #ctr{margin-left:0}.h1 b{font-size:17px}.h1 small{opacity:.7;font-size:11px}.h1 #whoB{margin-left:auto;white-space:nowrap;border:0;border-radius:999px;height:32px;padding:0 14px;font-size:13.5px;font-weight:800;background:#2e9e5b;color:#fff}.h1 button.need{background:#ff7a1a;animation:nb 1.2s ease-in-out infinite alternate}@keyframes nb{to{box-shadow:0 0 0 4px #ff7a1a55}}
 .tabs{display:flex;margin-top:8px}.tabs button{flex:1;height:42px;border:0;background:transparent;color:#b9c4d6;font-weight:800;font-size:15px;border-bottom:3px solid transparent}.tabs button.on{color:#fff;border-bottom-color:#ff7a1a}
 #flt{background:#fff;border-bottom:1px solid #d5dbe5;padding:8px 12px;font-size:13px}#flt>div{display:grid;gap:6px;align-items:center;max-width:980px;margin:0 auto}#flt .f1{grid-template-columns:44px minmax(0,1fr)}#flt .f2{grid-template-columns:44px minmax(0,1fr) 14px minmax(0,1fr);margin-top:6px}#flt .f3{grid-template-columns:repeat(4,minmax(0,1fr));margin-top:6px}
 #flt select,#flt input{height:38px;width:100%;min-width:0;border:1px solid #c5ccd6;border-radius:8px;padding:0 6px;background:#fff;font-size:14px}#flt label{color:#556;font-weight:700}#flt .b{padding:0 4px}
@@ -43,7 +44,7 @@ details{margin-top:8px}summary{font-weight:700;font-size:13.5px;padding:6px 0}.v
 </style>
 </head>
 <body>
-<header><div class="h1"><b>타이어케어 출고 관리</b><small>v2.2 · 2026-11-24</small><button id="whoB"></button></div>
+<header><div class="h1"><div class="tt"><b>타이어케어 출고 관리</b><small>v2.3 · 2026-11-24</small></div><button id="ctr" title="거점 바꾸기"></button><button id="whoB"></button></div>
 <div class="tabs"><button data-tab="list">지시서 목록</button><button data-tab="out">출고 관리</button></div></header>
 <div id="flt" hidden><div class="f1"><label>거점</label><select id="fc"></select></div><div class="f2"><label title="출고예정일 또는 발행일">기간</label><input type="date" id="ff"><span style="text-align:center">~</span><input type="date" id="ft"></div><div class="f3"><button class="b p" id="fg">조회</button><button class="b" data-q="0">오늘</button><button class="b" data-q="1">내일</button><button class="b" id="fr">새로고침</button></div></div>
 <main id="m"><div class="msg">여는 중…</div></main><div id="busy" hidden>최신 내용 확인 중…</div>
@@ -66,7 +67,7 @@ const T0=ymd(new Date()),F={from:T0,to:T0,center:ls('center')||''};
 /* 고른 기간은 같은 날 같은 탭 안에서만 유지 (지시서를 열었다 돌아와도 그대로) */
 try{const r=JSON.parse(sessionStorage.getItem('wh_range')||'null');if(r&&r.day===T0){F.from=r.from;F.to=r.to}}catch(e){}
 function keepRange(){try{sessionStorage.setItem('wh_range',JSON.stringify({day:T0,from:F.from,to:F.to}))}catch(e){}}
-let D={srv:[],trk:[]},LOADED=false,PEND=0,SEQ=0,FOCUS='',WIDE=false;
+let SHOWCX=false,D={srv:[],trk:[]},LOADED=false,PEND=0,SEQ=0,FOCUS='',WIDE=false;
 {const q=new URLSearchParams(location.search),t=q.get('tab');if(t==='list'||t==='out'){TAB=t;if(q.get('trk')){KIND='trk';FOCUS=q.get('trk')}else if(q.get('no')){FOCUS=q.get('no');if(t==='out')KIND='drv'}}else if(q.get('no')){TAB='list';FOCUS=q.get('no')}if(location.search)history.replaceState(null,'',location.pathname+location.hash)}
 {const h=location.hash.slice(1);if(h){KEY=decodeURIComponent(h);ls('key',KEY);history.replaceState(null,'',location.pathname+location.search)}}
 async function get(q){const j=await (await fetch(GAS+'?'+q+(KEY?'&t='+encodeURIComponent(KEY):''))).json();if(!j.ok)throw new Error(j.err||'오류');return j}
@@ -98,7 +99,7 @@ function askWho(){dlg(`<h3>이름</h3><div class="mu">체크·수정한 사람�
  $('#d_ok').onclick=()=>{const v=$('#d_who').value.trim();if(!v){$('#d_e').textContent='이름을 넣어 주세요.';return}WHO=v;ls('who',v);close();head()}}
 function dlg(h){close();const d=document.createElement('div');d.id='dlg';d.innerHTML='<div>'+h+'</div>';document.body.appendChild(d);d.addEventListener('click',e=>{if(e.target===d||e.target.hasAttribute('data-x'))close()})}
 function close(){const d=$('#dlg');if(d)d.remove()}
-function head(){$('#whoB').textContent=WHO?'👤 '+WHO:'이름 입력 ✎';$('#whoB').classList.toggle('need',!WHO);document.querySelectorAll('[data-tab]').forEach(b=>b.classList.toggle('on',b.dataset.tab===TAB))}
+function head(){$('#ctr').innerHTML='<small>작업 거점</small>'+esc(F.center||'전체 거점');$('#ctr').classList.toggle('all',!F.center);$('#whoB').textContent=WHO?'👤 '+WHO:'이름 입력 ✎';$('#whoB').classList.toggle('need',!WHO);document.querySelectorAll('[data-tab]').forEach(b=>b.classList.toggle('on',b.dataset.tab===TAB))}
 const isd=r=>{const s=String(r.M.issued||r.at||'');if(/^\d{4}-\d\d-\d\d/.test(s))return s.slice(0,10);const d=new Date(s);return isNaN(d)?'':ymd(d)},inRng=r=>(r.M.date>=F.from&&r.M.date<=F.to)||(isd(r)>=F.from&&isd(r)<=F.to);
 const inC=c=>!F.center||c===F.center,tot=M=>M.lines.reduce((s,g)=>s+g.w.length,0);
 function trkOf(M){const w=new Set(M.lines.flatMap(g=>g.w));return D.trk.filter(t=>!t.st.cancel&&t.lines.some(g=>g.w.some(x=>w.has(x)))).map(t=>({t,n:t.lines.reduce((s,g)=>s+g.w.filter(x=>w.has(x)).length,0)}))}
@@ -135,11 +136,11 @@ function draw(){head();$('#flt').hidden=false;const cs=[...new Set(D.srv.map(r=>
   const L=B.filter(inT).sort((a,b)=>kc(b.r.M.date,a.r.M.date)||kc(String(b.r.M.issued||''),String(a.r.M.issued||'')));
   L.forEach(x=>{const d=x.r.M.date;if(d!==pd){h+=`<div class="dh">출고예정일 ${d} (${dow(d)}) <small>${L.filter(y=>y.r.M.date===d).length}건${d<F.from||d>F.to?' · 조회 기간에 발행된 지시서':''}</small></div>`;pd=d}h+=sheetCard(x.r,x.i)});
   if(!L.length)h+='<div class="msg">이 조건에 발행된 지시서가 없습니다.</div>'}
- else{const p=x=>x.st.steps||{},T=D.trk.filter(x=>inC(x.center)&&String(x.loadAt).slice(0,10)>=F.from&&String(x.loadAt).slice(0,10)<=F.to),DV=drvOut(),act=T.filter(x=>!x.st.cancel);
+ else{const p=x=>x.st.steps||{},T0=D.trk.filter(x=>inC(x.center)&&String(x.loadAt).slice(0,10)>=F.from&&String(x.loadAt).slice(0,10)<=F.to),ncx=T0.filter(x=>x.st.cancel).length,T=SHOWCX?T0:T0.filter(x=>!x.st.cancel),DV=drvOut(),act=T0.filter(x=>!x.st.cancel);
   h+=`<div class="kind"><button data-a="kind" data-k="trk" class="${KIND==='trk'?'on':''}">용차출고 <b>${act.filter(x=>!(p(x).depart||p(x).hand)).length}</b><small>용차에 실어 보내는 건</small></button><button data-a="kind" data-k="drv" class="${KIND==='drv'?'on':''}">기사출고 <b>${DV.filter(d=>d.st<2).length}</b><small>기사가 직접 · 피킹까지</small></button></div>`;
-  if(KIND==='trk'){h+=`<div class="chips"><span>용차 미배정 <b>${act.filter(x=>!x.plate).length}</b></span><span>상차 전 <b>${act.filter(x=>!p(x).load).length}</b></span><span class="mu">출고 완료 ${act.filter(x=>(p(x).depart||p(x).hand)).length}</span></div>`;
+  if(KIND==='trk'){h+=`<div class="chips"><span>용차 미배정 <b>${act.filter(x=>!x.plate).length}</b></span><span>상차 전 <b>${act.filter(x=>!p(x).load).length}</b></span><span class="mu">출고 완료 ${act.filter(x=>(p(x).depart||p(x).hand)).length}</span>${ncx?`<button data-a="cx" class="${SHOWCX?'on':''}" style="margin-left:auto">${SHOWCX?'취소 '+ncx+'건 숨기기':'취소 '+ncx+'건 보기'}</button>`:''}</div>`;
    T.slice().sort((a,b)=>(a.st.cancel?1:0)-(b.st.cancel?1:0)||(((p(a).depart||p(a).hand)?1:0)-((p(b).depart||p(b).hand)?1:0))||kc(a.loadAt,b.loadAt)).forEach(x=>{const d=x.st.cancel?'취소':(p(x).depart||p(x).hand)?'출고 완료':'상차 '+x.loadAt.slice(0,10)+' ('+dow(x.loadAt.slice(0,10))+')';if(d!==pd){h+=`<div class="dh">${d}</div>`;pd=d}h+=trkCard(x)});
-   if(!T.length)h+='<div class="msg">이 조건에 등록된 용차가 없습니다.<br><small>[지시서 목록]에서 지시서를 골라 [용차 등록]을 누르세요.</small></div>'}
+   if(!T.length)h+=ncx?'<div class="msg">진행 중인 용차가 없습니다. (취소 '+ncx+'건은 [취소 보기]로 확인)</div>':'<div class="msg">이 조건에 등록된 용차가 없습니다.<br><small>[지시서 목록]에서 지시서를 골라 [용차 등록]을 누르세요.</small></div>'}
   else{const n=k=>DV.filter(d=>d.st===k).length;h+=`<div class="chips"><span>피킹 전 <b>${n(0)}</b></span><span>피킹 중 <b>${n(1)}</b></span><span class="mu">종결 ${n(2)}</span></div>`;
    DV.slice().sort((a,b)=>(a.st===2?1:0)-(b.st===2?1:0)||kc(a.M.date,b.M.date)||kc(a.M.no,b.M.no)).forEach(d=>{const g=d.st===2?'피킹 완료 (종결)':'출고예정일 '+d.M.date+' ('+dow(d.M.date)+')';if(g!==pd){h+=`<div class="dh">${g}</div>`;pd=g}h+=drvCard(d)});
    if(!DV.length)h+='<div class="msg">이 조건에 기사출고 대상 지시서가 없습니다.</div>'}}
@@ -213,7 +214,7 @@ async function editTruck(x){if(!needWho())return;const r=await trkForm('용차 �
  save(()=>{Object.assign(x,df);x.status=tstatus(x)},{a:'trk_set',id:x.id,info:df,rev:(x.st||{}).rev||0,by:WHO},false,res=>{const i=D.trk.findIndex(y=>y.id===x.id);if(i>=0){res.item._open=x._open;D.trk[i]=res.item}})}
 document.addEventListener('click',e=>{const t=e.target.closest('[data-a],[data-tab]');if(!t)return;if(t.dataset.tab){TAB=t.dataset.tab;ls('tab',TAB);window.scrollTo(0,0);if(LOADED)draw();return}
  const a=t.dataset.a,r=t.dataset.i!==undefined?D.srv[+t.dataset.i]:null,card=t.closest('[data-id]'),x=card?D.trk.find(y=>y.id===card.dataset.id):null;
- if(a==='type'){TYPE=t.dataset.k;draw();return}if(a==='kind'){KIND=t.dataset.k;draw();return}
+ if(a==='type'){TYPE=t.dataset.k;draw();return}if(a==='cx'){SHOWCX=!SHOWCX;draw();return}if(a==='kind'){KIND=t.dataset.k;draw();return}
  if(a==='open'&&r){openSheet(r);return}if(a==='treg'&&r){regTruck(r);return}
  if(a==='tedit'){const y=D.trk.find(z=>z.id===t.dataset.id);if(y)editTruck(y);return}
  if(a==='tdel'){const y=D.trk.find(z=>z.id===t.dataset.id);if(y&&r)delTruck(y,trkOf(r.M).map(e=>e.t));return}
@@ -233,7 +234,7 @@ document.addEventListener('change',e=>{const t=e.target;if(t.dataset&&t.dataset.
  if(t.id==='fc'){F.center=t.value;ls('center',F.center);draw()}});
 document.addEventListener('toggle',e=>{const c=e.target.closest&&e.target.closest('[data-id]');if(c){const x=D.trk.find(y=>y.id===c.dataset.id);if(x)x._open=e.target.open}},true);
 document.querySelectorAll('[data-q]').forEach(b=>b.onclick=()=>{const t=ymd(new Date()),q=+b.dataset.q;F.from=addD(t,q);F.to=addD(t,q);$('#ff').value=F.from;$('#ft').value=F.to;keepRange();LOADED=false;if(!MC[fkey()])busyBtn(b);$('#busy').hidden=false;load()});
-$('#whoB').onclick=askWho;$('#fr').onclick=e=>{busyBtn(e.target);$('#busy').hidden=false;load()};$('#fg').onclick=()=>{const a=$('#ff').value,b=$('#ft').value;if(!a||!b||a>b){alert('날짜 구간을 확인해 주세요.');return}F.from=a;F.to=b;keepRange();LOADED=false;if(!MC[fkey()])busyBtn($('#fg'));$('#busy').hidden=false;load()};
+$('#whoB').onclick=askWho;$('#ctr').onclick=()=>{window.scrollTo(0,0);const s=$('#fc');s.focus();try{s.showPicker()}catch(e){s.click()}};$('#fr').onclick=e=>{busyBtn(e.target);$('#busy').hidden=false;load()};$('#fg').onclick=()=>{const a=$('#ff').value,b=$('#ft').value;if(!a||!b||a>b){alert('날짜 구간을 확인해 주세요.');return}F.from=a;F.to=b;keepRange();LOADED=false;if(!MC[fkey()])busyBtn($('#fg'));$('#busy').hidden=false;load()};
 function poll(){if(!KEY||document.hidden||$('#dlg')||PEND||!LOADED)return;const a=document.activeElement;if(a&&/INPUT|SELECT/.test(a.tagName)&&a.type!=='checkbox')return;load(true)}
 setInterval(poll,30000);document.addEventListener('visibilitychange',()=>{if(!document.hidden)poll()});window.addEventListener('pageshow',e=>{if(e.persisted)poll()});
 head();
