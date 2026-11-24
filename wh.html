@@ -67,7 +67,7 @@ const T0=ymd(new Date()),F={from:T0,to:T0,center:ls('center')||''};
 /* 고른 기간은 같은 날 같은 탭 안에서만 유지 (지시서를 열었다 돌아와도 그대로) */
 try{const r=JSON.parse(sessionStorage.getItem('wh_range')||'null');if(r&&r.day===T0){F.from=r.from;F.to=r.to}}catch(e){}
 function keepRange(){try{sessionStorage.setItem('wh_range',JSON.stringify({day:T0,from:F.from,to:F.to}))}catch(e){}}
-const PV='v2.6';
+const PV='v2.7';
 /* 새 판이 올라왔는데 브라우저가 예전 판을 보여 주면 자동으로 새로 읽는다 (GitHub Pages 캐시 대비) */
 function verCheck(){fetch(location.pathname+'?_='+Date.now(),{cache:'no-store'}).then(r=>r.text()).then(t=>{const m=t.match(/const PV='([^']+)'/);if(m&&m[1]!==PV&&!sessionStorage.getItem('wh_upd_'+m[1])){sessionStorage.setItem('wh_upd_'+m[1],'1');const u=new URL(location.href);u.searchParams.set('v',m[1]);location.replace(u.toString())}}).catch(()=>{})}
 let SHOWCX=false,SHOWCXS=false,D={srv:[],trk:[]},LOADED=false,PEND=0,SEQ=0,FOCUS='',WIDE=false;
@@ -212,7 +212,7 @@ function departAsk(x){return new Promise(res=>{const S0=x.st.steps||{},cars=new 
  let done=false;const fin=v=>{if(done)return;done=true;close();res(v)};$('#dp_x').onclick=()=>fin(null);$('#dp_o').onclick=()=>fin(items.map(i=>i[0]).filter(k=>!S0[k]));
  d.addEventListener('click',e=>{if(e.target===d)fin(null)})})}
 /* 인쇄: 지시서는 이 페이지에서 A4로 그려 인쇄, 운송장은 루티에 로그인된 PC의 피킹지시서 도구를 통해 루티에서 출력 */
-function loadSheet(){return window.TCSheet?Promise.resolve():new Promise((ok,no)=>{const s=document.createElement('script');s.src='sheet.js?v=2';s.onload=ok;s.onerror=()=>no(new Error('지시서 모듈을 불러오지 못했습니다'));document.head.appendChild(s)})}
+function loadSheet(){return window.TCSheet?Promise.resolve():new Promise((ok,no)=>{const s=document.createElement('script');s.src='sheet.js?v=3';s.onload=ok;s.onerror=()=>no(new Error('지시서 모듈을 불러오지 못했습니다'));document.head.appendChild(s)})}
 function markPrinted(r,k){if(!WHO||(r.fl||{})[k])return;save(()=>{r.fl=Object.assign({},r.fl||{});r.fl[k]={at:now(),by:WHO}},{a:'iss_set',no:r.M.no,key:k,on:1,by:WHO},true)}
 async function printDoc(r,k){if(!needWho())return;
  if(k==='print'){const pw=window.open('','tcsheet');if(!pw){alert('팝업이 막혔습니다. 브라우저에서 이 사이트의 팝업을 허용해 주세요.');return}pw.document.write('<p style="font:15px sans-serif;padding:20px">지시서를 준비하는 중…</p>');
