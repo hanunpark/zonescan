@@ -12,7 +12,7 @@ body{margin:0;background:#eef1f5;color:#10223a;font:15px/1.45 -apple-system,"App
 button,input,select{font:inherit;color:inherit}
 header{position:sticky;top:0;z-index:5;background:#10223a;color:#fff;padding:8px 12px 0}
 .h1{display:flex;flex-wrap:wrap;align-items:center;gap:6px 8px}.tt b{white-space:nowrap}.tt{display:flex;flex-direction:column;line-height:1.15}.tt small{margin-top:2px}
-#ctr{order:3;flex-basis:100%;text-align:left;border:0;border-radius:10px;background:#fff;color:#10223a;font-weight:900;font-size:18px;height:40px;padding:0 12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}#ctr::after{content:' ▾';font-size:13px;color:#889}#ctr.all{background:#ff7a1a;color:#fff}#ctr small{font-weight:600;font-size:11px;color:#667;margin-right:4px}#ctr.all small{color:#ffe7d4}html.br #ctr{margin-left:0}.h1 b{font-size:17px}.h1 small{opacity:.7;font-size:11px}.h1 #whoB{margin-left:auto;white-space:nowrap;border:0;border-radius:999px;height:32px;padding:0 14px;font-size:13.5px;font-weight:800;background:#2e9e5b;color:#fff}.h1 button.need{background:#ff7a1a;animation:nb 1.2s ease-in-out infinite alternate}@keyframes nb{to{box-shadow:0 0 0 4px #ff7a1a55}}
+#ctr{order:3;flex-basis:100%;text-align:left;border:0;border-radius:10px;background:#fff;color:#10223a;font-weight:900;font-size:18px;height:40px;padding:0 12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}#ctr::after{content:' ▾';font-size:13px;color:#889}#ctr .pv{float:right;font-size:10.5px;font-weight:500;color:#99a;margin-top:12px}#ctr.all{background:#ff7a1a;color:#fff}#ctr small{font-weight:600;font-size:11px;color:#667;margin-right:4px}#ctr.all small{color:#ffe7d4}html.br #ctr{margin-left:0}.h1 b{font-size:17px}.h1 small{opacity:.7;font-size:11px}.h1 #whoB{margin-left:auto;white-space:nowrap;border:0;border-radius:999px;height:32px;padding:0 14px;font-size:13.5px;font-weight:800;background:#2e9e5b;color:#fff}.h1 button.need{background:#ff7a1a;animation:nb 1.2s ease-in-out infinite alternate}@keyframes nb{to{box-shadow:0 0 0 4px #ff7a1a55}}
 .tabs{display:flex;margin-top:8px}.tabs button{flex:1;height:42px;border:0;background:transparent;color:#b9c4d6;font-weight:800;font-size:15px;border-bottom:3px solid transparent}.tabs button.on{color:#fff;border-bottom-color:#ff7a1a}
 #flt{background:#fff;border-bottom:1px solid #d5dbe5;padding:8px 12px;font-size:13px}#flt>div{display:grid;gap:6px;align-items:center;max-width:980px;margin:0 auto}#flt .f1{grid-template-columns:44px minmax(0,1fr)}#flt .f2{grid-template-columns:44px minmax(0,1fr) 14px minmax(0,1fr);margin-top:6px}#flt .f3{grid-template-columns:repeat(4,minmax(0,1fr));margin-top:6px}
 #flt select,#flt input{height:38px;width:100%;min-width:0;border:1px solid #c5ccd6;border-radius:8px;padding:0 6px;background:#fff;font-size:14px}#flt label{color:#556;font-weight:700}#flt .b{padding:0 4px}
@@ -44,7 +44,7 @@ details{margin-top:8px}summary{font-weight:700;font-size:13.5px;padding:6px 0}.v
 </style>
 </head>
 <body>
-<header><div class="h1"><div class="tt"><b>타이어케어 출고 관리</b><small>v2.4 · 2026-11-24</small></div><button id="ctr" title="거점 바꾸기"></button><button id="whoB"></button></div>
+<header><div class="h1"><div class="tt"><b>타이어케어 출고 관리</b><small>v2.5 · 2026-11-24</small></div><button id="ctr" title="거점 바꾸기"></button><button id="whoB"></button></div>
 <div class="tabs"><button data-tab="list">지시서 목록</button><button data-tab="out">출고 관리</button></div></header>
 <div id="flt" hidden><div class="f1"><label>거점</label><select id="fc"></select></div><div class="f2"><label title="출고예정일 또는 발행일">기간</label><input type="date" id="ff"><span style="text-align:center">~</span><input type="date" id="ft"></div><div class="f3"><button class="b p" id="fg">조회</button><button class="b" data-q="0">오늘</button><button class="b" data-q="1">내일</button><button class="b" id="fr">새로고침</button></div></div>
 <main id="m"><div class="msg">여는 중…</div></main><div id="busy" hidden>최신 내용 확인 중…</div>
@@ -67,6 +67,9 @@ const T0=ymd(new Date()),F={from:T0,to:T0,center:ls('center')||''};
 /* 고른 기간은 같은 날 같은 탭 안에서만 유지 (지시서를 열었다 돌아와도 그대로) */
 try{const r=JSON.parse(sessionStorage.getItem('wh_range')||'null');if(r&&r.day===T0){F.from=r.from;F.to=r.to}}catch(e){}
 function keepRange(){try{sessionStorage.setItem('wh_range',JSON.stringify({day:T0,from:F.from,to:F.to}))}catch(e){}}
+const PV='v2.5';
+/* 새 판이 올라왔는데 브라우저가 예전 판을 보여 주면 자동으로 새로 읽는다 (GitHub Pages 캐시 대비) */
+function verCheck(){fetch(location.pathname+'?_='+Date.now(),{cache:'no-store'}).then(r=>r.text()).then(t=>{const m=t.match(/const PV='([^']+)'/);if(m&&m[1]!==PV&&!sessionStorage.getItem('wh_upd_'+m[1])){sessionStorage.setItem('wh_upd_'+m[1],'1');const u=new URL(location.href);u.searchParams.set('v',m[1]);location.replace(u.toString())}}).catch(()=>{})}
 let SHOWCX=false,SHOWCXS=false,D={srv:[],trk:[]},LOADED=false,PEND=0,SEQ=0,FOCUS='',WIDE=false;
 {const q=new URLSearchParams(location.search),t=q.get('tab');if(t==='list'||t==='out'){TAB=t;if(q.get('trk')){KIND='trk';FOCUS=q.get('trk')}else if(q.get('no')){FOCUS=q.get('no');if(t==='out')KIND='drv'}}else if(q.get('no')){TAB='list';FOCUS=q.get('no')}if(location.search)history.replaceState(null,'',location.pathname+location.hash)}
 {const h=location.hash.slice(1);if(h){KEY=decodeURIComponent(h);ls('key',KEY);history.replaceState(null,'',location.pathname+location.search)}}
@@ -99,7 +102,7 @@ function askWho(){dlg(`<h3>이름</h3><div class="mu">체크·수정한 사람�
  $('#d_ok').onclick=()=>{const v=$('#d_who').value.trim();if(!v){$('#d_e').textContent='이름을 넣어 주세요.';return}WHO=v;ls('who',v);close();head()}}
 function dlg(h){close();const d=document.createElement('div');d.id='dlg';d.innerHTML='<div>'+h+'</div>';document.body.appendChild(d);d.addEventListener('click',e=>{if(e.target===d||e.target.hasAttribute('data-x'))close()})}
 function close(){const d=$('#dlg');if(d)d.remove()}
-function head(){$('#ctr').innerHTML='<small>작업 거점</small>'+esc(F.center||'전체 거점');$('#ctr').classList.toggle('all',!F.center);$('#whoB').textContent=WHO?'👤 '+WHO:'이름 입력 ✎';$('#whoB').classList.toggle('need',!WHO);document.querySelectorAll('[data-tab]').forEach(b=>b.classList.toggle('on',b.dataset.tab===TAB))}
+function head(){$('#ctr').innerHTML='<small>작업 거점</small>'+esc(F.center||'전체 거점')+'<span class="pv">'+PV+'</span>';$('#ctr').classList.toggle('all',!F.center);$('#whoB').textContent=WHO?'👤 '+WHO:'이름 입력 ✎';$('#whoB').classList.toggle('need',!WHO);document.querySelectorAll('[data-tab]').forEach(b=>b.classList.toggle('on',b.dataset.tab===TAB))}
 const isd=r=>{const s=String(r.M.issued||r.at||'');if(/^\d{4}-\d\d-\d\d/.test(s))return s.slice(0,10);const d=new Date(s);return isNaN(d)?'':ymd(d)},inRng=r=>(r.M.date>=F.from&&r.M.date<=F.to)||(isd(r)>=F.from&&isd(r)<=F.to);
 const inC=c=>!F.center||c===F.center,tot=M=>M.lines.reduce((s,g)=>s+g.w.length,0);
 function trkOf(M){const w=new Set(M.lines.flatMap(g=>g.w));return D.trk.filter(t=>!t.st.cancel&&t.lines.some(g=>g.w.some(x=>w.has(x)))).map(t=>({t,n:t.lines.reduce((s,g)=>s+g.w.filter(x=>w.has(x)).length,0)}))}
@@ -140,7 +143,7 @@ function drvCard(d){const M=d.M,pc=d.tot?Math.round(d.chk/d.tot*100):0,f=d.fl.pi
  return `<div class="c${d.st===2?' done':d.st===0?' warn':''}" data-f="${esc(M.no)}"><div class="r1"><span class="ty"${M.tmp?' style="background:#e08a00"':''}>${M.tmp?'임시':'정식'}</span><span class="no">${esc(M.no)}</span><span class="bd${d.st===2?' g':d.st===0?' o':''}">${['피킹 전','피킹 중','피킹 완료 · 종결'][d.st]}</span><span class="qty">기사출고 <b>${d.n}</b>본</span></div>
  <div class="r2">${esc(M.center)} · 발행 ${esc(at(M.issued||d.r.at))} ${esc(d.r.who||'')}${d.tot>d.n?` · 용차 ${d.tot-d.n}본 별도`:''} · <span class="pg"><i><u style="width:${pc}%"></u></i>폰 체크 ${d.chk}/${d.tot}</span>${f?` · 완료 체크 ${esc(at(f.at))} ${esc(f.by||'')}`:''}</div>
  <div class="dvs">${[...d.P.entries()].sort((a,b)=>kc(a[0],b[0])).map(([k,a])=>`<span><b>${esc(k)}</b> ${a.cars.size}대 · ${a.n}본</span>`).join('')}</div>
- <div class="act"><button class="b${f?'':' p'}" data-a="dp" data-i="${d.i}">${f?'✓ 피킹 완료 (누르면 해제)':'피킹 완료 체크'}</button><button class="b" data-a="open" data-i="${d.i}">피킹지시서 열기</button></div>
+ <div class="act"><button class="b${f?'':' p'}" data-a="dp" data-i="${d.i}">${f?'✓ 피킹 완료 (누르면 해제)':'피킹 완료 체크'}</button><button class="b" data-a="open" data-i="${d.i}">피킹지시서 열기</button><button class="b s" style="margin-left:auto;color:#c2410c" data-a="scx" data-i="${d.i}">지시서 취소</button></div>
  <div class="mu" style="margin-top:6px">${d.st===2?'피킹 완료 — 이후 출고는 기사가 기사 앱에서 처리합니다.':'피킹까지가 창고 업무입니다. 폰 체크가 모두 끝나면 자동으로 종결됩니다.'}</div></div>`}
 function draw(){head();$('#flt').hidden=false;const cs=[...new Set(D.srv.map(r=>r.M.center).concat(D.trk.map(x=>x.center),ls('centers')||[],F.center?[F.center]:[]).filter(Boolean))].sort(kc);ls('centers',cs);
  $('#fc').innerHTML='<option value="">전체 거점</option>'+cs.map(c=>`<option${c===F.center?' selected':''}>${esc(c)}</option>`).join('');$('#ff').value=F.from;$('#ft').value=F.to;
@@ -253,7 +256,7 @@ document.querySelectorAll('[data-q]').forEach(b=>b.onclick=()=>{const t=ymd(new 
 $('#whoB').onclick=askWho;$('#ctr').onclick=()=>{window.scrollTo(0,0);const s=$('#fc');s.focus();try{s.showPicker()}catch(e){s.click()}};$('#fr').onclick=e=>{busyBtn(e.target);$('#busy').hidden=false;load()};$('#fg').onclick=()=>{const a=$('#ff').value,b=$('#ft').value;if(!a||!b||a>b){alert('날짜 구간을 확인해 주세요.');return}F.from=a;F.to=b;keepRange();LOADED=false;if(!MC[fkey()])busyBtn($('#fg'));$('#busy').hidden=false;load()};
 function poll(){if(!KEY||document.hidden||$('#dlg')||PEND||!LOADED)return;const a=document.activeElement;if(a&&/INPUT|SELECT/.test(a.tagName)&&a.type!=='checkbox')return;load(true)}
 setInterval(poll,30000);document.addEventListener('visibilitychange',()=>{if(!document.hidden)poll()});window.addEventListener('pageshow',e=>{if(e.persisted)poll()});
-head();
+head();setTimeout(verCheck,1500);document.addEventListener('visibilitychange',()=>{if(!document.hidden)verCheck()});
 if(GAS.indexOf('%%')===0)$('#m').innerHTML='<div class="msg">공유 저장소 주소가 설정되지 않은 페이지입니다.</div>';
 else if(!KEY&&window.parent!==window){$('#m').innerHTML='<div class="msg">피킹지시서 도구와 연결하는 중…</div>';setTimeout(()=>{if(!KEY)pinPad('')},2500)}
 else if(!KEY)pinPad('');
