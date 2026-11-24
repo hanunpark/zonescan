@@ -43,7 +43,7 @@ details{margin-top:8px}summary{font-weight:700;font-size:13.5px;padding:6px 0}.v
 </style>
 </head>
 <body>
-<header><div class="h1"><b>타이어케어 출고 관리</b><small>v2.0 · 2026-11-23</small><button id="whoB"></button></div>
+<header><div class="h1"><b>타이어케어 출고 관리</b><small>v2.1 · 2026-11-24</small><button id="whoB"></button></div>
 <div class="tabs"><button data-tab="list">지시서 목록</button><button data-tab="out">출고 관리</button></div></header>
 <div id="flt" hidden><div class="f1"><label>거점</label><select id="fc"></select></div><div class="f2"><label>기간</label><input type="date" id="ff"><span style="text-align:center">~</span><input type="date" id="ft"></div><div class="f3"><button class="b p" id="fg">조회</button><button class="b" data-q="0">오늘</button><button class="b" data-q="1">내일</button><button class="b" id="fr">새로고침</button></div></div>
 <main id="m"><div class="msg">여는 중…</div></main><div id="busy" hidden>최신 내용 확인 중…</div>
@@ -196,7 +196,7 @@ async function printDoc(r,k){if(!needWho())return;
  const kind=k==='wo'?'출고':'회수';
  if(!BR){dlg(`<h3>${kind} 운송장 인쇄</h3><div class="mu" style="margin-top:6px">운송장은 루티에서 출력합니다. <b>루티에 로그인된 PC</b>에서 루티 화면의 <b>피킹지시서 도구 → [관리 페이지]</b>로 이 화면을 열면 [${kind} 운송장] 버튼으로 바로 출력됩니다.</div><div class="act" style="justify-content:flex-end"><button class="b p" data-x>확인</button></div>`);return}
  const id='w'+Date.now();BR.pend[id]={r,k};$('#busy').hidden=false;$('#busy').textContent=kind+' 운송장을 루티에서 불러오는 중…';
- BR.win.postMessage({t:'tc-wb',id,kind:k,no:r.M.no,date:r.M.date,center:r.M.center,w:r.M.lines.flatMap(g=>g.w),cars:[...new Set(r.M.lines.map(g=>g.on))]},'*')}
+ BR.win.postMessage({t:'tc-wb',id,kind:k,no:r.M.no,date:r.M.date,center:r.M.center,w:r.M.lines.flatMap(g=>g.w),cars:[...new Set(r.M.lines.map(g=>g.on))],veh:[...new Set(r.M.lines.map(g=>g.veh))]},'*')}
 window.addEventListener('message',e=>{const d=e.data||{};
  if(d.t==='tc-hello'&&e.source===window.parent&&window.parent!==window){BR={win:e.source,pend:{}};if(d.key){KEY=d.key}if(d.who&&!WHO){WHO=d.who;ls('who',WHO);head()}document.documentElement.classList.add('br');if(!LOADED){LOADED=false;load()}return}
  if(d.t==='tc-tab'&&BR){TAB=d.tab;draw();return}
