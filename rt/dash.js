@@ -1,4 +1,4 @@
-/* 루티 주문현황 대시보드 v39 · 2026-11-25 — 루티 관리자 화면에서 로더 북마크로 불러 씀 */
+/* 루티 주문현황 대시보드 v40 · 2026-11-25 — 루티 관리자 화면에서 로더 북마크로 불러 씀 */
 (function(){function dash(){
 const API='https://api-prod.flowfix.co.kr/api/v1/admin/orders',SELLER=62,SUP='https://api-prod.flowfix.co.kr/api/v1/suppliers',CK='flowfix-admin-access-token';
 const WS={PENDING_RECEIPT:'접수대기',RECEIPT_CONFIRMED:'접수확정',GATHERING_INBOUND_COMPLETED:'집하입고완료',INBOUND_COMPLETED:'입고완료',DRIVER_OUTBOUND_WAITING:'기사출고대기',CENTER_OUTBOUND_COMPLETED:'센터출고',DRIVER_OUTBOUND_COMPLETED:'기사출고',WORK_IN_PROGRESS:'작업중',WORK_COMPLETED:'작업완료',COLLECTING:'회수중',COLLECTION_COMPLETED:'회수완료',RETURN_COMPLETED:'반납완료',CANCELLED:'취소'};
@@ -73,7 +73,7 @@ tr.now td{background:var(--soft)}tr.bad td:first-child{color:var(--crit)}
 .pr.crit{border-color:var(--crit);background:var(--critbg)}.pr.crit b{color:var(--crit)}.pr.warn{border-color:var(--warn);background:var(--warnbg)}.pr.warn b{color:var(--warn)}.pr.none b{color:var(--mute);font-size:13px;font-weight:500}
 .up{color:var(--crit)}.dn{color:var(--good)}
 .ex{display:flex;flex-wrap:wrap;gap:4px 8px;align-items:center;padding:6px 0;border-top:1px solid var(--line);font-size:12.5px}.ex b{margin-left:auto}.ex small{flex-basis:100%;color:var(--mute);font-size:11px}
-.num{border:0;background:none;padding:0;font:inherit;color:inherit;cursor:pointer;text-decoration:underline dotted;text-underline-offset:3px}.num:hover{color:var(--acc)}#ddl{scroll-margin-top:56px}#ddl td,#ddl th{text-align:left}#ddl h2 .lnk{font-size:12.5px}.bd td .num{text-decoration:none}.bd td .num:hover{text-decoration:underline}.kpi .num,.pr .num{text-decoration:none}.kpi .num:hover,.pr .num:hover{text-decoration:underline}.num.up{color:var(--crit)}
+.num{border:0;background:none;padding:0;font:inherit;color:inherit;cursor:pointer;text-decoration:underline dotted;text-underline-offset:3px}.num:hover{color:var(--acc)}#ddl td,#ddl th{text-align:left}#pane{position:fixed;left:0;right:0;bottom:0;height:46vh;z-index:30;background:var(--bg);border-top:2px solid var(--acc);box-shadow:0 -10px 30px rgba(20,24,50,.16);display:flex;flex-direction:column}body.pnbig #pane{height:86vh}body.pnon main{padding-bottom:calc(46vh + 24px)}body.pnbig main{padding-bottom:calc(86vh + 24px)}#pane #ddl{padding:0;border:0;display:flex;flex-direction:column;height:100%;min-height:0}#pane h2.ph{margin:0;padding:9px max(20px,calc((100vw - 1320px)/2 + 20px));border-bottom:1px solid var(--line);align-items:center;gap:6px 10px}#pane h2.ph small{font-size:12px}#pane h2.ph .sp{flex:1}#pane h2.ph button{font-size:12.5px;font-weight:600;border:1px solid var(--line);border-radius:6px;padding:3px 10px;background:var(--bg);color:var(--ink);cursor:pointer}#pane h2.ph button:hover{border-color:var(--acc);color:var(--acc)}#pane .pb{flex:1;min-height:0;overflow:auto;padding:8px max(20px,calc((100vw - 1320px)/2 + 20px)) 16px}#pane .pb .tw{overflow:visible}#pane thead th{position:sticky;top:-8px;background:var(--bg);z-index:1}.num.on{outline:2px solid var(--acc);outline-offset:1px;border-radius:4px;color:var(--acc)}.bd td .num{text-decoration:none}.bd td .num:hover{text-decoration:underline}.kpi .num,.pr .num{text-decoration:none}.kpi .num:hover,.pr .num:hover{text-decoration:underline}.num.up{color:var(--crit)}
 .lnk{border:0;background:none;color:var(--acc);padding:0;font-weight:600}
 .pill{display:inline-block;font-size:11px;font-weight:600;padding:1px 7px;border-radius:999px;background:var(--sub);color:var(--ink2)}.pill.crit{background:var(--critbg);color:var(--crit)}.pill.now{background:var(--acc);color:#fff}
 .rate{display:inline-flex;align-items:center;gap:8px;font-size:12px;font-weight:600}.rate i{display:inline-block;width:80px;height:8px;border-radius:4px;background:var(--sub);overflow:hidden}.rate u{display:block;height:100%;background:var(--good)}
@@ -87,7 +87,7 @@ tr.now td{background:var(--soft)}tr.bad td:first-child{color:var(--crit)}
 .chk{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px}.chk b{display:block;font-size:18px}.chk small{color:var(--mute);font-size:11.5px}
 @media print{header .ctl,.tabs{display:none}.tp[hidden]{display:block!important}.tp h3{display:block}}`;
 document.head.insertAdjacentHTML('beforeend','<meta name="viewport" content="width=device-width,initial-scale=1"><style>'+CSS+'</style>');
-document.body.innerHTML='<header><b>루티 현황</b><span id="ver" title="대시보드 버전">v39 · 2026-11-25</span><div class="ctl"><label>거래처 <select id="sel"></select></label><label>접수일 <input type="date" id="df"> ~ <input type="date" id="dt"></label><button id="dx" title="전체 기간 조회 — 서버 부담이 커서 마스터 관리자 비밀번호가 필요합니다">전체 🔒</button><label title="센터를 고르면 그 센터만 서버에서 받아옵니다">센터 <select id="cen"></select></label></div><span id="pb" hidden><i></i></span><span id="stamp"><i></i>불러오는 중…</span><div class="ctl"><label>자동 <select id="iv"><option value="0">끄기</option><option value="30">30분</option><option value="60">60분</option></select></label><button id="snap">스냅샷 저장</button><button class="pri" id="re">새로고침</button></div></header><main id="app"></main>';
+document.body.innerHTML='<header><b>루티 현황</b><span id="ver" title="대시보드 버전">v40 · 2026-11-25</span><div class="ctl"><label>거래처 <select id="sel"></select></label><label>접수일 <input type="date" id="df"> ~ <input type="date" id="dt"></label><button id="dx" title="전체 기간 조회 — 서버 부담이 커서 마스터 관리자 비밀번호가 필요합니다">전체 🔒</button><label title="센터를 고르면 그 센터만 서버에서 받아옵니다">센터 <select id="cen"></select></label></div><span id="pb" hidden><i></i></span><span id="stamp"><i></i>불러오는 중…</span><div class="ctl"><label>자동 <select id="iv"><option value="0">끄기</option><option value="30">30분</option><option value="60">60분</option></select></label><button id="snap">스냅샷 저장</button><button class="pri" id="re">새로고침</button></div></header><main id="app"></main>';
 const $=s=>document.querySelector(s);
 $('#iv').value=String(S.min);
 S.to=today();S.from=addD(S.to,-10);$('#df').value=S.from;$('#dt').value=S.to;
@@ -326,7 +326,16 @@ function draw(){
  if(S.dd){const e=DD[S.dd.k],L=(e?e.rows.slice():[]).sort((a,b)=>(a.ap<b.ap?-1:a.ap>b.ap?1:0)||(a.wb<b.wb?-1:a.wb>b.wb?1:0)),MAX=500,all=!S.seller;if(e)S.dd.l=e.l;S.cp=[...new Set(L.map(r=>r.wb).filter(Boolean))];
   h+='<section id="ddl"><h2>'+esc(S.dd.l)+' <small>운송장 '+f(L.length)+'건'+(e&&e.c!==L.length?' (주문 '+f(e.c)+'건)':'')+(L.length>MAX?' 중 약속일 빠른 순 '+MAX+'건 표시':'')+' · '+(S.last?S.last.toLocaleTimeString('ko-KR',{hour12:false})+' 기준':'')+'</small>'+(L.length?'<button class="lnk" data-act="cp">운송장번호 복사</button>':'')+'<button class="lnk" data-act="ddx">닫기</button></h2>'+
   (L.length?'<div class="tw"><table class="dtt"><thead><tr><th>운송장번호</th><th>주문번호</th><th>판매처</th><th>센터</th><th>수취인</th><th>품목</th><th>작업유형</th><th>약속일</th><th>지정일</th><th>주문상태</th><th>운송장상태</th><th>배정·일정</th><th>배정 기사</th><th>기사배정일</th><th>출고일</th><th>완료일</th><th>완료 기사</th><th>접수일</th><th>주문일</th></tr></thead><tbody>'+L.slice(0,MAX).map(r=>'<tr><td>'+esc(r.wb||'미발번')+'</td><td>'+esc(r.on||'-')+'</td><td>'+esc(r.v)+'</td><td>'+esc(r.c)+'</td><td>'+esc(r.rc||'-')+'</td><td>'+esc(r.p)+'</td><td>'+esc(r.m)+'</td><td>'+esc(r.ap||'미입력')+'</td><td>'+esc(r.rq||'-')+(r.rq&&r.rq!==r.ap?' <span class="pill crit">불일치</span>':'')+'</td><td>'+esc(OS[r.o]||r.o||'-')+'</td><td>'+esc(wsl(r.w)||'-')+'</td><td>'+(r.x?'취소':!r.a?'미배정':!r.s?'일정미확정':'일정확정')+'</td><td>'+esc(r.mdn||r.d||'-')+'</td><td>'+esc(r.ad||'-')+'</td><td>'+esc(r.od||'-')+'</td><td>'+esc(r.wd||'-')+'</td><td>'+esc(r.cd||'-')+'</td><td>'+esc(r.dt||'-')+'</td><td>'+esc(r.ord||'-')+'</td></tr>').join('')+'</tbody></table></div>':'<p class="note">지금은 해당 건이 없습니다.</p>')+'</section>'}
- $('#app').innerHTML=h.replace(/\u0001/g,U);if(S.go){S.go=false;const el=$('#ddl');if(el)el.scrollIntoView({block:'start',behavior:'smooth'})}tick()}
+ $('#app').innerHTML=h.replace(/\u0001/g,U);S.go=false;pane();tick()}
+function pane(){const sec=$('#ddl');document.body.classList.toggle('pnon',!!sec);document.body.classList.toggle('pnbig',!!(sec&&S.pnBig));if(!sec)return;
+ const P=document.createElement('div');P.id='pane';P.setAttribute('role','region');P.setAttribute('aria-label','운송장 내역');sec.parentNode.insertBefore(P,sec);P.appendChild(sec);
+ const h2=sec.querySelector('h2');h2.classList.add('ph');const pb=document.createElement('div');pb.className='pb';while(h2.nextSibling)pb.appendChild(h2.nextSibling);sec.appendChild(pb);
+ h2.querySelectorAll('.lnk').forEach(b=>{b.classList.remove('lnk');if(b.dataset.act==='ddx'){b.textContent='✕ 닫기';b.title='닫기 (Esc)'}});
+ const sp=document.createElement('span');sp.className='sp';const cp=h2.querySelector('[data-act=cp]'),x=h2.querySelector('[data-act=ddx]');h2.insertBefore(sp,cp||x);
+ const big=document.createElement('button');big.dataset.act='big';big.textContent=S.pnBig?'⤡ 작게':'⤢ 크게';h2.insertBefore(big,x);
+ if(S.ddBack&&S.ddBack.length){const bk=document.createElement('button');bk.dataset.act='back';bk.title='이전 목록';bk.textContent='← 뒤로';h2.insertBefore(bk,h2.firstChild)}
+ if(S.dd)document.querySelectorAll('[data-dd]').forEach(b=>{if(b.dataset.dd===S.dd.k)b.classList.add('on')})}
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&S.dd){S.dd=null;S.ddBack=[];draw()}});
 function tick(){const el=$('#stamp'),pb=$('#pb');if(!el)return;
  if(S.busy){const cur=LP.plan.find(k=>LP.st[k].s==='now')||LP.plan.find(k=>LP.st[k].s==='wt')||'',x=LP.st[cur]||{},pc=lpPct();
   el.className='busy';el.innerHTML='<button class="stopx" data-stop="1" title="불러오기 중단">중단</button><span class="ldsp"></span>불러오는 중'+(cur?'<span class="ldx"> · '+esc(cur)+(x.t>1?' '+Math.min(x.d+1,x.t)+'/'+x.t:'')+'</span>':'')+' · '+pc+'%';el.title=cur;
@@ -345,8 +354,10 @@ $('#app').onclick=e=>{const b=e.target.closest('button');if(!b)return;
  if(b.dataset.seg){S[b.dataset.seg]=b.dataset.v==='1';S.dd=null;reset();draw()}
  else if(b.dataset.p!==undefined){S.prod=b.dataset.p;reset();draw()}
  else if(b.dataset.tab){S.tab=b.dataset.tab;try{localStorage.setItem('rcDashTab',S.tab)}catch(x){}draw()}
- else if(b.dataset.dd!==undefined){const k=b.dataset.dd;S.dd={k:k,l:(S.DD[k]||{}).l||''};S.go=true;draw()}
- else if(b.dataset.act==='ddx'){S.dd=null;draw()}
+ else if(b.dataset.dd!==undefined){const k=b.dataset.dd;if(!S.ddBack)S.ddBack=[];if(S.dd&&S.dd.k!==k)S.ddBack.push(S.dd);else if(!S.dd)S.ddBack=[];S.dd={k:k,l:(S.DD[k]||{}).l||''};draw()}
+  else if(b.dataset.act==='big'){S.pnBig=!S.pnBig;draw()}
+  else if(b.dataset.act==='back'){S.dd=(S.ddBack||[]).pop()||null;draw()}
+ else if(b.dataset.act==='ddx'){S.dd=null;S.ddBack=[];draw()}
  else if(b.dataset.act==='cp'){const t=S.cp.join('\n'),ok=()=>{b.textContent='복사됨 ('+S.cp.length+'건)'};if(navigator.clipboard)navigator.clipboard.writeText(t).then(ok,()=>{});else{const a=document.createElement('textarea');a.value=t;document.body.appendChild(a);a.select();document.execCommand('copy');a.remove();ok()}}
  else if(b.dataset.act==='full'){load(true)}
  else if(b.id==='vx'){S.d1=S.d2='';S.dvRows=null;S.dvMsg='';draw()}};
@@ -363,7 +374,7 @@ $('#cen').onchange=async e=>{const v=e.target.value;if(S.busy){await stopLoad();
  if((S.lc===''&&S.center)||(S.lc!==null&&S.lc===sc())){draw();return}
  load()};
 $('#iv').onchange=e=>{S.min=+e.target.value;try{localStorage.setItem('rcDashMin2',String(S.min))}catch(x){}arm();if(S.rows.length)draw();else tick()};
-$('#snap').onclick=()=>{const d=document.documentElement.cloneNode(true);d.querySelectorAll('script,.ctl,.tabs,.lnk,.dv,#ddl,#pb').forEach(n=>n.remove());d.querySelectorAll('.tp').forEach(n=>{n.removeAttribute('hidden');const t=n.querySelector('h3');if(t)t.style.display='block'});
+$('#snap').onclick=()=>{const d=document.documentElement.cloneNode(true);d.querySelectorAll('script,.ctl,.tabs,.lnk,.dv,#ddl,#pane,#pb').forEach(n=>n.remove());d.querySelectorAll('.tp').forEach(n=>{n.removeAttribute('hidden');const t=n.querySelector('h3');if(t)t.style.display='block'});
  const st=d.querySelector('#stamp');if(st&&S.last)st.textContent='스냅샷 '+S.last.toLocaleString('ko-KR',{hour12:false})+(S.center?' · '+S.center:'');
  const a=document.createElement('a'),p=n=>String(n).padStart(2,'0'),t=S.last||new Date();a.href=URL.createObjectURL(new Blob(['<!doctype html>'+d.outerHTML],{type:'text/html'}));a.download=sname().replace(/[^0-9A-Za-z가-힣]+/g,'')+'_대시보드_'+t.getFullYear()+p(t.getMonth()+1)+p(t.getDate())+'_'+p(t.getHours())+p(t.getMinutes())+'.html';a.click()};
 fillSel();const ready=sellers();
