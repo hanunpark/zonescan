@@ -1,6 +1,6 @@
-/* 교체출고 사전피킹 지시서 v44 · 2026-11-25 — 루티 관리자 화면에서 북마크로 불러 씀 */
+/* 교체출고 사전피킹 지시서 v45 · 2026-11-25 — 루티 관리자 화면에서 북마크로 불러 씀 */
 (function(){function pick(){
-const API='https://api-prod.flowfix.co.kr/api/v1/admin/orders',CK='flowfix-admin-access-token',VER='v44 · 2026-11-25',MOB='https://hanunpark.github.io/zonescan/pick.html',GAS0='https://script.google.com/macros/s/AKfycby33E3x2WOVkZd_Kh4LSumPMT-KKbNa292E9WNKKTdx40WjCxsVgpSTq2R7oJby6XDF/exec';
+const API='https://api-prod.flowfix.co.kr/api/v1/admin/orders',CK='flowfix-admin-access-token',VER='v45 · 2026-11-25',MOB='https://hanunpark.github.io/zonescan/pick.html',GAS0='https://script.google.com/macros/s/AKfycby33E3x2WOVkZd_Kh4LSumPMT-KKbNa292E9WNKKTdx40WjCxsVgpSTq2R7oJby6XDF/exec';
 const $=s=>document.querySelector(s),esc=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const LS=(k,v)=>{try{if(v===undefined)return JSON.parse(localStorage.getItem('tcpk_'+k)||'null');if(v===null)localStorage.removeItem('tcpk_'+k);else localStorage.setItem('tcpk_'+k,JSON.stringify(v))}catch(e){return null}};
 const pad=n=>String(n).padStart(2,'0'),ymd=d=>d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());
@@ -127,10 +127,10 @@ function cls(r){const w=r.waybillStatus,o=r.orderStatus;
  if(r.cancelRequestedByType)return 'creq';
  if(OKS.indexOf(w)>=0||(w==='RECEIPT_CONFIRMED'&&atC(r)))return 'ok';return 'noinv'}
 const atC=r=>String(r.inventoryLocation||'').replace(/^FDC\s*/,'').trim()===(r.centerName||S.center);
-/* '보관품 출고' 판정 — 루티 화면의 '공급처' 칸 = API purchaseSupplierName (2026-11-24 확인; supplierName은 업체·고객사). 그 항목이 없는 자료(옛 형식 등)일 때만 다른 문자 항목에서 정확히 같은 값을 찾는다 */
-function isKeep(r){const t=v=>typeof v==='string'&&v.replace(/\s/g,'')==='보관품출고';if('purchaseSupplierName' in r)return t(r.purchaseSupplierName);for(const k in r){if(t(r[k]))return true}return false}
+/* 보관품 판정 — 루티 화면의 '판매지점' 칸 = API salesBranch (2026-11-25 확인, 그리드 열 정의 accessorKey). 값이 "보관품"이면 보관품 재출고로 보고 운송장번호(외부)를 반전 표기. 공급처(purchaseSupplierName)는 더 이상 보지 않음 */
+function isKeep(r){return typeof r.salesBranch==='string'&&r.salesBranch.replace(/\s/g,'')==='보관품'} // 2026-11-25 규칙 변경: 루티 '판매지점'(salesBranch) = "보관품" 이면 운송장번호(외부) 표기 (이전: 공급처 purchaseSupplierName = '보관품 출고')
 function slim(r){const m=r.orderSpecificationMetadata||{},md=r.mainDriver&&r.mainDriver.name||'';
- /* 공급처가 '보관품 출고'면 보관품 재출고 — 표기는 운송장번호(외부), 색 반전 */
+ /* 판매지점이 '보관품'이면 보관품 재출고 — 표기는 운송장번호(외부), 색 반전 */
  return{wb:String(r.waybillNumber||''),kp:isKeep(r),xw:String(r.externalWaybillNumber||''),on:r.orderNumber||'',veh:m.vehicleNumber||r.recipientName||'',model:m.vehicleModel||'',sup:r.supplierName||'',pn:r.productName||'',sku:r.sku||'',zone:r.zoneCode||'',
   drv:md,ad:String(r.orderAppointedDate||'').slice(0,10),cen:r.centerName||'',sub:r.hasSubDriver==='Y',ws:r.waybillStatus||'',k:cls(r),ri:r.waybillStatus==='RECEIPT_CONFIRMED'}}
 const hk=()=>'h_'+S.center+'_'+S.date,histL=()=>LS(hk())||[];
