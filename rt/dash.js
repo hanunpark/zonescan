@@ -1,9 +1,9 @@
-/* 루티 주문현황 대시보드 v40 · 2026-11-25 — 루티 관리자 화면에서 로더 북마크로 불러 씀 */
+/* 루티 주문현황 대시보드 v41 · 2026-11-26 — 루티 관리자 화면에서 로더 북마크로 불러 씀 */
 (function(){function dash(){
 const API='https://api-prod.flowfix.co.kr/api/v1/admin/orders',SELLER=62,SUP='https://api-prod.flowfix.co.kr/api/v1/suppliers',CK='flowfix-admin-access-token';
 const WS={PENDING_RECEIPT:'접수대기',RECEIPT_CONFIRMED:'접수확정',GATHERING_INBOUND_COMPLETED:'집하입고완료',INBOUND_COMPLETED:'입고완료',DRIVER_OUTBOUND_WAITING:'기사출고대기',CENTER_OUTBOUND_COMPLETED:'센터출고',DRIVER_OUTBOUND_COMPLETED:'기사출고',WORK_IN_PROGRESS:'작업중',WORK_COMPLETED:'작업완료',COLLECTING:'회수중',COLLECTION_COMPLETED:'회수완료',RETURN_COMPLETED:'반납완료',CANCELLED:'취소'};
 const OS={PENDING_RECEIPT:'접수대기',GATHERING_WAITING:'집하대기',GATHERING_CONFIRMED:'집하확정',DIRECT_RECEIPT:'직송접수',RECEIPT_COMPLETED:'접수완료',RECEIPT_FINALIZED:'직송확정',PURCHASE_ORDER_REQUESTED:'발주요청',PURCHASE_ORDER_CONFIRMED:'발주확정',CANCEL_REQUESTED:'취소요청',CANCELLATION_REQUESTED:'취소요청',RESCHEDULED:'재약속',COMPLETED:'완료',CANCELLED:'취소'};
-const PAST_OUT=['DRIVER_OUTBOUND_COMPLETED','WORK_IN_PROGRESS','WORK_COMPLETED','COLLECTING','COLLECTION_COMPLETED','RETURN_COMPLETED'];
+const LKD=[10,3];const PAST_OUT=['DRIVER_OUTBOUND_COMPLETED','WORK_IN_PROGRESS','WORK_COMPLETED','COLLECTING','COLLECTION_COMPLETED','RETURN_COMPLETED'];
 const TYPES=[['out','출고·설치'],['col','회수']];
 const WK=['일','월','화','수','목','금','토'];
 const CR=/^(DELIVERY|COURIER|PARCEL|CARRIER|SHIPPING|SHIPMENT)[A-Z_]*(COMPLETED|DELIVERED)$/,wsl=k=>WS[k]||(CR.test(k)?'택배사완료':k);
@@ -73,7 +73,7 @@ tr.now td{background:var(--soft)}tr.bad td:first-child{color:var(--crit)}
 .pr.crit{border-color:var(--crit);background:var(--critbg)}.pr.crit b{color:var(--crit)}.pr.warn{border-color:var(--warn);background:var(--warnbg)}.pr.warn b{color:var(--warn)}.pr.none b{color:var(--mute);font-size:13px;font-weight:500}
 .up{color:var(--crit)}.dn{color:var(--good)}
 .ex{display:flex;flex-wrap:wrap;gap:4px 8px;align-items:center;padding:6px 0;border-top:1px solid var(--line);font-size:12.5px}.ex b{margin-left:auto}.ex small{flex-basis:100%;color:var(--mute);font-size:11px}
-.num{border:0;background:none;padding:0;font:inherit;color:inherit;cursor:pointer;text-decoration:underline dotted;text-underline-offset:3px}.num:hover{color:var(--acc)}#ddl td,#ddl th{text-align:left}#pane{position:fixed;left:0;right:0;bottom:0;height:46vh;z-index:30;background:var(--bg);border-top:2px solid var(--acc);box-shadow:0 -10px 30px rgba(20,24,50,.16);display:flex;flex-direction:column}body.pnbig #pane{height:86vh}body.pnon main{padding-bottom:calc(46vh + 24px)}body.pnbig main{padding-bottom:calc(86vh + 24px)}#pane #ddl{padding:0;border:0;display:flex;flex-direction:column;height:100%;min-height:0}#pane h2.ph{margin:0;padding:9px max(20px,calc((100vw - 1320px)/2 + 20px));border-bottom:1px solid var(--line);align-items:center;gap:6px 10px}#pane h2.ph small{font-size:12px}#pane h2.ph .sp{flex:1}#pane h2.ph button{font-size:12.5px;font-weight:600;border:1px solid var(--line);border-radius:6px;padding:3px 10px;background:var(--bg);color:var(--ink);cursor:pointer}#pane h2.ph button:hover{border-color:var(--acc);color:var(--acc)}#pane .pb{flex:1;min-height:0;overflow:auto;padding:8px max(20px,calc((100vw - 1320px)/2 + 20px)) 16px}#pane .pb .tw{overflow:visible}#pane thead th{position:sticky;top:-8px;background:var(--bg);z-index:1}.num.on{outline:2px solid var(--acc);outline-offset:1px;border-radius:4px;color:var(--acc)}.bd td .num{text-decoration:none}.bd td .num:hover{text-decoration:underline}.kpi .num,.pr .num{text-decoration:none}.kpi .num:hover,.pr .num:hover{text-decoration:underline}.num.up{color:var(--crit)}
+.num{border:0;background:none;padding:0;font:inherit;color:inherit;cursor:pointer;text-decoration:underline dotted;text-underline-offset:3px}.num:hover{color:var(--acc)}#ddl td,#ddl th{text-align:left}#pane{position:fixed;left:0;right:0;bottom:0;height:46vh;z-index:30;background:var(--bg);border-top:2px solid var(--acc);box-shadow:0 -10px 30px rgba(20,24,50,.16);display:flex;flex-direction:column}body.pnbig #pane{height:86vh}body.pnon main{padding-bottom:calc(46vh + 24px)}body.pnbig main{padding-bottom:calc(86vh + 24px)}#pane #ddl{padding:0;border:0;display:flex;flex-direction:column;height:100%;min-height:0}#pane h2.ph{margin:0;padding:9px max(20px,calc((100vw - 1320px)/2 + 20px));border-bottom:1px solid var(--line);align-items:center;gap:6px 10px}#pane h2.ph small{font-size:12px}#pane h2.ph .sp{flex:1}#pane h2.ph button{font-size:12.5px;font-weight:600;border:1px solid var(--line);border-radius:6px;padding:3px 10px;background:var(--bg);color:var(--ink);cursor:pointer}#pane h2.ph button:hover{border-color:var(--acc);color:var(--acc)}#pane .pb{flex:1;min-height:0;overflow:auto;padding:8px max(20px,calc((100vw - 1320px)/2 + 20px)) 16px}#pane .pb .tw{overflow:visible}#pane thead th{position:sticky;top:-8px;background:var(--bg);z-index:1}.num.on{outline:2px solid var(--acc);outline-offset:1px;border-radius:4px;color:var(--acc)}.bd td .num{text-decoration:none}.bd td .num:hover{text-decoration:underline}.kpi .num,.pr .num{text-decoration:none}.kpi .num:hover,.pr .num:hover{text-decoration:underline}.num.up{color:var(--crit)}.dtt td.up{color:var(--crit);font-weight:600}
 .lnk{border:0;background:none;color:var(--acc);padding:0;font-weight:600}
 .pill{display:inline-block;font-size:11px;font-weight:600;padding:1px 7px;border-radius:999px;background:var(--sub);color:var(--ink2)}.pill.crit{background:var(--critbg);color:var(--crit)}.pill.now{background:var(--acc);color:#fff}
 .rate{display:inline-flex;align-items:center;gap:8px;font-size:12px;font-weight:600}.rate i{display:inline-block;width:80px;height:8px;border-radius:4px;background:var(--sub);overflow:hidden}.rate u{display:block;height:100%;background:var(--good)}
@@ -87,7 +87,7 @@ tr.now td{background:var(--soft)}tr.bad td:first-child{color:var(--crit)}
 .chk{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px}.chk b{display:block;font-size:18px}.chk small{color:var(--mute);font-size:11.5px}
 @media print{header .ctl,.tabs{display:none}.tp[hidden]{display:block!important}.tp h3{display:block}}`;
 document.head.insertAdjacentHTML('beforeend','<meta name="viewport" content="width=device-width,initial-scale=1"><style>'+CSS+'</style>');
-document.body.innerHTML='<header><b>루티 현황</b><span id="ver" title="대시보드 버전">v40 · 2026-11-25</span><div class="ctl"><label>거래처 <select id="sel"></select></label><label>접수일 <input type="date" id="df"> ~ <input type="date" id="dt"></label><button id="dx" title="전체 기간 조회 — 서버 부담이 커서 마스터 관리자 비밀번호가 필요합니다">전체 🔒</button><label title="센터를 고르면 그 센터만 서버에서 받아옵니다">센터 <select id="cen"></select></label></div><span id="pb" hidden><i></i></span><span id="stamp"><i></i>불러오는 중…</span><div class="ctl"><label>자동 <select id="iv"><option value="0">끄기</option><option value="30">30분</option><option value="60">60분</option></select></label><button id="snap">스냅샷 저장</button><button class="pri" id="re">새로고침</button></div></header><main id="app"></main>';
+document.body.innerHTML='<header><b>루티 현황</b><span id="ver" title="대시보드 버전">v41 · 2026-11-26</span><div class="ctl"><label>거래처 <select id="sel"></select></label><label>접수일 <input type="date" id="df"> ~ <input type="date" id="dt"></label><button id="dx" title="전체 기간 조회 — 서버 부담이 커서 마스터 관리자 비밀번호가 필요합니다">전체 🔒</button><label title="센터를 고르면 그 센터만 서버에서 받아옵니다">센터 <select id="cen"></select></label></div><span id="pb" hidden><i></i></span><span id="stamp"><i></i>불러오는 중…</span><div class="ctl"><label>자동 <select id="iv"><option value="0">끄기</option><option value="30">30분</option><option value="60">60분</option></select></label><button id="snap">스냅샷 저장</button><button class="pri" id="re">새로고침</button></div></header><main id="app"></main>';
 const $=s=>document.querySelector(s);
 $('#iv').value=String(S.min);
 S.to=today();S.from=addD(S.to,-10);$('#df').value=S.from;$('#dt').value=S.to;
@@ -129,7 +129,7 @@ async function wsFmt(codes){if(S.wf)return S.wf;if(codes.length<2)return 'each';
  return S.wf='each'}
 async function loadRange(){
  const fr=S.from||'2000-01-01',to=S.to||today(),M=new Map();
- lpStart(S.from?['기간 접수분','이전 미종결','오늘·전일 현황']:['기간 접수분','오늘·전일 현황']);
+ lpStart(S.from?['기간 접수분','이전 미종결','오늘·전일 현황','연계주문 점검']:['기간 접수분','오늘·전일 현황','연계주문 점검']);
  let dtp=S.rdt||'receiptDate';const pd=()=>dtp==='orderDate'?14:7,qa=()=>qs()+'&from='+(S.from?addD(fr,-pd()):fr)+'&to='+addD(to,pd())+'&dateType='+dtp;
  try{await pull(qa(),'기간 접수분',M)}catch(e){if(e.message==='LOGIN'||e.message==='CENTER'||dtp==='orderDate')throw e;dtp='orderDate';M.clear();await pull(qa(),'기간 접수분',M)}
  S.rdt=dtp;
@@ -146,9 +146,12 @@ async function loadRange(){
  S.cache=null;S.rows=[...M.values()];
  const inN=S.rows.filter(r=>r.dt&&r.dt>=fr&&r.dt<=to).length,oldN=S.from?S.rows.filter(r=>r.dt&&r.dt<fr&&!r.x&&!r.e).length:0;
  S.pgInfo=leak?'서버 기간 조회가 적용되지 않아 전체를 받음':'기간 접수 '+f(inN)+'건'+(S.from?' + 이전 미종결 '+f(oldN)+'건':'')+' (받은 양 '+f(S.rows.length)+'건)'+(dtp==='orderDate'?' · 서버가 접수일 조회를 받지 않아 주문일로 넓게 받아 접수일로 거름':'')}
+async function lkLoad(){const t0=today(),a=addD(t0,-LKD[0]),b=addD(t0,LKD[1]),out=[];S.lkRows=null;
+ try{let p=1,tp=1,ok=true;do{stp('연계주문 점검',p-1,tp);if(p>1)await new Promise(z=>setTimeout(z,300));chk();const d=await api('',qs()+'&from='+a+'&to='+b+'&dateType=orderAppointedDate&page='+p);tp=Math.min(d.totalPages||1,30);LP.n+=(d.items||[]).length;const sl=(d.items||[]).map(slim);if(sl.some(r=>!r.ap||r.ap<a||r.ap>b)){ok=false;break}out.push(...sl);p++}while(p<=tp);
+  stp('연계주문 점검',1,1);if(ok)S.lkRows=out}catch(e){if(e.message==='LOGIN'||e.message==='CENTER'||e.message==='ABORT'||e.name==='AbortError')throw e}}
 async function loadAll(force){
  S.tdRows=null;
- lpStart(['전체 데이터']);stp('전체 데이터',0,1);
+ lpStart(['전체 데이터','연계주문 점검']);stp('전체 데이터',0,1);
  const d1=await api('',qs()+'&page=1'),tp=Math.min(d1.totalPages||1,200),T=d1.totalItems||0,sz=d1.pageSize||1000,top=(d1.items||[])[0];
  const full=force===true||needFull()||!top||+top.rowNum!==T;
  let pages=[];
@@ -161,8 +164,8 @@ async function loadAll(force){
  S.pgInfo=full?'전체 '+tp+'페이지 받음':tp+'페이지 중 '+(pages.length+1)+'페이지만 받음'}
 async function load(force){
  if(S.busy)return;S.busy=true;S.err='';S.ac=new AbortController();$('#re').disabled=true;lpStart([]);if(S.rows.length)$('#app').classList.add('dim');tick();
- try{const run=()=>S.from||S.to?loadRange():loadAll(force);try{await run()}catch(e){if(e.message!=='CENTER')throw e;S.cache=null;await run()}
-  fixA(S.rows);fixA(S.tdRows);fixA(S.dvRows);S.lc=sc();if(S.dvRows&&S.dvC!==S.lc)setTimeout(detail,0);S.last=new Date();S.fresh=true;S.doneAt=Date.now();setTimeout(tick,2600)}
+ try{const run=async()=>{await (S.from||S.to?loadRange():loadAll(force));await lkLoad()};try{await run()}catch(e){if(e.message!=='CENTER')throw e;S.cache=null;await run()}
+  fixA(S.rows);fixA(S.tdRows);fixA(S.dvRows);fixA(S.lkRows);S.lc=sc();if(S.dvRows&&S.dvC!==S.lc)setTimeout(detail,0);S.last=new Date();S.fresh=true;S.doneAt=Date.now();setTimeout(tick,2600)}
  catch(e){const ab=e.name==='AbortError'||e.message==='ABORT';if(ab){S.cache=null}S.err=ab?(S.rows.length?'불러오기를 중단했습니다. 화면은 이전에 받은 데이터입니다. 거래처·기간·센터를 확인한 뒤 [새로고침]을 누르세요.':'불러오기를 중단했습니다. 거래처·기간·센터를 확인한 뒤 [새로고침]을 누르세요.'):e.message==='LOGIN'?'로그인이 만료되었습니다. FlowFix 관리자 화면에 다시 로그인한 뒤 [새로고침]을 눌러주세요.':'데이터를 불러오지 못했습니다 ('+e.message+'). 이전 수치를 그대로 표시합니다.'}
  S.busy=false;S.ac=null;$('#re').disabled=false;$('#app').classList.remove('dim');arm();draw()}
 async function detail(){
@@ -218,7 +221,7 @@ function draw(){
  const stg=r=>r.g?'g':!r.a?'na':!r.s?'ns':'sc';
  const Q=issues(W,td);
  const DD={},seg=(k,on)=>'<span class="seg"><button data-seg="'+k+'" data-v="0" class="'+(on?'':'on')+'">택배 제외</button><button data-seg="'+k+'" data-v="1" class="'+(on?'on':'')+'">택배만</button></span>';
- const N=(key,label,rows,o)=>{const c=o&&o.c!=null?o.c:rows.length;if(!c)return o&&o.t?'0':'<span class="z">·</span>';DD[key]={l:(S.tk?'[택배] ':'')+label,rows:rows,c:c};
+ const N=(key,label,rows,o)=>{const c=o&&o.c!=null?o.c:rows.length;if(!c)return o&&o.t?'0':'<span class="z">·</span>';DD[key]={l:(S.tk?'[택배] ':'')+label,rows:rows,c:c,lk:!!(o&&o.lk)};
   return '<button class="num'+(o&&o.cls?' '+o.cls:'')+'" data-dd="'+esc(key)+'" title="눌러서 내역 보기">'+f(c)+'</button>'};
  const lv=r=>!r.x,F=(rows,fn)=>rows.filter(fn);
  let h=S.err?'<div class="msg">'+esc(S.err)+'</div>':'';
@@ -229,7 +232,15 @@ function draw(){
  const rem=F(R,r=>!r.x&&!r.e),unasL=F(rem,r=>!r.g&&!r.a),doneL=F(R,r=>!r.x&&r.e),outL=F(R,r=>r.t!=='col'),colL=F(R,r=>r.t==='col');
  const kpi=(l,key,rows,d,big)=>'<div class="kpi'+(big?' big':'')+'"><div class="l">'+l+'</div><div class="v">'+N('kpi:'+key,l,rows,{t:1})+'<small>\u0001</small></div><div class="d">'+d+'</div></div>';
  const ag=L=>{const a=agg(L);return '종결 '+f(a.e)+' · '+pct(a.e,a.live)+'%'};
- h+='<div class="kpis">'+kpi('남은 물량','rem',rem,'취소·종결 제외',1)+kpi('기사 미배정','una',unasL,'남은 물량의 '+pct(unasL.length,rem.length)+'%',1)+kpi('종결','done',doneL,'진도율 '+pct(T.e,T.live)+'%')+kpi('전체 운송장','all',R,'주문 '+f(orders)+'건 · 취소 '+f(T.x))+kpi('출고·설치','out',outL,ag(outL))+kpi('회수','col',colL,ag(colL))+'</div>';
+ const lkA=addD(td,-LKD[0]),lkB=addD(td,LKD[1]),nrc=x=>String(x).replace(/[\s-]/g,'').toUpperCase(),LKA=[],LKG=[];S.LK={};
+ if(!S.tk){const src=(S.lkRows||S.rows).filter(r=>(!S.center||r.c===S.center)&&!r.k&&!r.x&&r.ap&&r.ap>=lkA&&r.ap<=lkB&&r.rc&&(r.m==='교체출고'||r.m==='교체회수'));
+  for(const L of group(src,r=>r.v+'|'+nrc(r.rc)+'|'+r.ap).values()){const O=L.filter(r=>r.m==='교체출고'),C=L.filter(r=>r.m==='교체회수');if(!O.length||!C.length)continue;
+   for(const [me,ot] of [[O,C],[C,O]]){const pg=ot.filter(x=>x.g||x.e),pa=ot.filter(x=>x.a||x.g||x.e);
+    for(const r of me){if(r.g||r.e)continue;if(!r.a&&pa.length){const q=pg[0]||pa[0];S.LK[r.id]={k:'배정 누락',p:q,since:String(q.g||q.e?(q.od||q.ad||r.ap):(q.ad||r.ap)).slice(0,10)};LKA.push(r)}
+     else if(r.a&&pg.length){const q=pg[0];S.LK[r.id]={k:'출고 누락',p:q,since:String(q.od||r.ap).slice(0,10)};LKG.push(r)}}}}}
+ const lkAll=LKA.concat(LKG),lkc=lkAll.length?'up':'';
+ const lkCard=S.tk?'':'<div class="kpi lkk" title="약속일 '+lkA.slice(5)+' ~ '+lkB.slice(5)+' · 판매처·수취인(차량번호)·약속일이 같은 교체출고·교체회수 중 한쪽만 기사배정 또는 출고된 건'+(S.lkRows?'':' · 서버에서 따로 받지 못해 지금 불러온 데이터 안에서만 찾음')+'"><div class="l">연계주문 누락</div><div class="v">'+N('kpi:lk','연계주문 누락',lkAll,{t:1,lk:1,cls:lkc})+'<small>\u0001</small></div><div class="d">배정 누락 '+N('lk:a','연계주문 누락 · 배정 누락',LKA,{t:1,lk:1,cls:LKA.length?'up':''})+' · 출고 누락 '+N('lk:g','연계주문 누락 · 출고 누락',LKG,{t:1,lk:1,cls:LKG.length?'up':''})+'</div></div>';
+ h+='<div class="kpis">'+kpi('남은 물량','rem',rem,'취소·종결 제외',1)+kpi('기사 미배정','una',unasL,'남은 물량의 '+pct(unasL.length,rem.length)+'%',1)+kpi('종결','done',doneL,'진도율 '+pct(T.e,T.live)+'%')+kpi('전체 운송장','all',R,'주문 '+f(orders)+'건 · 취소 '+f(T.x))+kpi('출고·설치','out',outL,ag(outL))+kpi('회수','col',colL,ag(colL))+lkCard+'</div>';
  {const src=(S.tdRows||S.rows).filter(flt),exact=!!S.tdRows||!(S.from||S.to),yd=addD(td,-1),KS=['n','na','a','s','g','e','u','x'],KL={n:'약속 건수',na:'미배정',a:'배정',s:'일정 확정',g:'출고',e:'완료',u:'미완료',x:'취소'};
   const mkb=()=>{const o={};for(const k of KS)o[k]={c:0,r:[]};return o},ad=(b,L,n)=>{b.c+=n;for(const r of L)b.r.push(r)};
   const st=rows=>{const o=mkb();for(const r of rows){const one=[r];if(r.x){ad(o.x,one,1);continue}ad(o.n,one,1);if(r.a||r.g||r.e)ad(o.a,one,1);else ad(o.na,one,1);if(r.s||r.g||r.e)ad(o.s,one,1);if(r.g||r.e)ad(o.g,one,1);if(r.e)ad(o.e,one,1);else ad(o.u,one,1)}return o};
@@ -323,9 +334,9 @@ function draw(){
  if(!P.some(p=>p[0]===S.tab))S.tab='cen';
  h+='<section>'+(DV?'<div class="msg dvb">아래 표는 약속일 '+esc(S.d1)+' ~ '+esc(S.d2)+' 물량 '+f(DV.length)+'\u0001 기준입니다. <button class="lnk" id="vx">원래대로</button></div>':'')+'<div class="tabs">'+P.map(p=>'<button data-tab="'+p[0]+'" class="'+(p[0]===S.tab?'on':'')+'">'+p[1]+'</button>').join('')+'</div>'+P.map(p=>'<div class="tp"'+(p[0]===S.tab?'':' hidden')+'><h3>'+p[1]+'</h3>'+p[2]+'</div>').join('')+'</section>';
  S.DD=DD;S.cp=[];
- if(S.dd){const e=DD[S.dd.k],L=(e?e.rows.slice():[]).sort((a,b)=>(a.ap<b.ap?-1:a.ap>b.ap?1:0)||(a.wb<b.wb?-1:a.wb>b.wb?1:0)),MAX=500,all=!S.seller;if(e)S.dd.l=e.l;S.cp=[...new Set(L.map(r=>r.wb).filter(Boolean))];
+ if(S.dd){const e=DD[S.dd.k],LKm=!!(e&&e.lk),lki=r=>S.LK[r.id]||{k:'-',p:null,since:''},L=(e?e.rows.slice():[]).sort((a,b)=>(LKm?(lki(a).since<lki(b).since?-1:lki(a).since>lki(b).since?1:0):0)||(a.ap<b.ap?-1:a.ap>b.ap?1:0)||(a.wb<b.wb?-1:a.wb>b.wb?1:0)),MAX=500,dday=d=>d?Math.round((new Date(td+'T00:00:00')-new Date(d+'T00:00:00'))/864e5):null,all=!S.seller;if(e)S.dd.l=e.l;S.cp=[...new Set(L.map(r=>r.wb).filter(Boolean))];
   h+='<section id="ddl"><h2>'+esc(S.dd.l)+' <small>운송장 '+f(L.length)+'건'+(e&&e.c!==L.length?' (주문 '+f(e.c)+'건)':'')+(L.length>MAX?' 중 약속일 빠른 순 '+MAX+'건 표시':'')+' · '+(S.last?S.last.toLocaleTimeString('ko-KR',{hour12:false})+' 기준':'')+'</small>'+(L.length?'<button class="lnk" data-act="cp">운송장번호 복사</button>':'')+'<button class="lnk" data-act="ddx">닫기</button></h2>'+
-  (L.length?'<div class="tw"><table class="dtt"><thead><tr><th>운송장번호</th><th>주문번호</th><th>판매처</th><th>센터</th><th>수취인</th><th>품목</th><th>작업유형</th><th>약속일</th><th>지정일</th><th>주문상태</th><th>운송장상태</th><th>배정·일정</th><th>배정 기사</th><th>기사배정일</th><th>출고일</th><th>완료일</th><th>완료 기사</th><th>접수일</th><th>주문일</th></tr></thead><tbody>'+L.slice(0,MAX).map(r=>'<tr><td>'+esc(r.wb||'미발번')+'</td><td>'+esc(r.on||'-')+'</td><td>'+esc(r.v)+'</td><td>'+esc(r.c)+'</td><td>'+esc(r.rc||'-')+'</td><td>'+esc(r.p)+'</td><td>'+esc(r.m)+'</td><td>'+esc(r.ap||'미입력')+'</td><td>'+esc(r.rq||'-')+(r.rq&&r.rq!==r.ap?' <span class="pill crit">불일치</span>':'')+'</td><td>'+esc(OS[r.o]||r.o||'-')+'</td><td>'+esc(wsl(r.w)||'-')+'</td><td>'+(r.x?'취소':!r.a?'미배정':!r.s?'일정미확정':'일정확정')+'</td><td>'+esc(r.mdn||r.d||'-')+'</td><td>'+esc(r.ad||'-')+'</td><td>'+esc(r.od||'-')+'</td><td>'+esc(r.wd||'-')+'</td><td>'+esc(r.cd||'-')+'</td><td>'+esc(r.dt||'-')+'</td><td>'+esc(r.ord||'-')+'</td></tr>').join('')+'</tbody></table></div>':'<p class="note">지금은 해당 건이 없습니다.</p>')+'</section>'}
+  (L.length?'<div class="tw"><table class="dtt"><thead><tr>'+(LKm?'<th>누락 구분</th><th>연계 운송장</th><th>연계 유형·상태</th><th>연계 처리일</th><th>경과</th>':'')+'<th>운송장번호</th><th>주문번호</th><th>판매처</th><th>센터</th><th>수취인</th><th>품목</th><th>작업유형</th><th>약속일</th><th>지정일</th><th>주문상태</th><th>운송장상태</th><th>배정·일정</th><th>배정 기사</th><th>기사배정일</th><th>출고일</th><th>완료일</th><th>완료 기사</th><th>접수일</th><th>주문일</th></tr></thead><tbody>'+L.slice(0,MAX).map(r=>{const z=lki(r),q=z.p,dd=dday(z.since);return '<tr>'+(LKm?'<td><span class="pill crit">'+esc(z.k)+'</span></td><td>'+esc(q?q.wb||'미발번':'-')+'</td><td>'+esc(q?q.m+' · '+(wsl(q.w)||'-'):'-')+'</td><td>'+esc(z.since||'-')+'</td><td'+(dd>=2?' class="up"':'')+'>'+(dd==null?'-':dd>0?dd+'일':dd===0?'오늘':'D'+dd)+'</td>':'')+'<td>'+esc(r.wb||'미발번')+'</td><td>'+esc(r.on||'-')+'</td><td>'+esc(r.v)+'</td><td>'+esc(r.c)+'</td><td>'+esc(r.rc||'-')+'</td><td>'+esc(r.p)+'</td><td>'+esc(r.m)+'</td><td>'+esc(r.ap||'미입력')+'</td><td>'+esc(r.rq||'-')+(r.rq&&r.rq!==r.ap?' <span class="pill crit">불일치</span>':'')+'</td><td>'+esc(OS[r.o]||r.o||'-')+'</td><td>'+esc(wsl(r.w)||'-')+'</td><td>'+(r.x?'취소':!r.a?'미배정':!r.s?'일정미확정':'일정확정')+'</td><td>'+esc(r.mdn||r.d||'-')+'</td><td>'+esc(r.ad||'-')+'</td><td>'+esc(r.od||'-')+'</td><td>'+esc(r.wd||'-')+'</td><td>'+esc(r.cd||'-')+'</td><td>'+esc(r.dt||'-')+'</td><td>'+esc(r.ord||'-')+'</td></tr>'}).join('')+'</tbody></table></div>':'<p class="note">지금은 해당 건이 없습니다.</p>')+'</section>'}
  $('#app').innerHTML=h.replace(/\u0001/g,U);S.go=false;pane();tick()}
 function pane(){const sec=$('#ddl');document.body.classList.toggle('pnon',!!sec);document.body.classList.toggle('pnbig',!!(sec&&S.pnBig));if(!sec)return;
  const P=document.createElement('div');P.id='pane';P.setAttribute('role','region');P.setAttribute('aria-label','운송장 내역');sec.parentNode.insertBefore(P,sec);P.appendChild(sec);
