@@ -19,7 +19,10 @@ h3{margin:0 0 8px;font-size:15px}
 .v input{width:26px;height:26px;margin-top:2px;flex:none}.v b{font-size:17px}.v .p{font-size:14px}.v .mu,.mu{color:#667;font-size:13px}.v.on{opacity:.55}
 .tag{display:inline-block;font-size:12px;font-weight:700;background:#c2410c;color:#fff;border-radius:4px;padding:0 5px;margin-left:4px}
 input.t{width:100%;height:44px;border:1px solid #c5ccd6;border-radius:8px;padding:0 10px;font:inherit}
-.err{text-align:center;padding:40px 16px}button.l{border:1px solid #c5ccd6;background:#fff;border-radius:8px;height:40px;padding:0 14px;font:600 14px inherit;color:#10223a}
+.err{text-align:center;padding:40px 16px}/* 공지·메모 */
+.nt{border-left:6px solid #2a6fb0}.nt.o{border-left-color:#e08a00}.nt.r{border-left-color:#d92d20;background:#fef2f2}.nt .lv{display:inline-block;font-size:12px;font-weight:800;color:#fff;background:#2a6fb0;border-radius:4px;padding:0 6px}.nt.o .lv{background:#e08a00}.nt.r .lv{background:#d92d20}
+.nt h4{margin:4px 0;font-size:17px}.nt .bdy{white-space:pre-wrap;font-size:15px}.nt .ok{color:#2e9e5b;font-weight:800;margin-top:6px}.nt button{margin-top:8px}.mm{border-top:1px solid #eef0f4;padding:7px 0;white-space:pre-wrap}.mm:first-of-type{border-top:0}.rl{display:inline-block;font-size:11.5px;font-weight:800;border-radius:4px;padding:0 5px;background:#556;color:#fff;margin-right:4px}.rl.pc{background:#b45309}
+button.l{border:1px solid #c5ccd6;background:#fff;border-radius:8px;height:40px;padding:0 14px;font:600 14px inherit;color:#10223a}
 </style>
 </head>
 <body>
@@ -32,7 +35,7 @@ const TST=[['arrive','용차 도착'],['depart','출고 처리']];
 const $=s=>document.querySelector(s),esc=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const dt=v=>v?String(v).replace('T',' ').slice(5,16).replace('-','/'):'-';
 const SZ=/(\d{3}\/\d{2}Z?R\d{2})/,size=p=>{const m=String(p||'').match(SZ);return m?m[1]:String(p||'').split('_')[0]};
-const K=new URLSearchParams(location.search).get('k');let X=null,busy=false;
+const K=new URLSearchParams(location.search).get('k');let X=null,busy=false,NT=[];
 let who='';try{who=localStorage.getItem('trk_who')||''}catch(e){}
 const now=()=>{const d=new Date(),p=n=>String(n).padStart(2,'0');return d.getFullYear()+'-'+p(d.getMonth()+1)+'-'+p(d.getDate())+' '+p(d.getHours())+':'+p(d.getMinutes())};
 /* 누르면 화면을 바로 바꾸고 저장은 뒤에서 한다. 실패하면 서버 내용으로 되돌린다 */
@@ -41,13 +44,14 @@ function tstatus(x){const st=x.st||{},p=st.steps||{};if(st.cancel)return '취소
 async function send(b){for(let n=0;;n++){let j;try{j=await (await fetch(GAS,{method:'POST',body:JSON.stringify(b)})).json()}catch(e){if(n<1){await new Promise(r=>setTimeout(r,1200));continue}throw new Error('통신 상태를 확인해 주세요.')}if(j.busy&&n<1){await new Promise(r=>setTimeout(r,1500));continue}if(!j.ok)throw new Error(j.err||'오류');return j}}
 function post(apply,b,pre){X.st.steps=X.st.steps||{};X.st.ld=X.st.ld||{};apply();X.status=tstatus(X);render();PEND++;$('#sv').hidden=false;b.a='trk_set';b.k=K;(pre||[]).forEach(x=>{x.a='trk_set';x.k=K});
  QQ=QQ.then(async()=>{for(const x of pre||[])await send(x);return send(b)}).then(j=>{PEND--;if(!PEND){$('#sv').hidden=true;const ch=JSON.stringify([j.item.st,j.item.status])!==JSON.stringify([X.st,X.status]);X=j.item;if(ch)render()}}).catch(e=>{PEND--;if(!PEND)$('#sv').hidden=true;alert('저장하지 못했습니다 — 최신 내용으로 되돌립니다.\n'+(e.message||''));load().catch(()=>{})})}
-async function load(){const j=await (await fetch(GAS+'?a=trk_get&k='+encodeURIComponent(K))).json();if(!j.ok)throw new Error(j.err||'용차 정보를 찾지 못했습니다');X=j.item;render()}
+async function load(){const j=await (await fetch(GAS+'?a=trk_get&k='+encodeURIComponent(K))).json();if(!j.ok)throw new Error(j.err||'용차 정보를 찾지 못했습니다');X=j.item;NT=j.ntc||[];render()}
 function render(){const p=X.st.steps||{},ld=X.st.ld||{},V=new Map();
  X.lines.forEach(g=>{let a=V.get(g.on);if(!a)V.set(g.on,a={veh:g.veh,sup:g.sup,drv:g.drv,n:0,pn:[],z:[],ot:g.ot});a.n+=g.w.length;const s=size(g.pn);if(a.pn.indexOf(s)<0)a.pn.push(s);if(a.z.indexOf(g.zone||'-')<0)a.z.push(g.zone||'-')});
  const lc=[...V.keys()].filter(k=>ld[k]).length,lock=!!(p.depart||p.unload||p.hand);
  try{if(localStorage.getItem('wh_key')){$('#nav').hidden=false;$('#n1').href='wh.html?tab=list';$('#n2').href='wh.html?tab=out&trk='+encodeURIComponent(X.id)}}catch(_){}
  $('#hd').hidden=false;$('#id').textContent=X.id;$('#bd').textContent=X.status;$('#sb').textContent=X.center+' · 차량 '+X.cars+'대 · '+X.cnt+'본';document.title='용차 '+X.id;
- $('#m').innerHTML=(X.st.cancel?'<div class="card" style="color:#b91c1c;font-weight:700">이 용차는 취소되었습니다.</div>':'')+`<div class="card"><div class="kv">
+ const top=NT.map(n=>{const ok=who&&n.acks.some(a=>a.r==='yc'&&a.n===who),c=n.lvl==='긴급'?' r':n.lvl==='중요'?' o':'';return `<div class="card nt${c}"><span class="lv">📢 ${esc(n.lvl)} 공지</span><h4>${esc(n.title)}</h4>${n.body?`<div class="bdy">${esc(n.body)}</div>`:''}<div class="mu">${esc(n.by)} · ${esc(String(n.at).slice(5,16))}</div>${ok?'<div class="ok">✓ 확인함 ('+esc(who)+')</div>':`<button class="l" data-nk="${esc(n.no)}">확인했습니다</button>`}</div>`}).join('')+((X.mm||[]).length?`<div class="card"><h3>📝 작업 메모</h3>${X.mm.map(m=>`<div class="mm"><span class="rl ${m.r}">${m.r==='pc'?'지시자':'창고'}</span>${esc(m.text)}<div class="mu">${esc(m.by)} · ${esc(String(m.upd||m.at).slice(5,16))}</div></div>`).join('')}</div>`:'');
+ $('#m').innerHTML=top+(X.st.cancel?'<div class="card" style="color:#b91c1c;font-weight:700">이 용차는 취소되었습니다.</div>':'')+`<div class="card"><div class="kv">
  <span>용차</span><b>${esc(X.plate||'미배정')}</b><span>기사·연락처</span><div>${esc(X.driver||'-')} ${X.phone?`<a href="tel:${esc(X.phone)}">${esc(X.phone)}</a>`:''}</div>
  <span>상차 예정</span><b>${dt(X.loadAt)}</b><span>하차 예정</span><b>${dt(X.unloadAt)}</b><span>하차지</span><div>${esc(X.dest||'-')}</div><span>받는 기사</span><div>${esc(X.recv||'-')}</div>${X.memo?`<span>메모</span><div>${esc(X.memo)}</div>`:''}</div></div>
  <div class="card"><h3>작업자 이름</h3><input class="t" id="who" value="${esc(who)}" placeholder="체크한 사람 이름"></div>
@@ -56,7 +60,8 @@ function render(){const p=X.st.steps||{},ld=X.st.ld||{},V=new Map();
  <div style="text-align:center"><button class="l" id="rf">새로 불러오기</button></div>`;
  $('#who').onchange=e=>{who=e.target.value.trim();try{localStorage.setItem('trk_who',who)}catch(_){}};$('#rf').onclick=()=>load().catch(()=>{});const la=$('#ldall');if(la)la.onclick=()=>{if(!needWho())return;const at=now();post(()=>{new Set(X.lines.map(g=>g.on)).forEach(c=>{if(!X.st.ld[c])X.st.ld[c]={at,by:who}});X.st.steps.load={at,by:who}},{loadAll:1,by:who})}}
 function needWho(){if(who)return true;const v=(prompt('체크한 사람 이름을 넣어 주세요.')||'').trim();if(!v)return false;who=v;try{localStorage.setItem('trk_who',who)}catch(_){}return true}
-document.addEventListener('click',e=>{const t=e.target.closest('[data-st]');if(!t||!X)return;const k=t.dataset.st,p=X.st.steps||{},cur=p[k];
+document.addEventListener('click',e=>{const nk=e.target.closest('[data-nk]');if(nk){if(!needWho())return;const no=nk.dataset.nk,n=NT.find(z=>z.no===no);nk.disabled=true;nk.textContent='저장 중…';send({a:'ack',tk:K,no,name:who}).then(j=>{if(n)n.acks.push({r:'yc',n:who,at:j.at});render()}).catch(()=>{nk.disabled=false;nk.textContent='확인했습니다';alert('저장하지 못했습니다. 통신 상태를 확인해 주세요.')});return}
+ const t=e.target.closest('[data-st]');if(!t||!X)return;const k=t.dataset.st,p=X.st.steps||{},cur=p[k];
  if(cur){if(confirm(k==='depart'?'출고 처리를 풀까요?':'이미 체크된 단계입니다. 체크를 풀까요?'))post(()=>{delete X.st.steps[k]},{step:{name:k,on:0}});return}
  if(!needWho())return;
  if(k==='depart'){const cars=new Set(X.lines.map(g=>g.on)),n=[...cars].filter(c=>(X.st.ld||{})[c]).length;if(!confirm('출고 처리하시겠습니까?\n실은 차량 '+n+'/'+cars.size+'대'+(n<cars.size?' — 다 싣지 않았습니다':'')+'\n명세서·운송장 등 넘길 서류를 확인하세요.'))return;const at=now();post(()=>{X.st.steps.depart={at,by:who}},{step:{name:'depart',on:1,at,by:who}});return}

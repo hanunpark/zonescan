@@ -29,6 +29,10 @@ main{padding:10px 10px 40px}
 .row{display:flex;justify-content:space-between;gap:8px;border-top:1px solid #eef0f4;padding:8px 0}.row:first-of-type{border-top:0}
 .ex{color:#b45309}.err{text-align:center;padding:40px 16px}
 .ft{font-size:12px;color:#889;text-align:center;margin-top:14px}
+/* 공지·메모 */
+.nt{border-left:6px solid #2a6fb0}.nt.o{border-left-color:#e08a00}.nt.r{border-left-color:#d92d20;background:#fef2f2}.nt .lv{display:inline-block;font-size:12px;font-weight:800;color:#fff;background:#2a6fb0;border-radius:4px;padding:0 6px;margin-right:4px}.nt.o .lv{background:#e08a00}.nt.r .lv{background:#d92d20}
+.nt h4{margin:4px 0;font-size:17px}.nt .bdy{white-space:pre-wrap;font-size:15px}.nt .ok{color:#2e9e5b;font-weight:800;margin-top:6px}.nt button{margin-top:8px}
+.mmc .mm{border-top:1px solid #eef0f4;padding:7px 0;font-size:15px;white-space:pre-wrap}.mmc .mm:first-of-type{border-top:0}
 button.l{border:1px solid #c5ccd6;background:#fff;border-radius:8px;height:40px;padding:0 14px;font:600 14px inherit;color:#10223a}
 </style>
 </head>
@@ -44,7 +48,10 @@ const PAL=['#e4572e','#2a6fb0','#2e9e5b','#8e44ad','#d4a017','#0f8b8d','#c2185b'
 const $=s=>document.querySelector(s),esc=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const zc=(a,b)=>(a||'￿').localeCompare(b||'￿','ko',{numeric:true}),kc=(a,b)=>String(a).localeCompare(String(b),'ko');
 const dow=s=>'일월화수목금토'[new Date(s+'T00:00:00').getDay()];
-let O,K,done={},view='z',LK='',KEY='',TK=null;
+let O,K,done={},view='z',LK='',KEY='',TK=null,NT=[],MM=[];
+const ME=()=>{try{return localStorage.getItem('pk_who')||''}catch(e){return ''}};
+function topHtml(){const me=ME();let h='';NT.forEach(n=>{const ok=me&&n.acks.some(a=>a.r==='wk'&&a.n===me),c=n.lvl==='긴급'?' r':n.lvl==='중요'?' o':'';h+=`<div class="card nt${c}"><span class="lv">📢 ${esc(n.lvl)} 공지</span><h4>${esc(n.title)}</h4>${n.body?`<div class="bdy">${esc(n.body)}</div>`:''}<div class="mu">${esc(n.by)} · ${esc(String(n.at).slice(5,16))}</div>${ok?'<div class="ok">✓ 확인함 ('+esc(me)+')</div>':`<button class="l" data-nk="${esc(n.no)}">확인했습니다</button>`}</div>`});
+ if(MM.length)h+=`<div class="card mmc"><b>📝 작업 메모</b>${MM.map(m=>`<div class="mm"><span class="tag">${m.r==='pc'?'지시자':'창고'}</span> ${esc(m.text)}<div class="mu">${esc(m.by)} · ${esc(String(m.upd||m.at).slice(5,16))}</div></div>`).join('')}</div>`;return h}
 function cxBanner(c){let b=document.getElementById('cxb');if(!c){if(b)b.remove();return}if(!b){b=document.createElement('div');b.id='cxb';b.style.cssText='position:sticky;top:0;z-index:20;background:#c2410c;color:#fff;font-weight:800;padding:10px 12px;font-size:15px';document.body.insertBefore(b,document.body.firstChild)}b.textContent='⛔ 취소된 지시서입니다 — 피킹하지 마세요 ('+(c.why||'사유 없음')+' · '+(c.by||'')+' '+String(c.at||'').slice(5)+')'}
 const dtS=v=>v?String(v).replace('T',' ').slice(5,16).replace('-','/'):'-';
 function tkTag(on){if(!TK||!TK.m[on])return '';const i=TK.L.findIndex(t=>t.id===TK.m[on]);return `<span class="tag" style="background:#10223a;color:#fff;border-color:#10223a">용차${TK.L.length>1?i+1:''}</span>`}
@@ -68,20 +75,23 @@ function render(){const L=lines();let h='';const SH=shipHtml(L);
    return `<div class="card"><div class="zh"><span>${chip(i)} <b>${cars}대 · ${t}본</b></span><span class="cnt">${d}/${t}${d===t&&t?' ✓':''}</span></div>${a.map(g=>{const k=g.w.filter(w=>done[w]).length;return `<div class="row"><div><span class="v" style="font-size:16px">${esc(g.veh)}</span>${tkTag(g.on)}${g.sub?'<span class="tag">서브 Y</span>':''} <span class="mu">${esc(g.sup)}</span><div class="p">${esc(g.pn)}</div><div class="mu">존 ${esc(g.zone||'-')}</div></div><b style="white-space:nowrap;color:${k===g.w.length?'#2e9e5b':'#10223a'}">${k}/${g.w.length}</b></div>`}).join('')}</div>`}).join('')}
  if(O.X&&O.X.length)h+=`<div class="card ex"><b>꺼낼 수 없는 건 (참고)</b>${O.X.map(x=>`<div class="row"><span>${esc(x[0])} · ${esc(x[2])} · ${esc(x[1])}</span><b>${x[4]}본</b></div>`).join('')}</div>`;
  h+=`<div class="ft">${esc(O.no)} · ${O.t?'임시':O.n+'차'} · 발행 ${esc(O.i)}${O.w?' · '+esc(O.w):''}<br>발행 시점 기준 화면입니다. 이후 루티 변경은 반영되지 않습니다. (출고 방식·용차 정보는 열 때마다 최신으로 받습니다)${LK?'<br>체크는 같은 지시서를 받은 사람끼리 공유됩니다.':''}<br>${LK?'<button class="l" id="rf" style="margin-top:8px">다른 사람 체크 불러오기</button> ':''}<button class="l" id="rs" style="margin-top:8px">체크 모두 지우기</button></div>`;
- $('#m').innerHTML=SH+h;prog()}
+ $('#m').innerHTML=topHtml()+SH+h;prog()}
 document.addEventListener('click',e=>{const t=(e.target.closest&&e.target.closest('[data-w]'))||e.target;
  if(t.dataset.w){const w=t.dataset.w;if(done[w])delete done[w];else done[w]=1;LS(K,done);push(w,done[w]?1:0);t.classList.toggle('d',!!done[w]);prog();if(navigator.vibrate)navigator.vibrate(20);
   const c=t.closest('.card');if(c&&view==='z'){const b=[...c.querySelectorAll('[data-w]')],d=b.filter(x=>done[x.dataset.w]).length;c.querySelector('.cnt').textContent=d+'/'+b.length+(d===b.length?' ✓':'');c.classList.toggle('done',d===b.length)}return}
+ if(t.dataset&&t.dataset.nk){let me=ME();if(!me){me=(prompt('확인한 사람 이름을 넣어 주세요. (이 폰에서 한 번만 묻습니다)')||'').trim();if(!me)return;try{localStorage.setItem('pk_who',me)}catch(_){}}const no=t.dataset.nk,n=NT.find(z=>z.no===no);t.disabled=true;t.textContent='저장 중…';
+  fetch(GAS,{method:'POST',body:JSON.stringify({a:'ack',k:LK,no,name:me})}).then(r=>r.json()).then(j=>{if(!j.ok)throw new Error(j.err);if(n)n.acks.push({r:'wk',n:me,at:j.at});render()}).catch(e=>{t.disabled=false;t.textContent='확인했습니다';alert('저장하지 못했습니다. 통신 상태를 확인해 주세요.')});return}
  if(t.dataset.v){view=t.dataset.v;document.querySelectorAll('nav button').forEach(b=>b.classList.toggle('on',b===t));render();scrollTo(0,0);return}
  if(t.id==='rs'&&confirm('이 지시서의 체크를 모두 지울까요?')){Object.keys(done).forEach(w=>push(w,0));done={};LS(K,done);render()}
  if(t.id==='rf'){pull().then(render)}});
 const Q=[];let busy=false;
+document.addEventListener('visibilitychange',()=>{if(!document.hidden&&LK&&O)pull().then(render)});
 function push(w,v){if(!LK)return;Q.push({a:'check',id:LK,key:KEY,wb:w,v});flush()}
 async function flush(){if(busy||!Q.length)return;busy=true;const x=Q[0];try{const r=await fetch(GAS,{method:'POST',body:JSON.stringify(x)});const j=await r.json();if(j.ok)Q.shift();else throw 0}catch(e){busy=false;setTimeout(flush,4000);return}busy=false;flush()}
-async function pull(){if(!LK)return;try{const j=await (await fetch(GAS+'?a=get&k='+encodeURIComponent(LK))).json();if(j.ok){if(j.tk!==undefined)TK=j.tk;cxBanner(j.cancel);const s={};(j.checked||[]).forEach(w=>s[w]=1);Q.forEach(q=>{if(q.v)s[q.wb]=1;else delete s[q.wb]});done=s;LS(K,done)}}catch(e){}}
+async function pull(){if(!LK)return;try{const j=await (await fetch(GAS+'?a=get&k='+encodeURIComponent(LK))).json();if(j.ok){if(j.tk!==undefined)TK=j.tk;NT=j.ntc||[];MM=j.mm||[];cxBanner(j.cancel);const s={};(j.checked||[]).forEach(w=>s[w]=1);Q.forEach(q=>{if(q.v)s[q.wb]=1;else delete s[q.wb]});done=s;LS(K,done)}}catch(e){}}
 (async()=>{try{const k=new URLSearchParams(location.search).get('k'),h=location.hash.slice(1);
  if(k){if(GAS.indexOf('%%')===0)throw new Error('공유 저장소 주소가 설정되지 않은 페이지입니다.');const j=await (await fetch(GAS+'?a=get&k='+encodeURIComponent(k))).json();if(!j.ok)throw new Error(j.err||'지시서를 찾지 못했습니다');
-  O=j.o;LK=k;KEY=j.key;TK=j.tk||null;setTimeout(()=>cxBanner(j.cancel),0);K='pk_'+O.no+'_'+O.n+'_'+O.f;done={};(j.checked||[]).forEach(w=>done[w]=1);LS(K,done)}
+  O=j.o;LK=k;KEY=j.key;TK=j.tk||null;NT=j.ntc||[];MM=j.mm||[];setTimeout(()=>cxBanner(j.cancel),0);K='pk_'+O.no+'_'+O.n+'_'+O.f;done={};(j.checked||[]).forEach(w=>done[w]=1);LS(K,done)}
  else if(h){O=await dec(h);K='pk_'+O.no+'_'+O.n+'_'+O.f;done=LS(K)||{}}
  else throw new Error('지시서 링크가 아닙니다. PC의 [전달하기]로 받은 링크를 열어 주세요.');document.title=O.d.slice(5)+' 피킹 · '+O.f;
  $('#no').textContent=(O.t?'[임시] ':'')+O.no+(O.t?'':' · '+O.n+'차')+' · 출고예정일';$('#dt').textContent=O.d+' ('+dow(O.d)+')';
