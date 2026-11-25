@@ -58,7 +58,7 @@ details{margin-top:8px}summary{font-weight:700;font-size:13.5px;padding:6px 0}.v
 </style>
 </head>
 <body>
-<header><div class="h1"><div class="tt"><b>타이어케어 출고 관리</b><small>v2.9 · 2026-11-25</small></div><button id="ctr" title="거점 바꾸기"></button><button id="whoB"></button></div>
+<header><div class="h1"><div class="tt"><b>타이어케어 출고 관리</b><small>v2.10 · 2026-11-25</small></div><button id="ctr" title="거점 바꾸기"></button><button id="whoB"></button></div>
 <div class="tabs"><button data-tab="list">지시서 목록</button><button data-tab="out">출고 관리</button><button data-tab="ntc">공지</button></div></header>
 <div id="flt" hidden><div class="f1"><label>거점</label><select id="fc"></select></div><div class="f2"><label title="출고예정일 또는 발행일">기간</label><input type="date" id="ff"><span style="text-align:center">~</span><input type="date" id="ft"></div><div class="f3"><button class="b p" id="fg">조회</button><button class="b" data-q="0">오늘</button><button class="b" data-q="1">내일</button><button class="b" id="fr">새로고침</button></div></div>
 <main id="m"><div class="msg">여는 중…</div></main><div id="busy" hidden>최신 내용 확인 중…</div>
@@ -81,7 +81,7 @@ const T0=ymd(new Date()),F={from:T0,to:T0,center:ls('center')||''};
 /* 고른 기간은 같은 날 같은 탭 안에서만 유지 (지시서를 열었다 돌아와도 그대로) */
 try{const r=JSON.parse(sessionStorage.getItem('wh_range')||'null');if(r&&r.day===T0){F.from=r.from;F.to=r.to}}catch(e){}
 function keepRange(){try{sessionStorage.setItem('wh_range',JSON.stringify({day:T0,from:F.from,to:F.to}))}catch(e){}}
-const PV='v2.9';
+const PV='v2.10';
 /* 새 판이 올라왔는데 브라우저가 예전 판을 보여 주면 자동으로 새로 읽는다 (GitHub Pages 캐시 대비) */
 function verCheck(){fetch(location.pathname+'?_='+Date.now(),{cache:'no-store'}).then(r=>r.text()).then(t=>{const m=t.match(/const PV='([^']+)'/);if(m&&m[1]!==PV&&!sessionStorage.getItem('wh_upd_'+m[1])){sessionStorage.setItem('wh_upd_'+m[1],'1');const u=new URL(location.href);u.searchParams.set('v',m[1]);location.replace(u.toString())}}).catch(()=>{})}
 let SHOWCX=false,SHOWCXS=false,D={srv:[],trk:[],ntc:[],role:''},LOADED=false,PEND=0,SEQ=0,FOCUS='',WIDE=false;
@@ -231,7 +231,7 @@ function memoDlg(kind,ref,id){if(!needWho())return;const mm=(kind==='iss'?(D.srv
 /* ───── 용차 인수인계 명세서 (A4, 용차 1건 = 1장) ───── */
 function kpShort(x){x=String(x);const d=x.replace(/\D/g,''),h=x.indexOf('-')>0?x.slice(0,x.indexOf('-')):d.slice(0,4);return{h:'*'+h+'~',t:d.slice(-4)}}
 function truckDoc(x){const KP={};D.srv.forEach(r=>r.M.lines.forEach(g=>{if(g.kp)g.w.forEach(w=>{KP[w]=(g.xw&&g.xw[w])||w})}));
- const V=new Map();x.lines.forEach(g=>{let a=V.get(g.on);if(!a)V.set(g.on,a={veh:g.veh,model:g.model||'',sup:String(g.sup||'').replace(/\s*\(.*?\)\s*/g,''),drv:g.drv||'',pn:[],w:[],ot:g.ot||''});const s=size(g.pn);if(a.pn.indexOf(s)<0)a.pn.push(s);a.w=a.w.concat(g.w)});
+ const V=new Map();x.lines.forEach(g=>{let a=V.get(g.on);if(!a)V.set(g.on,a={veh:g.veh,model:g.model||'',sup:String(g.sup||'').replace(/\s*\(.*?\)\s*/g,' ').replace(/주식회사|유한회사|㈜|\(주\)/g,'').replace(/\s+/g,' ').trim(),drv:g.drv||'',pn:[],w:[],ot:g.ot||''});const s=size(g.pn);if(a.pn.indexOf(s)<0)a.pn.push(s);a.w=a.w.concat(g.w)});
  const cars=[...V.values()].sort((a,b)=>kc(a.drv,b.drv)||kc(a.veh,b.veh)),tot=cars.reduce((s,a)=>s+a.w.length,0),mm=(x.mm||[]).filter(m=>m.r==='pc'),srcs=[...new Set([x.src].concat(D.srv.filter(r=>r.M.lines.some(g=>g.w.some(w=>x.lines.some(l=>l.w.indexOf(w)>=0)))).map(r=>r.M.no)).filter(Boolean))];
  const wb=w=>KP[w]?(p=>`<span class="kp"><i>${esc(p.h)}</i><b>${esc(p.t)}</b></span>`)(kpShort(KP[w])):`<span>${esc(w)}</span>`;
  const css=`@page{size:A4;margin:12mm}*{box-sizing:border-box}body{font:12px/1.45 "Apple SD Gothic Neo","Malgun Gothic",sans-serif;color:#000;margin:0}h1{font-size:20px;margin:0}.top{display:flex;justify-content:space-between;align-items:flex-end;border-bottom:2.5px solid #000;padding-bottom:6px}.no{font-size:16px;font-weight:800;text-align:right}
@@ -320,7 +320,7 @@ function departAsk(x){return new Promise(res=>{const S0=x.st.steps||{},cars=new 
  let done=false;const fin=v=>{if(done)return;done=true;close();res(v)};$('#dp_x').onclick=()=>fin(null);$('#dp_o').onclick=()=>fin(items.map(i=>i[0]).filter(k=>!S0[k]));
  d.addEventListener('click',e=>{if(e.target===d)fin(null)})})}
 /* 인쇄: 지시서는 이 페이지에서 A4로 그려 인쇄, 운송장은 루티에 로그인된 PC의 피킹지시서 도구를 통해 루티에서 출력 */
-function loadSheet(){return window.TCSheet?Promise.resolve():new Promise((ok,no)=>{const s=document.createElement('script');s.src='sheet.js?v=4';s.onload=ok;s.onerror=()=>no(new Error('지시서 모듈을 불러오지 못했습니다'));document.head.appendChild(s)})}
+function loadSheet(){return window.TCSheet?Promise.resolve():new Promise((ok,no)=>{const s=document.createElement('script');s.src='sheet.js?v=5';s.onload=ok;s.onerror=()=>no(new Error('지시서 모듈을 불러오지 못했습니다'));document.head.appendChild(s)})}
 function markPrinted(r,k){if(!WHO)return;if((r.fl||{})[k]&&!(k==='print'&&memoStale(r.mm,r.fl.print)))return;save(()=>{r.fl=Object.assign({},r.fl||{});r.fl[k]={at:nowS(),by:WHO}},{a:'iss_set',no:r.M.no,key:k,on:1,by:WHO},true)}
 async function printDoc(r,k){if(!needWho())return;
  if(k==='print'){const pw=window.open('','tcsheet');if(!pw){alert('팝업이 막혔습니다. 브라우저에서 이 사이트의 팝업을 허용해 주세요.');return}pw.document.write('<p style="font:15px sans-serif;padding:20px">지시서를 준비하는 중…</p>');
