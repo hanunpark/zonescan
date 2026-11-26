@@ -1,6 +1,6 @@
-/* 피킹 지시서 v52 · 2026-11-26 — 루티 관리자 화면에서 북마크로 불러 씀 */
+/* 피킹 지시서 v53 · 2026-11-26 — 루티 관리자 화면에서 북마크로 불러 씀 */
 (function(){function pick(){
-const API='https://api-prod.flowfix.co.kr/api/v1/admin/orders',CK='flowfix-admin-access-token',VER='v52 · 2026-11-26',MOB='https://hanunpark.github.io/zonescan/pick.html',GAS0='https://script.google.com/macros/s/AKfycby33E3x2WOVkZd_Kh4LSumPMT-KKbNa292E9WNKKTdx40WjCxsVgpSTq2R7oJby6XDF/exec';
+const API='https://api-prod.flowfix.co.kr/api/v1/admin/orders',CK='flowfix-admin-access-token',VER='v53 · 2026-11-26',MOB='https://hanunpark.github.io/zonescan/pick.html',GAS0='https://script.google.com/macros/s/AKfycby33E3x2WOVkZd_Kh4LSumPMT-KKbNa292E9WNKKTdx40WjCxsVgpSTq2R7oJby6XDF/exec';
 const $=s=>document.querySelector(s),esc=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const LS=(k,v)=>{try{if(v===undefined)return JSON.parse(localStorage.getItem('tcpk_'+k)||'null');if(v===null)localStorage.removeItem('tcpk_'+k);else localStorage.setItem('tcpk_'+k,JSON.stringify(v))}catch(e){return null}};
 const pad=n=>String(n).padStart(2,'0'),ymd=d=>d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());
@@ -687,5 +687,9 @@ setInterval(poll,30000);window.addEventListener('focus',()=>setTimeout(poll,300)
 if(location.host!=='admin.flowfix.co.kr'){alert('루티 관리자 화면(admin.flowfix.co.kr)에 로그인한 탭에서 눌러주세요.');return}
 var w=window.__TC_W&&!window.__TC_W.closed?window.__TC_W:window.open('','tcPicking');window.__TC_W=null;
 if(!w){alert('팝업이 차단되었습니다. 주소창 오른쪽의 팝업 차단 아이콘에서 허용한 뒤 다시 눌러주세요.');return}
+/* 루티 탭마다 피킹 지시서 탭 하나 (v53): 도구 창은 그린 뒤 고유 이름으로 바꿔, 다른 루티 탭의 북마크가 이 창을 가져가지 않게 한다.
+   같은 루티 탭에서 다시 누르면 새 탭에 새로 그리고 이전 탭은 닫는다 (예전의 '같은 탭에 다시 그리기'와 같은 효과) */
+var prev=window.__TC_TOOL;if(prev&&prev!==w&&!prev.closed){try{prev.close()}catch(e){}}
 w.document.open();w.document.write('<!doctype html><html lang="ko"><head><meta charset="utf-8"><title>피킹지시서</title></head><body><script>('+pick.toString()+')()<\/script></body></html>');w.document.close();
+try{w.name='tcPicking-'+Date.now().toString(36)+Math.random().toString(36).slice(2,6)}catch(e){}window.__TC_TOOL=w;
 })();
