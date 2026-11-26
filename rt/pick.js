@@ -1,6 +1,6 @@
-/* 피킹 지시서 v47 · 2026-11-26 — 루티 관리자 화면에서 북마크로 불러 씀 */
+/* 피킹 지시서 v48 · 2026-11-26 — 루티 관리자 화면에서 북마크로 불러 씀 */
 (function(){function pick(){
-const API='https://api-prod.flowfix.co.kr/api/v1/admin/orders',CK='flowfix-admin-access-token',VER='v47 · 2026-11-26',MOB='https://hanunpark.github.io/zonescan/pick.html',GAS0='https://script.google.com/macros/s/AKfycby33E3x2WOVkZd_Kh4LSumPMT-KKbNa292E9WNKKTdx40WjCxsVgpSTq2R7oJby6XDF/exec';
+const API='https://api-prod.flowfix.co.kr/api/v1/admin/orders',CK='flowfix-admin-access-token',VER='v48 · 2026-11-26',MOB='https://hanunpark.github.io/zonescan/pick.html',GAS0='https://script.google.com/macros/s/AKfycby33E3x2WOVkZd_Kh4LSumPMT-KKbNa292E9WNKKTdx40WjCxsVgpSTq2R7oJby6XDF/exec';
 const $=s=>document.querySelector(s),esc=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const LS=(k,v)=>{try{if(v===undefined)return JSON.parse(localStorage.getItem('tcpk_'+k)||'null');if(v===null)localStorage.removeItem('tcpk_'+k);else localStorage.setItem('tcpk_'+k,JSON.stringify(v))}catch(e){return null}};
 const pad=n=>String(n).padStart(2,'0'),ymd=d=>d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());
@@ -109,7 +109,28 @@ details label{padding:3px 0;white-space:nowrap}
 @page{size:A4;margin:9mm}
 @media print{body{background:#fff}.noprint,#mo{display:none!important}.wrap{display:block;padding:0}.sheet{box-shadow:none;margin:0;padding:0;width:auto}.drh{break-after:avoid}}
 </style>`);
-document.title='피킹지시서';
+/* 겉모양(대시보드와 같은 색·글자 규칙). A4 지시서(.sheet)에는 적용하지 않음 — 인쇄물은 그대로. PC는 컴퓨터 설정 따라 다크 모드 */
+document.documentElement.classList.add('pc');
+document.head.insertAdjacentHTML('beforeend',`<style id="shell">
+:root{--bg:#fff;--sub:#f5f6f9;--ink:#171a26;--ink2:#565b70;--mute:#8b90a3;--line:#e6e8ef;--line2:#c9cde0;--acc:#4b5fe0;--acch:#3f51c9;--soft:#eef0ff;--good:#0a7d3c;--goodbg:#e6f6ec;--warn:#8a5a00;--warnbg:#fff4d6;--crit:#c0302f;--critbg:#fdeaea;--hd:#1b1d33;--hdmu:#aab0cf;--onacc:#fff;--card:#fff}
+@media(prefers-color-scheme:dark){html.pc{--bg:#14151d;--sub:#1c1e2a;--ink:#eff0f6;--ink2:#c0c3d4;--mute:#888da3;--line:#2c2f43;--line2:#3a3e57;--acc:#8b9bff;--acch:#a3b0ff;--soft:#23274a;--good:#4cc77e;--goodbg:#143122;--warn:#f5b93a;--warnbg:#3a2e0c;--crit:#f07878;--critbg:#3c1b1b;--hd:#0f1018;--onacc:#10121c;--card:#1a1c27}}
+body{background:var(--sub);color:var(--ink);font:13.5px/1.5 -apple-system,"Apple SD Gothic Neo","Pretendard","Noto Sans KR","Malgun Gothic",sans-serif;font-variant-numeric:tabular-nums}
+.bar{background:var(--hd);padding:8px 16px;gap:8px 12px}.bar .ver,.ttl .ver{color:var(--hdmu);opacity:1}
+input,select,button,summary{border-color:var(--line2);background:var(--bg);color:var(--ink);border-radius:8px}button:hover{border-color:var(--mute)}
+button.pri{background:var(--acc);border-color:var(--acc);color:var(--onacc);font-weight:600}button.pri:hover{background:var(--acch)}
+.tabs{border:0;gap:2px;border-radius:0}.tabs button{color:var(--hdmu);border-radius:8px!important;height:32px;padding:0 12px;font-weight:500}.tabs button:hover{color:#fff}.tabs button.on{background:#2f3354;color:#fff;font-weight:600}
+.bar2{background:var(--bg);border-bottom:1px solid var(--line)}details>div{background:var(--bg);border-color:var(--line2)}
+.lk{color:var(--acc)}.lk.del{color:var(--crit)}.mu{color:var(--ink2)}#sum{color:var(--ink)}
+#dup{background:var(--warnbg);border-color:var(--warn);color:var(--warn)}#msg{background:var(--card);border:1px solid var(--line)}
+.panel{background:var(--card);border:1px solid var(--line)}.panel td{border-bottom-color:var(--line)}.panel tr.sel td{background:var(--soft)}.panel tr.offr td{color:var(--mute)}.lt{color:var(--ink2)}
+.dh{border-bottom:1px solid var(--line2);font-weight:700}.fl{background:var(--bg);border-color:var(--line2);color:var(--ink)}.fl.on{background:var(--goodbg);border-color:var(--good);color:var(--good)}
+.lchips button.on,.okind button.on{background:var(--soft);border-color:var(--acc);color:var(--acc)}.okind button.on small{color:var(--acc)}
+.shx,.tks .tkl,.dvs span{background:var(--sub);border:1px solid var(--line)}.fcar{border-color:var(--line)}.spin{color:var(--warn)}
+#mo{background:rgba(15,17,30,.55)}#mo>div{background:var(--bg);color:var(--ink);box-shadow:0 10px 40px rgba(0,0,0,.3)}#mo textarea{border-color:var(--line2);background:var(--bg)}
+#mgw{background:var(--sub)}#who.req{border-color:var(--crit);background:var(--critbg)}
+.wrap.lw .panel{background:var(--sub)}.sheet{color:#111}
+</style>`);
+document.title='피킹 지시서';
 document.body.innerHTML=`<div class="bar noprint"><div class="ttl"><b>피킹 지시서</b><span class="ver">${VER}</span></div><div class="tabs"><button data-t="make">지시서 만들기</button><button data-t="tmp">임시 (루티 체크건)</button><button data-t="list">지시서 목록 <span id="lc"></span></button><button data-t="trk">출고 관리</button><button data-t="ntc">공지 <span id="nc"></span></button></div><button id="gs" style="height:30px;font-size:12.5px"></button>
 <span id="mk" style="display:contents"><label>출고예정일(약속일) <input type="date" id="dt"></label><label>거점 <select id="cen"></select></label><button id="go" class="pri">조회</button><span id="st" style="font-size:13px"></span></span></div>
 <div class="bar2 noprint" id="opt" hidden><details id="sd"><summary>거래처 <span id="sn"></span></summary><div id="sups"></div></details><details id="dd"><summary>기사(메인기사) <span id="dn"></span></summary><div id="drvs"></div></details>
@@ -319,7 +340,7 @@ function send(M){document.querySelectorAll('#mo').forEach(x=>x.remove());const D
   let done=false;try{const ta=document.createElement('textarea');ta.value=t;ta.setAttribute('readonly','');ta.style.cssText='position:fixed;left:-9999px;top:0';mo.appendChild(ta);ta.focus();ta.select();ta.setSelectionRange(0,t.length);done=document.execCommand('copy');ta.remove()}catch(e){}
   if(done){ok();return}if(navigator.clipboard)navigator.clipboard.writeText(t).then(ok,()=>{$('#sms').textContent='자동 복사가 막혔습니다. 위 칸을 길게 눌러 직접 복사하세요.'});else $('#sms').textContent='자동 복사가 막혔습니다. 위 칸에서 직접 복사하세요.'};
  $('#swh').onclick=e=>{cp(`${M.tmp?'[임시] ':''}피킹 지시서 — ${M.no}${M.tmp?'':' · '+M.n+'차'}\n${M.date.slice(5).replace('-','/')}(${dow(M.date)}) 출고 · ${M.center} · 차량 ${new Set(M.lines.map(VK)).size}대 ${M.lines.reduce((s,g)=>s+g.w.length,0)}본\n지시서 목록에서 열기: ${WH}?no=${encodeURIComponent(M.no)}`,e.target)};$('#swh').hidden=!S.gas;$('#sto').onchange=upd;$('#scp').onclick=e=>{if(url)cp($('#stx').value,e.target)};$('#slk').onclick=e=>{if(url)cp(url,e.target)};$('#sop').onclick=()=>{if(!url)return;const w=window.open(url,'_blank');if(!w)$('#sms').textContent='팝업이 막혔습니다. 링크만 복사해 주소창에 붙여넣으세요.'};$('#scl').onclick=()=>mo.remove();mo.onclick=e=>{if(e.target===mo)mo.remove()};upd()}
-function gsLabel(){const on=S.gas&&S.gk;$('#gs').textContent=on?'공유 저장소 연결됨':(S.gas?'PC 키 입력 필요':'공유 설정 (짧은 링크)');$('#gs').style.background=on?'#2e9e5b':(S.gas?'#ff7a1a':'#fff');$('#gs').style.color=on||S.gas?'#fff':'#10223a'}
+function gsLabel(){const on=S.gas&&S.gk;$('#gs').textContent=on?'공유 저장소 연결됨':(S.gas?'PC 키 입력 필요':'공유 설정 (짧은 링크)');$('#gs').style.cssText='height:28px;font-size:12px;border-radius:999px;'+(on?'background:transparent;border:1px solid #2f6b4a;color:#7fd9a3':S.gas?'background:#f5b93a;border:1px solid #f5b93a;color:#3d2800;font-weight:600':'background:transparent;border:1px solid #3a3e5e;color:#dfe2f3')}
 if(S.gas&&!S.gk)S.gas='';
 gsLabel();
 $('#gs').onclick=async()=>{const v=prompt('Apps Script 웹 앱 주소(https://script.google.com/macros/s/…/exec)를 붙여넣으세요.\n비우고 확인하면 공유를 끕니다.',S.gas||'');if(v===null)return;const u=v.trim();
