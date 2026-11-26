@@ -115,24 +115,32 @@ document.addEventListener('click',e=>{const t=(e.target.closest&&e.target.closes
  if(t.dataset.v){view=t.dataset.v;document.querySelectorAll('nav button').forEach(b=>b.classList.toggle('on',b===t));render();scrollTo(0,0);return}
  if(t.id==='rs'&&confirm('이 지시서의 체크를 모두 지울까요?')){Object.keys(done).forEach(w=>push(w,0));done={};LS(K,done);render()}
  if(t.id==='rf'){pull().then(render)}});
-const Q=[];let busy=false;
+/* v2.18 체크 전송: 대기열을 이 폰에 저장(탭이 닫혀도 남음), 연달아 누른 것은 한 번에 묶어 보냄(서버 v2.10부터), 실패하면 간격을 늘려 다시 */
+let Q=[],busy=false,BATCH=false,WAIT=4000,REVG='';const ACK={};
+const QK=()=>'pkq_'+LK,saveQ=()=>{try{localStorage.setItem(QK(),JSON.stringify(Q))}catch(e){}};
+function initQ(){try{Q=(JSON.parse(localStorage.getItem(QK())||'[]')||[]).filter(q=>q&&q.wb&&Date.now()-(q.t||0)<864e5)}catch(e){Q=[]}if(Q.length){Q.forEach(q=>{if(q.v)done[q.wb]=1;else delete done[q.wb]});setTimeout(flush,500)}}
+/* 서버 체크 목록에 아직 안 보낸 것·조회 시작 뒤에 저장된 것을 겹쳐 화면 상태를 정한다 (방금 누른 체크가 되돌아가지 않게) */
+function merge(checked,t0){const s={};(checked||[]).forEach(w=>s[w]=1);Q.forEach(q=>{if(q.v)s[q.wb]=1;else delete s[q.wb]});Object.keys(ACK).forEach(w=>{if(ACK[w]>=t0){if(done[w])s[w]=1;else delete s[w]}});return s}
 document.addEventListener('visibilitychange',()=>{if(!document.hidden&&LK&&O)pull().then(render)});
-function push(w,v){if(!LK)return;Q.push({a:'check',id:LK,key:KEY,wb:w,v});flush()}
-async function flush(){if(busy||!Q.length)return;busy=true;const x=Q[0];try{const r=await fetch(GAS,{method:'POST',body:JSON.stringify(x)});const j=await r.json();if(j.ok)Q.shift();else throw 0}catch(e){busy=false;setTimeout(flush,4000);return}busy=false;flush()}
-const jfetch=async(u,o,tries)=>{tries=tries||3;for(let n=0;;n++){let t='',net=false;try{const r=await fetch(u,o);t=await r.text();return JSON.parse(t)}catch(e){net=!t}if(n<tries-1){await new Promise(r=>setTimeout(r,[1200,2500,4000][n]||4000));continue}const er=new Error(net?'통신 상태를 확인해 주세요.':'구글 서버가 잠시 응답하지 않습니다 (서버 오류). 잠시 뒤 다시 시도해 주세요.');er.srv=!net;throw er}};
-async function pull(){if(!LK)return;try{const j=await jfetch(GAS+'?a=get&k='+encodeURIComponent(LK));if(j.ok){if(j.tk!==undefined)TK=j.tk;NT=j.ntc||[];MM=j.mm||[];cxBanner(j.cancel);const s={};(j.checked||[]).forEach(w=>s[w]=1);Q.forEach(q=>{if(q.v)s[q.wb]=1;else delete s[q.wb]});done=s;LS(K,done)}}catch(e){}}
+function push(w,v){if(!LK)return;Q=Q.filter(q=>q.wb!==w);Q.push({wb:w,v,t:Date.now()});saveQ();clearTimeout(push.t);push.t=setTimeout(flush,BATCH?400:0)}
+async function flush(){if(busy||!Q.length)return;busy=true;const part=BATCH?Q.slice(0,200):[Q[0]],body=BATCH?{a:'check',id:LK,key:KEY,items:part.map(q=>({wb:q.wb,v:q.v}))}:{a:'check',id:LK,key:KEY,wb:part[0].wb,v:part[0].v};
+ try{const r=await fetch(GAS,{method:'POST',body:JSON.stringify(body)});const j=await r.json();if(!j.ok)throw 0;const t=Date.now();part.forEach(q=>{ACK[q.wb]=t});Q=Q.filter(q=>part.indexOf(q)<0);saveQ();WAIT=4000}
+ catch(e){busy=false;setTimeout(flush,WAIT);WAIT=Math.min(WAIT*2,60000);return}busy=false;flush()}
+const jfetch=async(u,o,tries)=>{tries=tries||3;for(let n=0;;n++){let t='',net=false;const ac=window.AbortController?new AbortController():null,tm=ac?setTimeout(()=>ac.abort(),25000):0;try{const r=await fetch(u,ac?Object.assign({},o,{signal:ac.signal}):o);t=await r.text();clearTimeout(tm);return JSON.parse(t)}catch(e){clearTimeout(tm);net=!t}if(n<tries-1){await new Promise(r=>setTimeout(r,[1200,2500,4000][n]||4000));continue}const er=new Error(net?'통신 상태를 확인해 주세요.':'구글 서버가 잠시 응답하지 않습니다 (서버 오류). 잠시 뒤 다시 시도해 주세요.');er.srv=!net;throw er}};
+async function pull(){if(!LK)return;const t0=Date.now();try{const j=await jfetch(GAS+'?a=get&k='+encodeURIComponent(LK)+(REVG?'&r='+encodeURIComponent(REVG):''));if(j.ok&&!j.same){REVG=j.rev||'';if(j.cap&&j.cap.batch)BATCH=true;if(j.tk!==undefined)TK=j.tk;NT=j.ntc||[];MM=j.mm||[];cxBanner(j.cancel);done=merge(j.checked,t0);LS(K,done)}}catch(e){}}
 (async()=>{try{const k=new URLSearchParams(location.search).get('k'),h=location.hash.slice(1);
  let late=null;
  if(k&&h){try{O=await dec(h)}catch(_){O=null}}
- if(k&&O){LK=k;KEY=O.no;K='pk_'+O.no+'_'+O.n+'_'+O.f;done=LS(K)||{};if(GAS.indexOf('%%')!==0)late=jfetch(GAS+'?a=get&k='+encodeURIComponent(k))}
+ const t0=Date.now();
+ if(k&&O){LK=k;KEY=O.no;K='pk_'+O.no+'_'+O.n+'_'+O.f;done=LS(K)||{};initQ();if(GAS.indexOf('%%')!==0)late=jfetch(GAS+'?a=get&k='+encodeURIComponent(k))}
  else if(k){if(GAS.indexOf('%%')===0)throw new Error('공유 저장소 주소가 설정되지 않은 페이지입니다.');const j=await jfetch(GAS+'?a=get&k='+encodeURIComponent(k));if(!j.ok)throw new Error(j.err||'지시서를 찾지 못했습니다');
-  O=j.o;LK=k;KEY=j.key;TK=j.tk||null;TITLE=j.title||'';NT=j.ntc||[];MM=j.mm||[];setTimeout(()=>cxBanner(j.cancel),0);K='pk_'+O.no+'_'+O.n+'_'+O.f;done={};(j.checked||[]).forEach(w=>done[w]=1);LS(K,done)}
+  O=j.o;LK=k;KEY=j.key;TK=j.tk||null;TITLE=j.title||'';NT=j.ntc||[];MM=j.mm||[];REVG=j.rev||'';if(j.cap&&j.cap.batch)BATCH=true;setTimeout(()=>cxBanner(j.cancel),0);K='pk_'+O.no+'_'+O.n+'_'+O.f;done={};initQ();done=merge(j.checked,t0);LS(K,done)}
  else if(h){O=await dec(h);K='pk_'+O.no+'_'+O.n+'_'+O.f;done=LS(K)||{}}
  else throw new Error('지시서 링크가 아닙니다. PC의 [전달하기]로 받은 링크를 열어 주세요.');document.title=TITLE||(O.d.slice(5)+' 피킹 · '+O.f);
  $('#no').textContent=(TITLE?TITLE+' · ':'')+(O.t?'[임시] ':'')+O.no+(O.t?'':' · '+O.n+'차')+' · 출고예정일';$('#dt').textContent=O.d+' ('+dow(O.d)+')';
  try{if(localStorage.getItem('wh_key')){$('#nav').hidden=false;$('#n1').href='wh.html?tab=list&no='+encodeURIComponent(O.no);$('#n2').href='wh.html?tab=out&no='+encodeURIComponent(O.no)}}catch(_){}
  const L=lines();$('#sb').textContent=O.c+' · '+O.f+' · 차량 '+new Set(L.map(VK)).size+'대'+(O.u?' · 마감 '+O.u:'');$('#hd').hidden=false;render();
- if(late)late.then(j=>{if(!j.ok)return;KEY=j.key||KEY;TK=j.tk||null;TITLE=j.title||'';NT=j.ntc||[];MM=j.mm||[];cxBanner(j.cancel);const s={};(j.checked||[]).forEach(w=>s[w]=1);Q.forEach(q=>{if(q.v)s[q.wb]=1;else delete s[q.wb]});done=s;LS(K,done);
+ if(late)late.then(j=>{if(!j.ok)return;KEY=j.key||KEY;REVG=j.rev||'';if(j.cap&&j.cap.batch)BATCH=true;TK=j.tk||null;TITLE=j.title||'';NT=j.ntc||[];MM=j.mm||[];cxBanner(j.cancel);done=merge(j.checked,t0);LS(K,done);
   $('#no').textContent=(TITLE?TITLE+' · ':'')+(O.t?'[임시] ':'')+O.no+(O.t?'':' · '+O.n+'차')+' · 출고예정일';if(TITLE)document.title=TITLE;render()}).catch(()=>{})}
  catch(e){$('#m').innerHTML='<div class="err">지시서를 열 수 없습니다.<br><small>'+esc(e.message)+'</small></div>'}})();
 }
