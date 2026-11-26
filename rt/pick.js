@@ -1,6 +1,6 @@
-/* 피킹 지시서 v50 · 2026-11-26 — 루티 관리자 화면에서 북마크로 불러 씀 */
+/* 피킹 지시서 v51 · 2026-11-26 — 루티 관리자 화면에서 북마크로 불러 씀 */
 (function(){function pick(){
-const API='https://api-prod.flowfix.co.kr/api/v1/admin/orders',CK='flowfix-admin-access-token',VER='v50 · 2026-11-26',MOB='https://hanunpark.github.io/zonescan/pick.html',GAS0='https://script.google.com/macros/s/AKfycby33E3x2WOVkZd_Kh4LSumPMT-KKbNa292E9WNKKTdx40WjCxsVgpSTq2R7oJby6XDF/exec';
+const API='https://api-prod.flowfix.co.kr/api/v1/admin/orders',CK='flowfix-admin-access-token',VER='v51 · 2026-11-26',MOB='https://hanunpark.github.io/zonescan/pick.html',GAS0='https://script.google.com/macros/s/AKfycby33E3x2WOVkZd_Kh4LSumPMT-KKbNa292E9WNKKTdx40WjCxsVgpSTq2R7oJby6XDF/exec';
 const $=s=>document.querySelector(s),esc=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const LS=(k,v)=>{try{if(v===undefined)return JSON.parse(localStorage.getItem('tcpk_'+k)||'null');if(v===null)localStorage.removeItem('tcpk_'+k);else localStorage.setItem('tcpk_'+k,JSON.stringify(v))}catch(e){return null}};
 const pad=n=>String(n).padStart(2,'0'),ymd=d=>d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());
@@ -18,7 +18,7 @@ const S={date:addD(ymd(new Date()),1),center:LS('center')||'일산FDC',rows:[],u
 const GK0='%%GK%%';S.gas=LS('gas')||(GAS0.indexOf('%%')<0?GAS0:'');S.gk=LS('gk')||(GK0.indexOf('%%')<0?GK0:'');
 const jfetch=async(u,o,tries)=>{tries=tries||3;for(let n=0;;n++){let t='',net=false;try{const r=await fetch(u,o);t=await r.text();return JSON.parse(t)}catch(e){net=!t}if(n<tries-1){await new Promise(r=>setTimeout(r,[1200,2500,4000][n]||4000));continue}const er=new Error(net?'통신 상태를 확인해 주세요.':'구글 서버가 잠시 응답하지 않습니다 (서버 오류). 잠시 뒤 다시 시도해 주세요.');er.srv=!net;throw er}};
 async function gget(q){const j=await jfetch(S.gas+'?'+q+'&t='+encodeURIComponent(S.gk),{redirect:'follow'});if(!j.ok)throw new Error(j.err||'공유 저장소 오류');return j}
-async function gpost(b){b.t=S.gk;const safe=b.a==='iss_set'||(b.a==='trk_set'&&!b.info)||b.a==='check';const idem=safe||b.a==='link'&&b.reuse;for(let n=0;;n++){let j;try{j=await jfetch(S.gas,{method:'POST',body:JSON.stringify(b),redirect:'follow'},idem?3:1)}catch(e){throw new Error(e.srv?'구글 서버가 잠시 응답하지 않아 저장하지 못했을 수 있습니다. 잠시 뒤 새로고침으로 확인해 주세요.':'통신 실패 — 저장되지 않았을 수 있습니다. 새로고침으로 확인해 주세요.')}if(j.busy&&safe&&n<1){await new Promise(r=>setTimeout(r,1500));continue}if(!j.ok)throw new Error(j.err||'공유 저장소 오류');return j}}
+async function gpost(b){b.t=S.gk;const safe=b.a==='iss_set'||(b.a==='trk_set'&&!b.info)||b.a==='check';const idem=safe||b.a==='link'&&b.reuse;for(let n=0;;n++){let j;try{j=await jfetch(S.gas,{method:'POST',body:JSON.stringify(b),redirect:'follow'},idem?(b.a==='link'?5:3):1)}catch(e){throw new Error(e.srv?'구글 서버가 잠시 응답하지 않아 저장하지 못했을 수 있습니다. 잠시 뒤 새로고침으로 확인해 주세요.':'통신 실패 — 저장되지 않았을 수 있습니다. 새로고침으로 확인해 주세요.')}if(j.busy&&safe&&n<1){await new Promise(r=>setTimeout(r,1500));continue}if(!j.ok)throw new Error(j.err||'공유 저장소 오류');return j}}
 
 document.head.insertAdjacentHTML('beforeend',`<meta name="viewport" content="width=device-width,initial-scale=1"><style>
 *{box-sizing:border-box}[hidden]{display:none!important}body{margin:0;background:#eef1f5;color:#111;font:14px/1.5 "Apple SD Gothic Neo","Malgun Gothic","Noto Sans KR",sans-serif}
@@ -602,7 +602,7 @@ function mgPost(m){try{if(MG&&MG.contentWindow)MG.contentWindow.postMessage(m,'*
 function mgShow(t){let box=$('#mgw');if(!box){box=document.createElement('div');box.id='mgw';box.innerHTML='<iframe id="mgf" title="관리 페이지" src="'+WH+'?tab='+(t==='trk'?'out':t==='ntc'?'ntc':'list')+'&_='+Date.now()+'"></iframe>';document.body.appendChild(box);MG=box.querySelector('iframe');
   MG.onload=()=>mgPost({t:'tc-hello',key:S.gk,who:S.who})}
  else mgPost({t:'tc-tab',tab:t==='trk'?'out':t==='ntc'?'ntc':'list'});box.hidden=false;const bar=$('.bar');if(bar)box.style.top=bar.getBoundingClientRect().bottom+'px';$('#main').hidden=true;$('#opt').hidden=true;$('#sum').innerHTML='';$('#dup').hidden=true}
-function mgHide(){const b=$('#mgw');if(b)b.hidden=true;$('#main').hidden=false}
+function mgHide(){const b=$('#mgw');if(b){b.hidden=true;mgPost({t:'tc-vis',on:0})}$('#main').hidden=false}
 window.addEventListener('message',async e=>{if(!MG||e.source!==MG.contentWindow)return;const d=e.data||{};
  if(d.t==='tc-wb'){let r;try{r=await rootyWaybills(d)}catch(x){r={ok:false,err:x.message}}mgPost({t:'tc-wb-done',id:d.id,ok:!!r.ok,err:r.err||''})}});
 /* 루티 운송장 출력 — 루티 [운송장 출력]과 같은 150×96mm 라벨을 이 PC에서 루티 자료로 직접 그려 인쇄한다.
