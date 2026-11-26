@@ -1,6 +1,6 @@
-/* 피킹 지시서 v54 · 2026-11-26 — 루티 관리자 화면에서 북마크로 불러 씀 */
+/* 피킹 지시서 v55 · 2026-11-26 — 루티 관리자 화면에서 북마크로 불러 씀 */
 (function(){function pick(){
-const API='https://api-prod.flowfix.co.kr/api/v1/admin/orders',CK='flowfix-admin-access-token',VER='v54 · 2026-11-26',MOB='https://hanunpark.github.io/zonescan/pick.html',GAS0='https://script.google.com/macros/s/AKfycby33E3x2WOVkZd_Kh4LSumPMT-KKbNa292E9WNKKTdx40WjCxsVgpSTq2R7oJby6XDF/exec';
+const API='https://api-prod.flowfix.co.kr/api/v1/admin/orders',CK='flowfix-admin-access-token',VER='v55 · 2026-11-26',MOB='https://hanunpark.github.io/zonescan/pick.html',GAS0='https://script.google.com/macros/s/AKfycby33E3x2WOVkZd_Kh4LSumPMT-KKbNa292E9WNKKTdx40WjCxsVgpSTq2R7oJby6XDF/exec';
 const $=s=>document.querySelector(s),esc=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const LS=(k,v)=>{try{if(v===undefined)return JSON.parse(localStorage.getItem('tcpk_'+k)||'null');if(v===null)localStorage.removeItem('tcpk_'+k);else localStorage.setItem('tcpk_'+k,JSON.stringify(v))}catch(e){return null}};
 const pad=n=>String(n).padStart(2,'0'),ymd=d=>d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());
@@ -602,7 +602,7 @@ $('#tp').onclick=()=>{const V=view();if(!V.ok.length){alert('출력할 대상이
 let MG=null;
 function mgPost(m){try{if(MG&&MG.contentWindow)MG.contentWindow.postMessage(m,'*')}catch(e){}}
 function mgShow(t){let box=$('#mgw');if(!box){box=document.createElement('div');box.id='mgw';box.innerHTML='<iframe id="mgf" title="관리 페이지" allow="clipboard-write" src="'+WH+'?tab='+(t==='trk'?'out':t==='ntc'?'ntc':'list')+'&_='+Date.now()+'"></iframe>';document.body.appendChild(box);MG=box.querySelector('iframe');
-  MG.onload=()=>mgPost({t:'tc-hello',key:S.gk,who:S.who})}
+  MG.onload=()=>{mgPost({t:'tc-hello',key:S.gk,who:S.who});mgPost({t:'tc-vis',on:box.hidden?0:1})}}
  else mgPost({t:'tc-tab',tab:t==='trk'?'out':t==='ntc'?'ntc':'list'});box.hidden=false;const bar=$('.bar');if(bar)box.style.top=bar.getBoundingClientRect().bottom+'px';$('#main').hidden=true;$('#opt').hidden=true;$('#sum').innerHTML='';$('#dup').hidden=true}
 function mgHide(){const b=$('#mgw');if(b){b.hidden=true;mgPost({t:'tc-vis',on:0})}$('#main').hidden=false}
 window.addEventListener('message',async e=>{if(!MG||e.source!==MG.contentWindow)return;const d=e.data||{};
@@ -613,8 +613,11 @@ const SIDO={'서울특별시':'서울','부산광역시':'부산','대구광역�
 function regionOf(a){const t=String(a||'').trim().split(/\s+/);if(!t[0])return '';const s=SIDO[t[0]]||t[0].replace(/(특별자치시|특별자치도|특별시|광역시|도)$/,'');const g=(t[1]||'').replace(/(시|군|구)$/,'');return g&&s!=='세종'?s+'-'+g:s}
 function loadJB(){return window.JsBarcode?Promise.resolve():new Promise((ok,no)=>{const s=document.createElement('script');s.src='https://cdnjs.cloudflare.com/ajax/libs/jsbarcode/3.11.5/JsBarcode.all.min.js';s.onload=ok;s.onerror=()=>no(new Error('바코드 모듈을 불러오지 못했습니다 (인터넷 연결 확인)'));document.head.appendChild(s)})}
 function bc(v,h){const s=document.createElementNS('http://www.w3.org/2000/svg','svg');JsBarcode(s,v,{format:'CODE128',displayValue:false,margin:0,height:h,width:2});s.setAttribute('preserveAspectRatio','none');return s.outerHTML}
-async function rootyFetch(date,center){const out=[];let pg=1,tp=1;const q='?driverUnassignedOnly=false&from='+addD(date,-3)+'&to='+addD(date,3)+'&dateType=orderAppointedDate&centerNames='+encodeURIComponent(center)+'&size=1000';
- do{const d=await api('',q+'&page='+pg);tp=Math.min(d.totalPages||1,20);(d.items||[]).forEach(x=>out.push(x));pg++}while(pg<=tp);return out}
+/* 운송장 출력용 루티 조회: 같은 날짜·거점은 2분 동안 다시 받지 않는다(출고 → 회수 연달아 출력할 때), 쪽 사이 0.3초 쉼 */
+const RFC={};async function rootyFetch(date,center){const ck=date+'|'+center,c=RFC[ck];if(c&&Date.now()-c.t<120000)return c.p;
+ const p=(async()=>{const out=[];let pg=1,tp=1;const q='?driverUnassignedOnly=false&from='+addD(date,-3)+'&to='+addD(date,3)+'&dateType=orderAppointedDate&centerNames='+encodeURIComponent(center)+'&size=1000';
+ do{if(pg>1)await new Promise(z=>setTimeout(z,300));const d=await api('',q+'&page='+pg);tp=Math.min(d.totalPages||1,20);(d.items||[]).forEach(x=>out.push(x));pg++}while(pg<=tp);return out})();
+ RFC[ck]={t:Date.now(),p};p.catch(()=>{delete RFC[ck]});return p}
 function labelHtml(o,ts){const addr=[o.recipientAddress,o.recipientDetailAddress].filter(Boolean).join(' ');return `<section class="lb">
  <div class="l1"><div class="ln"><span>운송장 번호</span><b>${esc(o.waybillNumber)}</b></div><div class="lt">${esc(ts)}<b>${esc(o.centerName||'')}</b></div><div class="lb1">${bc(o.waybillNumber,40)}</div></div>
  <div class="l2"><div class="tab">받<br>는<br>분</div><div><b class="nm">${esc(o.recipientName||'')}</b><div class="ad">${esc(addr)}</div></div></div>
@@ -670,7 +673,8 @@ $('#csv').onclick=()=>{if(S.tmp){tmpExcel();return}const V=view(),q=v=>'"'+Strin
  V.ok.concat(V.ex).sort((a,b)=>zc(a.zone,b.zone)||kc(a.veh,b.veh)).forEach(r=>L.push([NO(S.center,S.date,V.no),S.date,S.center,r.drv,r.sub?'Y':'',r.sup,r.zone,r.veh,r.model,r.pn,r.sku,r.wb,r.k==='ok'?(r.ri?'피킹(접수확정·재고위치)':'피킹')+(r.ot?' · '+r.ot:''):(r.k==='noinv'?'미입고':'취소요청'),(V.D.get(r.wb)||[]).join('·')]));
  const b=new Blob(['﻿'+L.map(x=>x.map(q).join(',')).join('\r\n')],{type:'text/csv'}),a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='피킹지시서_'+S.center+'_'+S.date+'.csv';document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},500)};
 tab('make');
-if(S.gas&&S.gk)setTimeout(()=>{lfetch().then(n=>{LC[n.k]=n;LS('lcache',n)}).catch(()=>{});tfetch().then(n=>{TC[n.k]=n;LS('tcache',n)}).catch(()=>{})},1200);
+/* v55: 공유 저장소가 연결되면 지시서 목록·출고 관리는 관리 페이지(iframe)가 직접 불러오므로, 예전 화면용 미리 불러오기(무거운 요청 4건)와 그 캐시는 쓰지 않는다 */
+if(S.gas&&S.gk){try{localStorage.removeItem('tcpk_lcache');localStorage.removeItem('tcpk_tcache')}catch(e){}}
 /* 여러 명 동시 사용: 다른 사람이 바꾼 내용을 30초마다, 그리고 창으로 돌아올 때 받아 온다 */
 function poll(){if(!S.gas||!S.gk||document.hidden||$('#mo'))return;if($('#mgw')&&!$('#mgw').hidden)return;const a=document.activeElement;if(a&&/INPUT|SELECT|TEXTAREA/.test(a.tagName)&&a.type!=='checkbox')return;
  if(S.tab==='list'&&!PEND){const key=lkey(),seq=LSEQ;lfetch().then(n=>{const o=LC[key],same=o&&JSON.stringify([o.srv,o.trk])===JSON.stringify([n.srv,n.trk]);LC[key]=n;LS('lcache',n);if(same||seq!==LSEQ||S.tab!=='list'||lkey()!==key||PEND||$('#mo'))return;const id=curId();lbuild(n.srv,n.trk,'');S.cur=null;if(id){const j=LIST.findIndex((x,i)=>{S.cur=i;return curId()===id});S.cur=j<0?null:j}ldraw()}).catch(()=>{})}
@@ -682,7 +686,7 @@ function ntcBadge(){const u=ntcUn().length,b=$('#nc');if(b){b.textContent=u?u:''
 function ntcPopup(){if($('#mo'))return;const n=ntcUn().find(z=>z.lvl==='긴급'&&!sessionStorage.getItem('tc_pop_'+z.no));if(!n)return;sessionStorage.setItem('tc_pop_'+n.no,'1');const mo=document.createElement('div');mo.id='mo';
  mo.innerHTML=`<div><h3><span style="background:#d92d20;color:#fff;border-radius:4px;padding:1px 7px;font-size:12px;margin-right:6px">긴급 공지</span>${esc(n.title)}</h3>${n.body?`<div style="white-space:pre-wrap;font-size:14px;margin:6px 0">${esc(n.body)}</div>`:''}<div class="mu">${esc(n.by)} · ${esc(String(n.at).slice(5,16))}</div><div style="display:flex;gap:8px;justify-content:flex-end;margin-top:12px"><button id="np_x">나중에</button><button class="pri" id="np_o">확인했습니다</button></div></div>`;document.body.appendChild(mo);
  mo.querySelector('#np_x').onclick=()=>mo.remove();mo.querySelector('#np_o').onclick=async()=>{if(!needWho())return;mo.remove();try{const r=await gpost({a:'ack',no:n.no,name:S.who});n.acks.push({r:'pc',n:S.who,at:r.at||''});ntcBadge();mgPost({t:'tc-reload'})}catch(e){alert('확인을 저장하지 못했습니다: '+e.message)}}}
-setTimeout(()=>ntcPoll(true),1500);setInterval(()=>{if(!document.hidden)ntcPoll()},30000);
+setTimeout(()=>ntcPoll(true),1500);setInterval(()=>{if(!document.hidden&&!($('#mgw')&&!$('#mgw').hidden))ntcPoll()},30000);/* 관리 페이지가 보이는 동안에는 그쪽이 공지를 함께 받음 */
 setInterval(poll,30000);window.addEventListener('focus',()=>setTimeout(poll,300));document.addEventListener('visibilitychange',()=>{if(!document.hidden)poll()});
 }
 

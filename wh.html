@@ -159,7 +159,7 @@ table.gt .n{text-align:right;white-space:nowrap}table.gt .nm{font-weight:600}tab
 </style>
 </head>
 <body>
-<header><div class="h1"><div class="tt"><b>타이어케어 출고 관리</b><small>v2.17 · 2026-11-26</small></div><button id="ctr" title="거점 바꾸기"></button><button id="whoB"></button></div>
+<header><div class="h1"><div class="tt"><b>타이어케어 출고 관리</b><small>v2.18 · 2026-11-26</small></div><button id="ctr" title="거점 바꾸기"></button><button id="whoB"></button></div>
 <div class="tabs"><button data-tab="list">지시서 목록</button><button data-tab="out">출고 관리</button><button data-tab="ntc">공지</button></div></header>
 <div id="flt" hidden><div class="f1"><label>거점</label><select id="fc"></select></div><div class="fb"><label>기준</label><div class="seg"><button data-by="iss">지시일</button><button data-by="due">출고예정일</button></div></div><div class="f2"><label>날짜</label><button class="b nv" data-dd="-1" title="하루 앞">‹</button><input type="date" id="ff"><span id="fsep">~</span><input type="date" id="ft"><button class="b nv" data-dd="1" title="하루 뒤">›</button><button class="b rg" id="frg" title="여러 날을 한꺼번에 보기">기간</button></div><div class="f3"><button class="b p" id="fg">조회</button><button class="b" data-q="0">오늘</button><button class="b" data-q="1">내일</button><button class="b" id="f7">최근 7일</button><button class="b" id="fr">새로고침</button></div><div id="fst"></div></div>
 <main id="m"><div class="msg">여는 중…</div></main><div id="busy" hidden>최신 내용 확인 중…</div>
@@ -182,27 +182,31 @@ const T0=ymd(new Date()),F={from:T0,to:T0,center:ls('center')||'',by:ls('by')||'
 /* 고른 기간은 같은 날 같은 탭 안에서만 유지 (지시서를 열었다 돌아와도 그대로) */
 try{const r=JSON.parse(sessionStorage.getItem('wh_range')||'null');if(r&&r.day===T0){F.from=r.from;F.to=r.to;F.rng=r.from!==r.to}}catch(e){}
 function keepRange(){try{sessionStorage.setItem('wh_range',JSON.stringify({day:T0,from:F.from,to:F.to}))}catch(e){}}
-const PV='v2.17';
+const PV='v2.18';
 /* 새 판이 올라왔는데 브라우저가 예전 판을 보여 주면 자동으로 새로 읽는다 (GitHub Pages 캐시 대비) */
-function verCheck(){fetch(location.pathname+'?_='+Date.now(),{cache:'no-store'}).then(r=>r.text()).then(t=>{const m=t.match(/const PV='([^']+)'/);if(m&&m[1]!==PV&&!sessionStorage.getItem('wh_upd_'+m[1])){sessionStorage.setItem('wh_upd_'+m[1],'1');const u=new URL(location.href);u.searchParams.set('v',m[1]);location.replace(u.toString())}}).catch(()=>{})}
+let VC=0;function verCheck(){if(Date.now()-VC<600000)return;VC=Date.now();fetch(location.pathname+'?_='+Date.now(),{cache:'no-store'}).then(r=>r.text()).then(t=>{const m=t.match(/const PV='([^']+)'/);if(m&&m[1]!==PV&&!sessionStorage.getItem('wh_upd_'+m[1])){sessionStorage.setItem('wh_upd_'+m[1],'1');const u=new URL(location.href);u.searchParams.set('v',m[1]);location.replace(u.toString())}}).catch(()=>{})}
 let SHOWCX=false,SHOWCXS=false,D={srv:[],trk:[],ntc:[],role:''},LOADED=false,PEND=0,SEQ=0,FOCUS='',WIDE=false;
 {const q=new URLSearchParams(location.search),t=q.get('tab');if(t==='list'||t==='out'||t==='ntc'){TAB=t;if(q.get('trk')){KIND='trk';FOCUS=q.get('trk')}else if(q.get('no')){FOCUS=q.get('no');if(t==='out')KIND='drv'}}else if(q.get('no')){TAB='list';FOCUS=q.get('no')}if(location.search)history.replaceState(null,'',location.pathname+location.hash)}
 {const h=location.hash.slice(1);if(h){KEY=decodeURIComponent(h);ls('key',KEY);history.replaceState(null,'',location.pathname+location.search)}}
-const jfetch=async(u,o,tries)=>{tries=tries||3;for(let n=0;;n++){let t='',net=false;try{const r=await fetch(u,o);t=await r.text();return JSON.parse(t)}catch(e){net=!t}if(n<tries-1){await new Promise(r=>setTimeout(r,[1200,2500,4000][n]||4000));continue}const er=new Error(net?'통신 상태를 확인해 주세요.':'구글 서버가 잠시 응답하지 않습니다 (서버 오류). 잠시 뒤 다시 시도해 주세요.');er.srv=!net;throw er}};
-async function get(q){const j=await jfetch(GAS+'?'+q+(KEY?'&t='+encodeURIComponent(KEY):''));if(!j.ok)throw new Error(j.err||'오류');return j}
+const jfetch=async(u,o,tries)=>{tries=tries||3;for(let n=0;;n++){let t='',net=false;const ac=window.AbortController?new AbortController():null,tm=ac?setTimeout(()=>ac.abort(),25000):0;try{const r=await fetch(u,ac?Object.assign({},o,{signal:ac.signal}):o);t=await r.text();clearTimeout(tm);return JSON.parse(t)}catch(e){clearTimeout(tm);net=!t}if(n<tries-1){await new Promise(r=>setTimeout(r,[1200,2500,4000][n]||4000));continue}const er=new Error(net?'통신 상태를 확인해 주세요.':'구글 서버가 잠시 응답하지 않습니다 (서버 오류). 잠시 뒤 다시 시도해 주세요.');er.srv=!net;throw er}};
+async function get(q,tries){const j=await jfetch(GAS+'?'+q+(KEY?'&t='+encodeURIComponent(KEY):''),undefined,tries);if(!j.ok)throw new Error(j.err||'오류');return j}
+/* v2.18: 조회마다 지난 응답의 판 번호(rev)를 실어 보내고, 서버가 '변경 없음'이라 하면 지난 응답을 그대로 쓴다 (Apps Script v2.10부터) */
+let LR={};async function getR(q,tries){const p=LR[q],j=await get(q+(p&&p.rev?'&r='+encodeURIComponent(p.rev):''),tries);if(j.same&&p)return [p,true];if(j.rev)LR[q]=j;else delete LR[q];return [j,false]}
 async function post(b,safe){b.t=KEY;for(let n=0;;n++){let j;try{j=await jfetch(GAS,{method:'POST',body:JSON.stringify(b)},safe?(b.a==='link'?5:3):1)}catch(e){throw new Error(e.srv?'구글 서버가 잠시 응답하지 않아 저장하지 못했을 수 있습니다. 잠시 뒤 새로고침으로 확인해 주세요.':'통신 실패 — 저장되지 않았을 수 있습니다.')}if(j.busy&&safe&&n<1){await new Promise(r=>setTimeout(r,1500));continue}if(!j.ok)throw new Error(j.err||'오류');return j}}
 function fkey(){return F.from+'|'+F.to}
 /* 누른 버튼에 바로 표시 */
 let BB=null;function busyBtn(b){if(BB){BB.textContent=BB.dataset.t;BB.disabled=false;BB=null}if(b){BB=b;b.dataset.t=b.textContent;b.textContent='불러오는 중…';b.disabled=true}}
 /* 오늘·내일은 미리 받아 두어 누르면 바로 보이게 */
 let PF=false;function prefetch(){if(PF)return;PF=true;const t=ymd(new Date());[[t,t],[addD(t,1),addD(t,1)]].forEach(([a,b])=>{const k=a+'|'+b;if(MC[k]||k===fkey())return;const sv=[F.from,F.to];F.from=a;F.to=b;fetchAll().then(n=>{MC[n.k]=n}).catch(()=>{});F.from=sv[0];F.to=sv[1]})}
-function fetchAll(){const k=fkey();return Promise.all([get('a=list&from='+addD(F.from,-7)+'&to='+addD(F.to,7)+'&ifrom='+F.from+'&ito='+F.to),get('a=trk_list&from='+addD(F.from,-10)+'&to='+addD(F.to,10)).then(r=>r.items)]).then(([l,trk])=>({k,srv:l.items.filter(x=>x.M),trk,ntc:l.ntc||[],role:l.role||''}))}
+function fetchAll(quiet){const k=fkey(),t=quiet?1:3;return Promise.all([getR('a=list&from='+addD(F.from,-7)+'&to='+addD(F.to,7)+'&ifrom='+F.from+'&ito='+F.to,t),getR('a=trk_list&from='+addD(F.from,-10)+'&to='+addD(F.to,10),t)]).then(([[l,s1],[tr,s2]])=>({k,srv:l.items.filter(x=>x.M),trk:tr.items,ntc:l.ntc||[],role:l.role||'',same:s1&&s2}))}
 const MC={};
-async function load(quiet){const seq=++SEQ,key=fkey();if(!LOADED){const c=MC[key]||(()=>{const s=ls('cache');return s&&s.k===key?s:null})();if(c){D=c;LOADED=true;draw()}}
+let LOADING=0,FAILS=0,SKIP=0,WSEQ=0;
+async function load(quiet){const seq=++SEQ,key=fkey(),w0=WSEQ;if(!LOADED){const c=MC[key]||(()=>{const s=ls('cache');return s&&s.k===key?s:null})();if(c){D=c;LOADED=true;draw()}}
  if(!LOADED&&$('#m').querySelector('.c,.kind')){$('#m').style.opacity=.45;LOADED=true}
  if(!LOADED)$('#m').innerHTML='<div class="msg">불러오는 중…</div>';else if(!quiet)$('#busy').hidden=false;
- if(!quiet)stamp('ld','불러오는 중…');try{const n=await fetchAll();MC[n.k]=n;if(seq!==SEQ||key!==fkey())return;$('#busy').hidden=true;{const d=new Date();stamp('ok','✓ '+pad(d.getHours())+':'+pad(d.getMinutes())+':'+pad(d.getSeconds())+' 최신으로 불러옴')}$('#m').style.opacity='';busyBtn();ls('cache',n);prefetch();if(PEND||$('#dlg'))return;const same=LOADED&&JSON.stringify([D.srv,D.trk,D.ntc])===JSON.stringify([n.srv,n.trk,n.ntc]);D=n;LOADED=true;if(!same)draw();ntcPop()}
- catch(e){$('#busy').hidden=true;$('#m').style.opacity='';busyBtn();if(seq!==SEQ)return;stamp('','⚠ 불러오지 못했습니다 — '+e.message);if(!LOADED)$('#m').innerHTML='<div class="msg">불러오지 못했습니다.<br><small>'+esc(e.message)+'</small><br><br><button class="b" onclick="location.reload()">다시 시도</button>'+'</div>';if(/키가 맞지/.test(e.message)){KEY='';ls('key','');pinPad(KEY0?'비밀번호가 바뀌었습니다. 새 비밀번호를 눌러 주세요.':'')}}}
+ if(!quiet)stamp('ld','불러오는 중…');LOADING++;try{const n=await fetchAll(quiet);FAILS=0;MC[n.k]=n;if(seq!==SEQ||key!==fkey())return;if(w0!==WSEQ)return;/* 불러오는 사이 저장이 있었으면 이 응답(저장 전 내용)은 버린다 — 다음 새로고침에 반영 */$('#busy').hidden=true;{const d=new Date();stamp('ok','✓ '+pad(d.getHours())+':'+pad(d.getMinutes())+':'+pad(d.getSeconds())+' 최신으로 불러옴')}$('#m').style.opacity='';busyBtn();prefetch();if(PEND||$('#dlg'))return;const same=LOADED&&(n.same&&D.k===n.k||JSON.stringify([D.srv,D.trk,D.ntc])===JSON.stringify([n.srv,n.trk,n.ntc]));D=n;LOADED=true;if(!same){ls('cache',n);draw()}ntcPop()}
+ catch(e){if(quiet){FAILS++;SKIP=Math.min(Math.pow(2,FAILS)-1,10)}$('#busy').hidden=true;$('#m').style.opacity='';busyBtn();if(seq!==SEQ)return;stamp('','⚠ 불러오지 못했습니다 — '+e.message);if(!LOADED)$('#m').innerHTML='<div class="msg">불러오지 못했습니다.<br><small>'+esc(e.message)+'</small><br><br><button class="b" onclick="location.reload()">다시 시도</button>'+'</div>';if(/키가 맞지/.test(e.message)){KEY='';ls('key','');pinPad(KEY0?'비밀번호가 바뀌었습니다. 새 비밀번호를 눌러 주세요.':'')}}}
+const load0=load;load=async function(q){try{return await load0(q)}finally{LOADING=Math.max(0,LOADING-1)}};
 const KEY0=KEY;
 function pinPad(note){$('#flt').hidden=true;let v='';const dr=()=>{document.querySelectorAll('.dots i').forEach((d,i)=>d.classList.toggle('on',i<v.length))};
  $('#m').innerHTML=`<div class="pin"><h3>비밀번호 4자리</h3><div class="mu">관리자에게 받은 숫자 4자리를 누르세요.<br>한 번 누르면 이 폰에 저장됩니다.</div><div class="dots"><i></i><i></i><i></i><i></i></div><div class="er" id="p_e">${esc(note||'')}</div><div class="pad">${[1,2,3,4,5,6,7,8,9].map(n=>`<button data-n="${n}">${n}</button>`).join('')}<button class="x" data-n="c">지우기</button><button data-n="0">0</button><button class="x" data-n="b">←</button></div></div>`;
@@ -212,7 +216,7 @@ function pinPad(note){$('#flt').hidden=true;let v='';const dr=()=>{document.quer
   v='';dr();delete $('.pad').dataset.busy}}
 /* 저장: 화면을 먼저 바꾸고 뒤에서 저장. 실패하면 서버 내용으로 되돌린다. 같은 건은 누른 순서대로 처리 */
 let Q=Promise.resolve();
-function save(apply,body,safe,done,pre){apply();draw();PEND++;Q=Q.then(async()=>{for(const b of pre||[])await post(b,safe);return post(body,safe)}).then(r=>{PEND--;if(done)done(r);if(!PEND)ls('cache',D)}).catch(e=>{PEND--;alert('저장하지 못했습니다 — 최신 내용으로 되돌립니다.\n'+e.message);LOADED=true;load()})}
+function save(apply,body,safe,done,pre){WSEQ++;apply();draw();PEND++;Q=Q.then(async()=>{for(const b of pre||[])await post(b,safe);return post(body,safe)}).then(r=>{WSEQ++;PEND--;if(done)done(r);if(!PEND)ls('cache',D)}).catch(e=>{WSEQ++;PEND--;LR={};alert('저장하지 못했습니다 — 최신 내용으로 되돌립니다.\n'+e.message);LOADED=true;load()})}
 function needWho(){if(WHO)return true;askWho();return false}
 function askWho(){dlg(`<h3>이름</h3><div class="mu">체크·수정한 사람으로 기록됩니다. 로그인은 없습니다.</div><label>이름</label><input id="d_who" value="${esc(WHO)}" placeholder="예: 홍길동"><div class="er" id="d_e"></div><div class="act" style="justify-content:flex-end"><button class="b" data-x>닫기</button><button class="b p" id="d_ok">저장</button></div>`);
  $('#d_ok').onclick=()=>{const v=$('#d_who').value.trim();if(!v){$('#d_e').textContent='이름을 넣어 주세요.';return}WHO=v;ls('who',v);close();head()}}
@@ -412,7 +416,7 @@ function draw(){head();$('#flt').hidden=false;const cs=[...new Set(D.srv.map(r=>
   else{const n=k=>DV.filter(d=>d.st===k).length;h+=`<div class="chips"><span>피킹 전 <b>${n(0)}</b></span><span>피킹 중 <b>${n(1)}</b></span><span class="mu">종결 ${n(2)}</span><button data-a="tgla">모두 펼치기·접기</button></div>`;
    const DS=DV.slice().sort((a,b)=>(a.st===2?1:0)-(b.st===2?1:0)||kc(a.M.date,b.M.date)||kc(a.M.no,b.M.no));if(WD()&&DS.length)h+=wideDrv(DS);else DS.forEach(d=>{const g=d.st===2?'피킹 완료 (종결)':'출고예정일 '+d.M.date+' ('+dow(d.M.date)+')';if(g!==pd){h+=`<div class="dh">${g}</div>`;pd=g}h+=drvCard(d)});
    if(!DV.length)h+='<div class="msg">이 조건에 기사출고 대상 지시서가 없습니다.</div>'}}
- $('#m').innerHTML=h;window.scrollTo(0,sc);if(FOCUS){const el=[...document.querySelectorAll('[data-f]')].find(e=>e.dataset.f===FOCUS);if(!el&&LOADED&&!WIDE&&$('#busy').hidden){WIDE=true;const t=ymd(new Date());F.from=addD(t,-14);F.to=addD(t,14);keepRange();LOADED=false;load();return}if(el&&el.dataset.tk&&!OPEN.has(el.dataset.tk)){OPEN.add(el.dataset.tk);keepOpen();draw();return}if(el){FOCUS='';el.style.outline='2px solid var(--acc)';el.scrollIntoView({block:'center'});setTimeout(()=>{el.style.outline=''},4000)}}}
+ {const pn=document.querySelector('.pane'),ps=pn?pn.scrollTop:0,pk=pn?pn.dataset.s:'';$('#m').innerHTML=h;window.scrollTo(0,sc);const p2=document.querySelector('.pane');if(p2){p2.dataset.s=TAB+'|'+KIND+'|'+SEL.list+'|'+SEL.trk+'|'+SEL.drv;if(ps&&pk===p2.dataset.s)p2.scrollTop=ps}}if(FOCUS){const el=[...document.querySelectorAll('[data-f]')].find(e=>e.dataset.f===FOCUS);if(!el&&LOADED&&!WIDE&&$('#busy').hidden){WIDE=true;const t=ymd(new Date());F.from=addD(t,-14);F.to=addD(t,14);keepRange();LOADED=false;load();return}if(el&&el.dataset.tk&&!OPEN.has(el.dataset.tk)){OPEN.add(el.dataset.tk);keepOpen();draw();return}if(el){FOCUS='';el.style.outline='2px solid var(--acc)';el.scrollIntoView({block:'center'});setTimeout(()=>{el.style.outline=''},4000)}}}
 function toObj(M){const L=M.lines,Dr=[...new Set(L.map(g=>g.drv))].sort(kc),P=[...new Set(L.map(g=>g.sup))];
  return{v:1,no:M.no,n:M.n,d:M.date,c:M.center,i:M.issued,w:M.who,u:M.due,t:M.tmp?1:0,f:M.drvLabel,D:Dr,P,L:L.map(g=>[g.zone,P.indexOf(g.sup),g.veh,g.model,g.pn,Dr.indexOf(g.drv),g.w,g.on,g.ri||0,g.sub?1:0,g.ot||'',g.kp?1:0,g.kp?g.xw:0]),X:(M.ex||[]).map(x=>[x[0],x[1],x[3],x[4],x[6]])}}
 /* 지시서 링크: 한 번 받은 번호는 이 기기에 기억, 지시서를 고르거나 펼치면 미리 받아 둔다 */
@@ -492,7 +496,7 @@ async function printDoc(r,k){if(!needWho())return;
  BR.win.postMessage({t:'tc-wb',id,kind:k,no:r.M.no,date:r.M.date,center:r.M.center,w:r.M.lines.flatMap(g=>g.w),cars:[...new Set(r.M.lines.map(g=>g.on))],veh:[...new Set(r.M.lines.map(g=>g.veh))]},'*')}
 window.addEventListener('message',e=>{const d=e.data||{};
  if(d.t==='tc-hello'&&e.source===window.parent&&window.parent!==window){BR={win:e.source,pend:{}};if(d.key){KEY=d.key}if(d.who&&!WHO){WHO=d.who;ls('who',WHO);head()}document.documentElement.classList.add('br');setMode();if(!LOADED){LOADED=false;load()}return}
- if(d.t==='tc-tab'&&BR){TAB=d.tab;const was=HID;HID=false;draw();if(was)poll();return}if(d.t==='tc-vis'&&BR){HID=!d.on;return}
+ if(d.t==='tc-tab'&&BR){TAB=d.tab;const was=HID;HID=false;draw();if(was)poll();return}if(d.t==='tc-vis'&&e.source===window.parent&&window.parent!==window){HID=!d.on;return}
  if(d.t==='tc-reload'&&BR){load(true);return}
  if(d.t==='tc-wb-done'&&BR&&BR.pend[d.id]){const p=BR.pend[d.id];delete BR.pend[d.id];$('#busy').hidden=true;$('#busy').textContent='최신 내용 확인 중…';if(d.ok)markPrinted(p.r,p.k);else alert('운송장을 출력하지 못했습니다.\n'+(d.err||''))}});
 async function editTruck(x){if(!needWho())return;const r=await trkForm('용차 정보 수정 — '+esc(x.id),x,'차량·시각·받는 기사는 배정 후에도 바꿀 수 있습니다. 바꾼 칸만 저장됩니다.');if(!r)return;const df={};FIELDS.forEach(f=>{if(String(r.o[f]||'')!==String(x[f]||''))df[f]=r.o[f]});if(!Object.keys(df).length)return;
@@ -542,7 +546,9 @@ $('#frg').onclick=e=>{F.rng=!F.rng;kick(e.target);if(!F.rng&&F.to!==F.from)setDa
 $('#ff').onchange=()=>{const a=$('#ff').value;if(!a)return;if(!F.rng)setDay(a,a,$('#fg'));else if(a<=F.to)setDay(a,F.to,$('#fg'))};
 $('#ft').onchange=()=>{const b=$('#ft').value;if(b&&b>=F.from)setDay(F.from,b,$('#fg'))};
 $('#whoB').onclick=askWho;$('#ctr').onclick=()=>{window.scrollTo(0,0);const s=$('#fc');s.focus();try{s.showPicker()}catch(e){s.click()}};$('#fr').onclick=e=>{kick(e.target);busyBtn(e.target);$('#busy').hidden=false;load()};$('#fg').onclick=()=>{const a=$('#ff').value,b=$('#ft').value;if(!a||!b||a>b){alert('날짜 구간을 확인해 주세요.');return}F.rng=a!==b;setDay(a,b,$('#fg'))};
-let HID=false;function poll(){if(!KEY||document.hidden||HID||$('#dlg')||PEND||!LOADED)return;/* PC 도구에서 다른 탭을 보는 동안(숨겨진 화면)은 불러오지 않음 */const a=document.activeElement;if(a&&/INPUT|SELECT/.test(a.tagName)&&a.type!=='checkbox')return;load(true)}
+let HID=false,DAY=ymd(new Date());function poll(){if(!KEY||document.hidden||HID||$('#dlg')||PEND||!LOADED||LOADING)return;if(SKIP>0){SKIP--;return}/* 실패하면 1·3·7·10번 건너뜀 */
+ {const d=ymd(new Date());if(d!==DAY){const was=DAY;DAY=d;if(!F.rng&&F.from===was&&F.to===was){setDay(d,d);return}}}/* 자정이 지나면 '오늘' 화면을 새 날짜로 */
+ /* PC 도구에서 다른 탭을 보는 동안(숨겨진 화면)은 불러오지 않음 */const a=document.activeElement;if(a&&/INPUT|SELECT/.test(a.tagName)&&a.type!=='checkbox')return;load(true)}
 setInterval(poll,30000);document.addEventListener('visibilitychange',()=>{if(!document.hidden)poll()});window.addEventListener('pageshow',e=>{if(e.persisted)poll()});
 setMode();{let RZ;addEventListener('resize',()=>{clearTimeout(RZ);RZ=setTimeout(()=>{const w=document.documentElement.classList.contains('wide');setMode();if(w!==WD()&&LOADED)draw()},150)})}
 head();setTimeout(verCheck,1500);document.addEventListener('visibilitychange',()=>{if(!document.hidden)verCheck()});
