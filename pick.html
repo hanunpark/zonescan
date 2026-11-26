@@ -122,13 +122,18 @@ async function flush(){if(busy||!Q.length)return;busy=true;const x=Q[0];try{cons
 const jfetch=async(u,o,tries)=>{tries=tries||3;for(let n=0;;n++){let t='',net=false;try{const r=await fetch(u,o);t=await r.text();return JSON.parse(t)}catch(e){net=!t}if(n<tries-1){await new Promise(r=>setTimeout(r,[1200,2500,4000][n]||4000));continue}const er=new Error(net?'통신 상태를 확인해 주세요.':'구글 서버가 잠시 응답하지 않습니다 (서버 오류). 잠시 뒤 다시 시도해 주세요.');er.srv=!net;throw er}};
 async function pull(){if(!LK)return;try{const j=await jfetch(GAS+'?a=get&k='+encodeURIComponent(LK));if(j.ok){if(j.tk!==undefined)TK=j.tk;NT=j.ntc||[];MM=j.mm||[];cxBanner(j.cancel);const s={};(j.checked||[]).forEach(w=>s[w]=1);Q.forEach(q=>{if(q.v)s[q.wb]=1;else delete s[q.wb]});done=s;LS(K,done)}}catch(e){}}
 (async()=>{try{const k=new URLSearchParams(location.search).get('k'),h=location.hash.slice(1);
- if(k){if(GAS.indexOf('%%')===0)throw new Error('공유 저장소 주소가 설정되지 않은 페이지입니다.');const j=await jfetch(GAS+'?a=get&k='+encodeURIComponent(k));if(!j.ok)throw new Error(j.err||'지시서를 찾지 못했습니다');
+ let late=null;
+ if(k&&h){try{O=await dec(h)}catch(_){O=null}}
+ if(k&&O){LK=k;KEY=O.no;K='pk_'+O.no+'_'+O.n+'_'+O.f;done=LS(K)||{};if(GAS.indexOf('%%')!==0)late=jfetch(GAS+'?a=get&k='+encodeURIComponent(k))}
+ else if(k){if(GAS.indexOf('%%')===0)throw new Error('공유 저장소 주소가 설정되지 않은 페이지입니다.');const j=await jfetch(GAS+'?a=get&k='+encodeURIComponent(k));if(!j.ok)throw new Error(j.err||'지시서를 찾지 못했습니다');
   O=j.o;LK=k;KEY=j.key;TK=j.tk||null;TITLE=j.title||'';NT=j.ntc||[];MM=j.mm||[];setTimeout(()=>cxBanner(j.cancel),0);K='pk_'+O.no+'_'+O.n+'_'+O.f;done={};(j.checked||[]).forEach(w=>done[w]=1);LS(K,done)}
  else if(h){O=await dec(h);K='pk_'+O.no+'_'+O.n+'_'+O.f;done=LS(K)||{}}
- else throw new Error('지시서 링크가 아닙니다. PC의 [전달하기]로 받은 링크를 열어 주세요.');document.title=O.d.slice(5)+' 피킹 · '+O.f;
+ else throw new Error('지시서 링크가 아닙니다. PC의 [전달하기]로 받은 링크를 열어 주세요.');document.title=TITLE||(O.d.slice(5)+' 피킹 · '+O.f);
  $('#no').textContent=(TITLE?TITLE+' · ':'')+(O.t?'[임시] ':'')+O.no+(O.t?'':' · '+O.n+'차')+' · 출고예정일';$('#dt').textContent=O.d+' ('+dow(O.d)+')';
  try{if(localStorage.getItem('wh_key')){$('#nav').hidden=false;$('#n1').href='wh.html?tab=list&no='+encodeURIComponent(O.no);$('#n2').href='wh.html?tab=out&no='+encodeURIComponent(O.no)}}catch(_){}
- const L=lines();$('#sb').textContent=O.c+' · '+O.f+' · 차량 '+new Set(L.map(VK)).size+'대'+(O.u?' · 마감 '+O.u:'');$('#hd').hidden=false;render()}
+ const L=lines();$('#sb').textContent=O.c+' · '+O.f+' · 차량 '+new Set(L.map(VK)).size+'대'+(O.u?' · 마감 '+O.u:'');$('#hd').hidden=false;render();
+ if(late)late.then(j=>{if(!j.ok)return;KEY=j.key||KEY;TK=j.tk||null;TITLE=j.title||'';NT=j.ntc||[];MM=j.mm||[];cxBanner(j.cancel);const s={};(j.checked||[]).forEach(w=>s[w]=1);Q.forEach(q=>{if(q.v)s[q.wb]=1;else delete s[q.wb]});done=s;LS(K,done);
+  $('#no').textContent=(TITLE?TITLE+' · ':'')+(O.t?'[임시] ':'')+O.no+(O.t?'':' · '+O.n+'차')+' · 출고예정일';if(TITLE)document.title=TITLE;render()}).catch(()=>{})}
  catch(e){$('#m').innerHTML='<div class="err">지시서를 열 수 없습니다.<br><small>'+esc(e.message)+'</small></div>'}})();
 }
 </script>

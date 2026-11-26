@@ -1,6 +1,6 @@
-/* 피킹 지시서 v51 · 2026-11-26 — 루티 관리자 화면에서 북마크로 불러 씀 */
+/* 피킹 지시서 v52 · 2026-11-26 — 루티 관리자 화면에서 북마크로 불러 씀 */
 (function(){function pick(){
-const API='https://api-prod.flowfix.co.kr/api/v1/admin/orders',CK='flowfix-admin-access-token',VER='v51 · 2026-11-26',MOB='https://hanunpark.github.io/zonescan/pick.html',GAS0='https://script.google.com/macros/s/AKfycby33E3x2WOVkZd_Kh4LSumPMT-KKbNa292E9WNKKTdx40WjCxsVgpSTq2R7oJby6XDF/exec';
+const API='https://api-prod.flowfix.co.kr/api/v1/admin/orders',CK='flowfix-admin-access-token',VER='v52 · 2026-11-26',MOB='https://hanunpark.github.io/zonescan/pick.html',GAS0='https://script.google.com/macros/s/AKfycby33E3x2WOVkZd_Kh4LSumPMT-KKbNa292E9WNKKTdx40WjCxsVgpSTq2R7oJby6XDF/exec';
 const $=s=>document.querySelector(s),esc=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const LS=(k,v)=>{try{if(v===undefined)return JSON.parse(localStorage.getItem('tcpk_'+k)||'null');if(v===null)localStorage.removeItem('tcpk_'+k);else localStorage.setItem('tcpk_'+k,JSON.stringify(v))}catch(e){return null}};
 const pad=n=>String(n).padStart(2,'0'),ymd=d=>d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());
@@ -331,16 +331,16 @@ function send(M){document.querySelectorAll('#mo').forEach(x=>x.remove());const D
  <p><b>대상</b> <select id="sto"><option value="">전체 (${D.length}명)</option>${D.map((d,i)=>`<option value="${i}">${esc(d||'미배정')}</option>`).join('')}</select></p>
  <div class="mu">카톡 등에 붙여넣을 메시지</div><textarea id="stx" readonly></textarea>
  <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px"><button class="pri" id="swh">관리자용 메시지 복사</button><button id="scp">메시지 복사</button><button id="slk">링크만 복사</button><button id="sop">새 탭에서 미리 보기</button><button id="scl" style="margin-left:auto">닫기</button></div><div id="sms" class="mu" style="margin-top:6px"></div><div id="qr"></div><div class="mu" style="text-align:center">PC 화면의 QR을 폰 카메라로 찍어도 열립니다</div></div>`;
- document.body.appendChild(mo);let url='';
+ document.body.appendChild(mo);let url='';const TT=M.title||((((LIST.find(x=>x.M.no===M.no)||{}).fl||{}).title||{}).text)||'';
  const upd=async()=>{const sv=$('#sto').value,d=sv===''?null:D[+sv],L=d!=null?M.lines.filter(g=>g.drv===d):M.lines,n=L.reduce((s,g)=>s+g.w.length,0);$('#stx').value='링크 만드는 중…';$('#sms').textContent='';
   const r=await linkFor(M,d);url=r.url;
-  $('#stx').value=`${M.tmp?'[임시] ':''}피킹 지시서 전달 — ${M.no}${M.tmp?'':' · '+M.n+'차'}\n${M.date.slice(5).replace('-','/')}(${dow(M.date)}) 출고 · ${M.center} · ${d==null?M.drvLabel:(d||'미배정')} · 차량 ${new Set(L.map(VK)).size}대 ${n}본\n${url}`;
+  $('#stx').value=`${M.tmp?'[임시] ':''}${TT||'피킹 지시서 전달'} — ${M.no}${M.tmp?'':' · '+M.n+'차'}\n${M.date.slice(5).replace('-','/')}(${dow(M.date)}) 출고 · ${M.center} · ${d==null?M.drvLabel:(d||'미배정')} · 차량 ${new Set(L.map(VK)).size}대 ${n}본\n${url}`;
   $('#sms').textContent=r.short?'짧은 링크 '+url.length+'자':(r.err?'⚠ 공유 저장소 연결 실패 — 긴 링크로 만들었습니다 ('+r.err+')':'긴 링크 '+url.length+'자 — [공유 설정]을 하면 짧은 링크가 됩니다');const q=$('#qr');q.innerHTML='';
   try{await loadQR();if(url.length<=2300)new QRCode(q,{text:url,width:200,height:200,correctLevel:QRCode.CorrectLevel.L});else q.innerHTML='<div class="mu">링크가 길어 QR 대신 메시지로 보내세요</div>'}catch(e){q.innerHTML=''}};
  const cp=(t,b)=>{const ok=()=>{const o=b.textContent;b.textContent='복사됨 ✓';$('#sms').textContent='복사되었습니다 — 카톡에 붙여넣으세요';setTimeout(()=>{b.textContent=o},1500)};
   let done=false;try{const ta=document.createElement('textarea');ta.value=t;ta.setAttribute('readonly','');ta.style.cssText='position:fixed;left:-9999px;top:0';mo.appendChild(ta);ta.focus();ta.select();ta.setSelectionRange(0,t.length);done=document.execCommand('copy');ta.remove()}catch(e){}
   if(done){ok();return}if(navigator.clipboard)navigator.clipboard.writeText(t).then(ok,()=>{$('#sms').textContent='자동 복사가 막혔습니다. 위 칸을 길게 눌러 직접 복사하세요.'});else $('#sms').textContent='자동 복사가 막혔습니다. 위 칸에서 직접 복사하세요.'};
- $('#swh').onclick=e=>{cp(`${M.tmp?'[임시] ':''}피킹 지시서 — ${M.no}${M.tmp?'':' · '+M.n+'차'}\n${M.date.slice(5).replace('-','/')}(${dow(M.date)}) 출고 · ${M.center} · 차량 ${new Set(M.lines.map(VK)).size}대 ${M.lines.reduce((s,g)=>s+g.w.length,0)}본\n지시서 목록에서 열기: ${WH}?no=${encodeURIComponent(M.no)}`,e.target)};$('#swh').hidden=!S.gas;$('#sto').onchange=upd;$('#scp').onclick=e=>{if(url)cp($('#stx').value,e.target)};$('#slk').onclick=e=>{if(url)cp(url,e.target)};$('#sop').onclick=()=>{if(!url)return;const w=window.open(url,'_blank');if(!w)$('#sms').textContent='팝업이 막혔습니다. 링크만 복사해 주소창에 붙여넣으세요.'};$('#scl').onclick=()=>mo.remove();mo.onclick=e=>{if(e.target===mo)mo.remove()};upd()}
+ $('#swh').onclick=e=>{cp(`${M.tmp?'[임시] ':''}${TT||'피킹 지시서'} — ${M.no}${M.tmp?'':' · '+M.n+'차'}\n${M.date.slice(5).replace('-','/')}(${dow(M.date)}) 출고 · ${M.center} · 차량 ${new Set(M.lines.map(VK)).size}대 ${M.lines.reduce((s,g)=>s+g.w.length,0)}본\n지시서 목록에서 열기: ${WH}?no=${encodeURIComponent(M.no)}`,e.target)};$('#swh').hidden=!S.gas;$('#sto').onchange=upd;$('#scp').onclick=e=>{if(url)cp($('#stx').value,e.target)};$('#slk').onclick=e=>{if(url)cp(url,e.target)};$('#sop').onclick=()=>{if(!url)return;const w=window.open(url,'_blank');if(!w)$('#sms').textContent='팝업이 막혔습니다. 링크만 복사해 주소창에 붙여넣으세요.'};$('#scl').onclick=()=>mo.remove();mo.onclick=e=>{if(e.target===mo)mo.remove()};upd()}
 function gsLabel(){const on=S.gas&&S.gk;$('#gs').textContent=on?'공유 저장소 연결됨':(S.gas?'PC 키 입력 필요':'공유 설정 (짧은 링크)');$('#gs').style.cssText='height:28px;font-size:12px;border-radius:999px;'+(on?'background:transparent;border:1px solid #2f6b4a;color:#7fd9a3':S.gas?'background:#f5b93a;border:1px solid #f5b93a;color:#3d2800;font-weight:600':'background:transparent;border:1px solid #3a3e5e;color:#dfe2f3')}
 if(S.gas&&!S.gk)S.gas='';
 gsLabel();
@@ -599,7 +599,7 @@ $('#tp').onclick=()=>{const V=view();if(!V.ok.length){alert('출력할 대상이
 /* [지시서 목록]·[출고 관리]는 관리 페이지(wh.html)를 그대로 띄운다 — 폰·PC가 같은 화면. 이 창이 루티 연결(운송장 출력) 통로가 된다 */
 let MG=null;
 function mgPost(m){try{if(MG&&MG.contentWindow)MG.contentWindow.postMessage(m,'*')}catch(e){}}
-function mgShow(t){let box=$('#mgw');if(!box){box=document.createElement('div');box.id='mgw';box.innerHTML='<iframe id="mgf" title="관리 페이지" src="'+WH+'?tab='+(t==='trk'?'out':t==='ntc'?'ntc':'list')+'&_='+Date.now()+'"></iframe>';document.body.appendChild(box);MG=box.querySelector('iframe');
+function mgShow(t){let box=$('#mgw');if(!box){box=document.createElement('div');box.id='mgw';box.innerHTML='<iframe id="mgf" title="관리 페이지" allow="clipboard-write" src="'+WH+'?tab='+(t==='trk'?'out':t==='ntc'?'ntc':'list')+'&_='+Date.now()+'"></iframe>';document.body.appendChild(box);MG=box.querySelector('iframe');
   MG.onload=()=>mgPost({t:'tc-hello',key:S.gk,who:S.who})}
  else mgPost({t:'tc-tab',tab:t==='trk'?'out':t==='ntc'?'ntc':'list'});box.hidden=false;const bar=$('.bar');if(bar)box.style.top=bar.getBoundingClientRect().bottom+'px';$('#main').hidden=true;$('#opt').hidden=true;$('#sum').innerHTML='';$('#dup').hidden=true}
 function mgHide(){const b=$('#mgw');if(b){b.hidden=true;mgPost({t:'tc-vis',on:0})}$('#main').hidden=false}
