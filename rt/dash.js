@@ -1,4 +1,4 @@
-/* 루티 주문현황 대시보드 v43 · 2026-11-26 — 루티 관리자 화면에서 로더 북마크로 불러 씀 */
+/* 루티 주문현황 대시보드 v44 · 2026-11-26 — 루티 관리자 화면에서 로더 북마크로 불러 씀 */
 (function(){function dash(){
 const API='https://api-prod.flowfix.co.kr/api/v1/admin/orders',SELLER=62,SUP='https://api-prod.flowfix.co.kr/api/v1/suppliers',CK='flowfix-admin-access-token';
 const WS={PENDING_RECEIPT:'접수대기',RECEIPT_CONFIRMED:'접수확정',GATHERING_INBOUND_COMPLETED:'집하입고완료',INBOUND_COMPLETED:'입고완료',DRIVER_OUTBOUND_WAITING:'기사출고대기',CENTER_OUTBOUND_COMPLETED:'센터출고',DRIVER_OUTBOUND_COMPLETED:'기사출고',WORK_IN_PROGRESS:'작업중',WORK_COMPLETED:'작업완료',COLLECTING:'회수중',COLLECTION_COMPLETED:'회수완료',RETURN_COMPLETED:'반납완료',CANCELLED:'취소'};
@@ -91,7 +91,7 @@ tr.now td{background:var(--soft)}tr.bad td:first-child{color:var(--crit)}
 .chk{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px}.chk b{display:block;font-size:18px}.chk small{color:var(--mute);font-size:11.5px}
 @media print{header .ctl,.tabs{display:none}.tp[hidden]{display:block!important}.tp h3{display:block}}`;
 document.head.insertAdjacentHTML('beforeend','<meta name="viewport" content="width=device-width,initial-scale=1"><style>'+CSS+'</style>');
-document.body.innerHTML='<header><b>루티 현황</b><span id="ver" title="대시보드 버전">v43 · 2026-11-26</span><div class="ctl"><label>거래처 <select id="sel"></select></label><label>접수일 <input type="date" id="df"> ~ <input type="date" id="dt"></label><button id="dx" title="전체 기간 조회 — 서버 부담이 커서 마스터 관리자 비밀번호가 필요합니다">전체 🔒</button><label title="센터를 고르면 그 센터만 서버에서 받아옵니다">센터 <select id="cen"></select></label></div><span id="pb" hidden><i></i></span><span id="stamp"><i></i>불러오는 중…</span><div class="ctl"><label>자동 <select id="iv"><option value="0">끄기</option><option value="30">30분</option><option value="60">60분</option></select></label><button id="snap">스냅샷 저장</button><button class="pri" id="re">새로고침</button></div></header><main id="app"></main>';
+document.body.innerHTML='<header><b>루티 현황</b><span id="ver" title="대시보드 버전">v44 · 2026-11-26</span><div class="ctl"><label>거래처 <select id="sel"></select></label><label>접수일 <input type="date" id="df"> ~ <input type="date" id="dt"></label><button id="dx" title="전체 기간 조회 — 서버 부담이 커서 마스터 관리자 비밀번호가 필요합니다">전체 🔒</button><label title="센터를 고르면 그 센터만 서버에서 받아옵니다">센터 <select id="cen"></select></label></div><span id="pb" hidden><i></i></span><span id="stamp"><i></i>불러오는 중…</span><div class="ctl"><label>자동 <select id="iv"><option value="0">끄기</option><option value="30">30분</option><option value="60">60분</option></select></label><button id="snap">스냅샷 저장</button><button class="pri" id="re">새로고침</button></div></header><main id="app"></main>';
 const $=s=>document.querySelector(s);
 $('#iv').value=String(S.min);
 S.to=today();S.from=addD(S.to,-10);$('#df').value=S.from;$('#dt').value=S.to;
@@ -351,7 +351,7 @@ function draw(){
   S.ddL=L;S.ddLK=LKm;h+='<section id="ddl"><h2>'+esc(S.dd.l)+' <small>운송장 '+f(L.length)+'건'+(e&&e.c!==L.length?' (주문 '+f(e.c)+'건)':'')+(L.length>MAX?' 중 약속일 빠른 순 '+MAX+'건 표시':'')+' · '+(S.last?S.last.toLocaleTimeString('ko-KR',{hour12:false})+' 기준':'')+'</small>'+(L.length?'<button class="lnk" data-act="cp">운송장번호 복사</button><button class="lnk" data-act="xl" title="이 목록 전체를 엑셀(.xlsx)로 받기">엑셀 받기</button>':'')+'<button class="lnk" data-act="ddx">닫기</button></h2>'+
   (L.length?(LKm?lkTab(L.slice(0,MAX)):stdTab(L.slice(0,MAX))):'<p class="note">지금은 해당 건이 없습니다.</p>')+'</section>'}
  $('#app').innerHTML=h.replace(/\u0001/g,U);S.go=false;pane();{const t=document.querySelector('#pane .lkt tr.h1 th.bz'),pn=document.querySelector('#pane');if(t&&pn)pn.style.setProperty('--h1h',(t.getBoundingClientRect().height-8)+'px')}tick()}
-const XLURL='https://hanunpark.github.io/zonescan/xlsx.mini.min.js';
+const XLURL='https://hanunpark.github.io/zonescan/xlsx-style.min.js';
 async function xl(btn){const L=S.ddL||[],LK=S.ddLK,lab=S.dd?S.dd.l:'목록';if(!L.length||btn.disabled)return;const o=btn.textContent;btn.disabled=true;btn.textContent='만드는 중…';
  const td=today(),dd=d=>d?Math.round((new Date(td+'T00:00:00')-new Date(d+'T00:00:00'))/864e5):'',st=r=>{const t=wsl(r.w)||'-';return (!r.x&&!r.e&&!r.g&&!r.a&&!/미배정/.test(t))?t+' · 미배정':t},
   ag=r=>r.x?'취소':!r.a?'미배정':!r.s?'일정미확정':'일정확정',mm=r=>r.rq&&r.rq!==r.ap?'불일치':'';
@@ -363,9 +363,24 @@ async function xl(btn){const L=S.ddL||[],LK=S.ddLK,lab=S.dd?S.dd.l:'목록';if(!
  const t=S.last||new Date(),p=n=>String(n).padStart(2,'0'),stamp=t.getFullYear()+p(t.getMonth()+1)+p(t.getDate())+'_'+p(t.getHours())+p(t.getMinutes()),
   base=lab.replace(/\[택배\]\s*/,'택배_').replace(/\s*·\s*/g,'_').replace(/[^0-9A-Za-z가-힣_]+/g,'')+'_'+stamp,
   save=(blob,name)=>{const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},4000)};
- try{if(!window.__XL){const r=await fetch(XLURL,{cache:'force-cache'});if(!r.ok)throw Error('HTTP '+r.status);window.__XL=(new Function((await r.text())+';return XLSX'))()}
-  const X=window.__XL,ws=X.utils.aoa_to_sheet([H].concat(R));
+ try{if(!window.__XLS){const r=await fetch(XLURL,{cache:'force-cache'});if(!r.ok)throw Error('HTTP '+r.status);window.__XLS=(new Function((await r.text())+';return XLSX'))()}
+  const X=window.__XLS,ws=X.utils.aoa_to_sheet([H].concat(R));
   ws['!cols']=H.map((h,i)=>{let w=h.length*2+2;for(const x of R.slice(0,400)){const v=x[i]==null?'':String(x[i]);let n=0;for(const ch of v)n+=ch.charCodeAt(0)>255?2:1;if(n+2>w)w=n+2}return {wch:Math.min(w,40)}});
+  {const E=X.utils.encode_cell,nr=x=>String(x||'').replace(/[\s-]/g,'').toUpperCase(),thin={style:'thin',color:{rgb:'E6E8EF'}},gb={style:'medium',color:{rgb:'565B70'}},
+    SC={na:['D23B3A','FFFFFF'],wt:['F2B52B','3D2A00'],ou:['4B5FE0','FFFFFF'],dn:['0F8A45','FFFFFF'],cx:['E6E8EF','8B90A3']},stc=r=>r.x?'cx':r.e?'dn':r.g?'ou':r.a?'wt':'na',
+    zn=i=>LK?(i>=3&&i<=6?'b':i>=7&&i<=10?'m':''):'',ZF={b:'E6F6EC',m:'FDEAEA'},ZT={b:'0A7D3C',m:'C0302F'},cell=(r,c)=>{const k=E({r:r,c:c});if(!ws[k])ws[k]={t:'s',v:''};return ws[k]};
+   H.forEach((h,i)=>{const z=zn(i);cell(0,i).s={font:{bold:true,color:{rgb:z?ZT[z]:'171A26'}},fill:{fgColor:{rgb:z?ZF[z]:'F1F3F8'}},border:{bottom:gb},alignment:{vertical:'center'}}});
+   let pv=null,pg=null,band=false;
+   L.forEach((r,j)=>{const z0=LK?(S.LK[r.id]||{}):null,v=nr(r.rc)+(LK?'|'+r.ap:''),g=v+'|'+(z0&&z0.p?z0.p.wb:''),nv=v!==pv,ng=g!==pg;if(nv&&j)band=!band;pv=v;pg=g;
+    const stI=LK?{5:z0&&z0.p,9:r}:{11:r};
+    for(let i=0;i<H.length;i++){const z=zn(i),o={font:{},fill:{fgColor:{rgb:z?ZF[z]:(band?'F1F3F8':'FFFFFF')}},border:{bottom:thin}};if(nv&&j)o.border.top=gb;
+     if(stI[i]){const c=SC[stc(stI[i])];o.fill={fgColor:{rgb:c[0]}};o.font={bold:true,color:{rgb:c[1]}}}
+     else if(LK&&i>=3&&i<=6&&!ng)o.font.color={rgb:'8B90A3'};
+     if(LK&&i===0)o.font={bold:true,color:{rgb:'C0302F'}};
+     if((LK&&i===8)||(!LK&&i===0)||(i===(LK?1:4)&&nv))o.font.bold=true;
+     if(LK&&i===11&&typeof R[j][11]==='number'&&R[j][11]>=2)o.font={bold:true,color:{rgb:'C0302F'}};
+     cell(j+1,i).s=o}});
+   ws['!rows']=[{hpt:20}]}
   ws['!autofilter']={ref:X.utils.encode_range({s:{r:0,c:0},e:{r:R.length,c:H.length-1}})};
   const info=X.utils.aoa_to_sheet([['목록',lab],['건수(운송장)',R.length],['기준 시각',t.toLocaleString('ko-KR',{hour12:false})],['거래처',sname()],['접수일 기간',S.from||S.to?(S.from||'')+' ~ '+(S.to||''):'전체'],['센터',S.center||'전체'],['품목',S.prod||'전체'],['대시보드',(($('#ver')||{}).textContent||'')]].concat(LK?[['연계주문 기준','판매처·수취인(차량번호)·약속일이 같은 교체출고·교체회수 중 한쪽만 기사배정(배정 누락) 또는 출고(출고 누락)된 건, 약속일 오늘−'+LKD[0]+'일 ~ +'+LKD[1]+'일']]:[]));info['!cols']=[{wch:16},{wch:60}];
   const wb=X.utils.book_new();X.utils.book_append_sheet(wb,ws,'목록');X.utils.book_append_sheet(wb,info,'조건');
