@@ -159,7 +159,7 @@ table.gt .n{text-align:right;white-space:nowrap}table.gt .nm{font-weight:600}tab
 </style>
 </head>
 <body>
-<header><div class="h1"><div class="tt"><b>타이어케어 출고 관리</b><small>v2.14 · 2026-11-26</small></div><button id="ctr" title="거점 바꾸기"></button><button id="whoB"></button></div>
+<header><div class="h1"><div class="tt"><b>타이어케어 출고 관리</b><small>v2.15 · 2026-11-26</small></div><button id="ctr" title="거점 바꾸기"></button><button id="whoB"></button></div>
 <div class="tabs"><button data-tab="list">지시서 목록</button><button data-tab="out">출고 관리</button><button data-tab="ntc">공지</button></div></header>
 <div id="flt" hidden><div class="f1"><label>거점</label><select id="fc"></select></div><div class="fb"><label>기준</label><div class="seg"><button data-by="iss">지시일</button><button data-by="due">출고예정일</button></div></div><div class="f2"><label>날짜</label><button class="b nv" data-dd="-1" title="하루 앞">‹</button><input type="date" id="ff"><span id="fsep">~</span><input type="date" id="ft"><button class="b nv" data-dd="1" title="하루 뒤">›</button><button class="b rg" id="frg" title="여러 날을 한꺼번에 보기">기간</button></div><div class="f3"><button class="b p" id="fg">조회</button><button class="b" data-q="0">오늘</button><button class="b" data-q="1">내일</button><button class="b" id="f7">최근 7일</button><button class="b" id="fr">새로고침</button></div><div id="fst"></div></div>
 <main id="m"><div class="msg">여는 중…</div></main><div id="busy" hidden>최신 내용 확인 중…</div>
@@ -182,14 +182,15 @@ const T0=ymd(new Date()),F={from:T0,to:T0,center:ls('center')||'',by:ls('by')||'
 /* 고른 기간은 같은 날 같은 탭 안에서만 유지 (지시서를 열었다 돌아와도 그대로) */
 try{const r=JSON.parse(sessionStorage.getItem('wh_range')||'null');if(r&&r.day===T0){F.from=r.from;F.to=r.to;F.rng=r.from!==r.to}}catch(e){}
 function keepRange(){try{sessionStorage.setItem('wh_range',JSON.stringify({day:T0,from:F.from,to:F.to}))}catch(e){}}
-const PV='v2.14';
+const PV='v2.15';
 /* 새 판이 올라왔는데 브라우저가 예전 판을 보여 주면 자동으로 새로 읽는다 (GitHub Pages 캐시 대비) */
 function verCheck(){fetch(location.pathname+'?_='+Date.now(),{cache:'no-store'}).then(r=>r.text()).then(t=>{const m=t.match(/const PV='([^']+)'/);if(m&&m[1]!==PV&&!sessionStorage.getItem('wh_upd_'+m[1])){sessionStorage.setItem('wh_upd_'+m[1],'1');const u=new URL(location.href);u.searchParams.set('v',m[1]);location.replace(u.toString())}}).catch(()=>{})}
 let SHOWCX=false,SHOWCXS=false,D={srv:[],trk:[],ntc:[],role:''},LOADED=false,PEND=0,SEQ=0,FOCUS='',WIDE=false;
 {const q=new URLSearchParams(location.search),t=q.get('tab');if(t==='list'||t==='out'||t==='ntc'){TAB=t;if(q.get('trk')){KIND='trk';FOCUS=q.get('trk')}else if(q.get('no')){FOCUS=q.get('no');if(t==='out')KIND='drv'}}else if(q.get('no')){TAB='list';FOCUS=q.get('no')}if(location.search)history.replaceState(null,'',location.pathname+location.hash)}
 {const h=location.hash.slice(1);if(h){KEY=decodeURIComponent(h);ls('key',KEY);history.replaceState(null,'',location.pathname+location.search)}}
-async function get(q){const j=await (await fetch(GAS+'?'+q+(KEY?'&t='+encodeURIComponent(KEY):''))).json();if(!j.ok)throw new Error(j.err||'오류');return j}
-async function post(b,safe){b.t=KEY;for(let n=0;;n++){let j;try{j=await (await fetch(GAS,{method:'POST',body:JSON.stringify(b)})).json()}catch(e){if(safe&&n<1){await new Promise(r=>setTimeout(r,1200));continue}throw new Error('통신 실패 — 저장되지 않았을 수 있습니다.')}if(j.busy&&safe&&n<1){await new Promise(r=>setTimeout(r,1500));continue}if(!j.ok)throw new Error(j.err||'오류');return j}}
+const jfetch=async(u,o,tries)=>{tries=tries||3;for(let n=0;;n++){let t='',net=false;try{const r=await fetch(u,o);t=await r.text();return JSON.parse(t)}catch(e){net=!t}if(n<tries-1){await new Promise(r=>setTimeout(r,[1200,2500,4000][n]||4000));continue}const er=new Error(net?'통신 상태를 확인해 주세요.':'구글 서버가 잠시 응답하지 않습니다 (서버 오류). 잠시 뒤 다시 시도해 주세요.');er.srv=!net;throw er}};
+async function get(q){const j=await jfetch(GAS+'?'+q+(KEY?'&t='+encodeURIComponent(KEY):''));if(!j.ok)throw new Error(j.err||'오류');return j}
+async function post(b,safe){b.t=KEY;for(let n=0;;n++){let j;try{j=await jfetch(GAS,{method:'POST',body:JSON.stringify(b)},safe?3:1)}catch(e){throw new Error(e.srv?'구글 서버가 잠시 응답하지 않아 저장하지 못했을 수 있습니다. 잠시 뒤 새로고침으로 확인해 주세요.':'통신 실패 — 저장되지 않았을 수 있습니다.')}if(j.busy&&safe&&n<1){await new Promise(r=>setTimeout(r,1500));continue}if(!j.ok)throw new Error(j.err||'오류');return j}}
 function fkey(){return F.from+'|'+F.to}
 /* 누른 버튼에 바로 표시 */
 let BB=null;function busyBtn(b){if(BB){BB.textContent=BB.dataset.t;BB.disabled=false;BB=null}if(b){BB=b;b.dataset.t=b.textContent;b.textContent='불러오는 중…';b.disabled=true}}

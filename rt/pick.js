@@ -1,6 +1,6 @@
-/* 피킹 지시서 v49 · 2026-11-26 — 루티 관리자 화면에서 북마크로 불러 씀 */
+/* 피킹 지시서 v50 · 2026-11-26 — 루티 관리자 화면에서 북마크로 불러 씀 */
 (function(){function pick(){
-const API='https://api-prod.flowfix.co.kr/api/v1/admin/orders',CK='flowfix-admin-access-token',VER='v49 · 2026-11-26',MOB='https://hanunpark.github.io/zonescan/pick.html',GAS0='https://script.google.com/macros/s/AKfycby33E3x2WOVkZd_Kh4LSumPMT-KKbNa292E9WNKKTdx40WjCxsVgpSTq2R7oJby6XDF/exec';
+const API='https://api-prod.flowfix.co.kr/api/v1/admin/orders',CK='flowfix-admin-access-token',VER='v50 · 2026-11-26',MOB='https://hanunpark.github.io/zonescan/pick.html',GAS0='https://script.google.com/macros/s/AKfycby33E3x2WOVkZd_Kh4LSumPMT-KKbNa292E9WNKKTdx40WjCxsVgpSTq2R7oJby6XDF/exec';
 const $=s=>document.querySelector(s),esc=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const LS=(k,v)=>{try{if(v===undefined)return JSON.parse(localStorage.getItem('tcpk_'+k)||'null');if(v===null)localStorage.removeItem('tcpk_'+k);else localStorage.setItem('tcpk_'+k,JSON.stringify(v))}catch(e){return null}};
 const pad=n=>String(n).padStart(2,'0'),ymd=d=>d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());
@@ -16,8 +16,9 @@ async function api(path,q){const tk=token();if(!tk)throw new Error('LOGIN');cons
  if(r.status===401||r.status===403)throw new Error('LOGIN');if(!r.ok)throw new Error('서버 응답 '+r.status);return (await r.json()).data||{}}
 const S={date:addD(ymd(new Date()),1),center:LS('center')||'일산FDC',rows:[],un:0,out:0,drv:new Set(),off:new Set(),noDup:false,at:'',who:LS('who')||'',busy:false,tab:'make',cur:null,shared:null,gas:''};
 const GK0='%%GK%%';S.gas=LS('gas')||(GAS0.indexOf('%%')<0?GAS0:'');S.gk=LS('gk')||(GK0.indexOf('%%')<0?GK0:'');
-async function gget(q){const r=await fetch(S.gas+'?'+q+'&t='+encodeURIComponent(S.gk),{redirect:'follow'});const j=await r.json();if(!j.ok)throw new Error(j.err||'공유 저장소 오류');return j}
-async function gpost(b){b.t=S.gk;const safe=b.a==='iss_set'||(b.a==='trk_set'&&!b.info)||b.a==='check';for(let n=0;;n++){let j;try{const r=await fetch(S.gas,{method:'POST',body:JSON.stringify(b),redirect:'follow'});j=await r.json()}catch(e){if(safe&&n<1){await new Promise(r=>setTimeout(r,1200));continue}throw new Error('통신 실패 — 저장되지 않았을 수 있습니다. 새로고침으로 확인해 주세요.')}if(j.busy&&safe&&n<1){await new Promise(r=>setTimeout(r,1500));continue}if(!j.ok)throw new Error(j.err||'공유 저장소 오류');return j}}
+const jfetch=async(u,o,tries)=>{tries=tries||3;for(let n=0;;n++){let t='',net=false;try{const r=await fetch(u,o);t=await r.text();return JSON.parse(t)}catch(e){net=!t}if(n<tries-1){await new Promise(r=>setTimeout(r,[1200,2500,4000][n]||4000));continue}const er=new Error(net?'통신 상태를 확인해 주세요.':'구글 서버가 잠시 응답하지 않습니다 (서버 오류). 잠시 뒤 다시 시도해 주세요.');er.srv=!net;throw er}};
+async function gget(q){const j=await jfetch(S.gas+'?'+q+'&t='+encodeURIComponent(S.gk),{redirect:'follow'});if(!j.ok)throw new Error(j.err||'공유 저장소 오류');return j}
+async function gpost(b){b.t=S.gk;const safe=b.a==='iss_set'||(b.a==='trk_set'&&!b.info)||b.a==='check';const idem=safe||b.a==='link'&&b.reuse;for(let n=0;;n++){let j;try{j=await jfetch(S.gas,{method:'POST',body:JSON.stringify(b),redirect:'follow'},idem?3:1)}catch(e){throw new Error(e.srv?'구글 서버가 잠시 응답하지 않아 저장하지 못했을 수 있습니다. 잠시 뒤 새로고침으로 확인해 주세요.':'통신 실패 — 저장되지 않았을 수 있습니다. 새로고침으로 확인해 주세요.')}if(j.busy&&safe&&n<1){await new Promise(r=>setTimeout(r,1500));continue}if(!j.ok)throw new Error(j.err||'공유 저장소 오류');return j}}
 
 document.head.insertAdjacentHTML('beforeend',`<meta name="viewport" content="width=device-width,initial-scale=1"><style>
 *{box-sizing:border-box}[hidden]{display:none!important}body{margin:0;background:#eef1f5;color:#111;font:14px/1.5 "Apple SD Gothic Neo","Malgun Gothic","Noto Sans KR",sans-serif}
@@ -669,7 +670,7 @@ $('#csv').onclick=()=>{if(S.tmp){tmpExcel();return}const V=view(),q=v=>'"'+Strin
 tab('make');
 if(S.gas&&S.gk)setTimeout(()=>{lfetch().then(n=>{LC[n.k]=n;LS('lcache',n)}).catch(()=>{});tfetch().then(n=>{TC[n.k]=n;LS('tcache',n)}).catch(()=>{})},1200);
 /* 여러 명 동시 사용: 다른 사람이 바꾼 내용을 30초마다, 그리고 창으로 돌아올 때 받아 온다 */
-function poll(){if(!S.gas||!S.gk||document.hidden||$('#mo'))return;const a=document.activeElement;if(a&&/INPUT|SELECT|TEXTAREA/.test(a.tagName)&&a.type!=='checkbox')return;
+function poll(){if(!S.gas||!S.gk||document.hidden||$('#mo'))return;if($('#mgw')&&!$('#mgw').hidden)return;const a=document.activeElement;if(a&&/INPUT|SELECT|TEXTAREA/.test(a.tagName)&&a.type!=='checkbox')return;
  if(S.tab==='list'&&!PEND){const key=lkey(),seq=LSEQ;lfetch().then(n=>{const o=LC[key],same=o&&JSON.stringify([o.srv,o.trk])===JSON.stringify([n.srv,n.trk]);LC[key]=n;LS('lcache',n);if(same||seq!==LSEQ||S.tab!=='list'||lkey()!==key||PEND||$('#mo'))return;const id=curId();lbuild(n.srv,n.trk,'');S.cur=null;if(id){const j=LIST.findIndex((x,i)=>{S.cur=i;return curId()===id});S.cur=j<0?null:j}ldraw()}).catch(()=>{})}
  if(S.tab==='trk'&&!TPEND&&TLOADED){const key=tkey(),seq=TSEQ;tfetch().then(n=>{const same=JSON.stringify([TL.map(tstrip).map(x=>{const z=Object.assign({},x);delete z._open;return z}),TSRV.map(r=>{const z=Object.assign({},r);delete z._x;return z})])===JSON.stringify([n.trk,n.srv]);TC[key]=n;LS('tcache',n);if(same||seq!==TSEQ||S.tab!=='trk'||tkey()!==key||TPEND||$('#mo'))return;const op={};document.querySelectorAll('.tk').forEach(c=>{const d=c.querySelector('details');if(d&&d.open)op[c.dataset.id]=1});n.trk.forEach(x=>{if(op[x.id])x._open=true});TL=n.trk;TSRV=n.srv;tdraw()}).catch(()=>{})}}
 /* 공지 (지시자 대상): 탭에 안 읽은 수, 긴급은 열 때 한 번 팝업 */
