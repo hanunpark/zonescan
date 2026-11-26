@@ -139,7 +139,7 @@ main{padding:12px 16px 80px}
 #dlg input[type=text],#dlg input[type=tel],#dlg .dti input[type=date],#dlg input:not([type]),#dlg select,.dti input,.dti select,#dlg textarea{border:0!important;background:var(--fill)!important;border-radius:12px!important;height:48px;font-size:15.5px}#dlg textarea{height:auto;padding:12px}
 #dlg .dti{gap:6px}#dlg .dti input[type=date]{flex:1 1 auto;width:auto!important;min-width:0;padding:0 10px}#dlg .dti select{flex:none;width:72px!important;padding:0 8px}#dlg .act{margin-top:20px}#dlg .act .b{flex:1;height:52px;border-radius:14px;font-size:15.5px}
 .pad button{border:0;background:var(--card);border-radius:16px}.dots i{border-width:2px}
-#busy{background:var(--ink);color:var(--bg)}.msg{color:var(--mute)}
+#busy{background:var(--ink);color:var(--bg)}#toast{position:fixed;left:50%;bottom:24px;transform:translate(-50%,20px);background:var(--ink);color:var(--bg);border-radius:12px;padding:12px 18px;font-size:14px;font-weight:600;opacity:0;pointer-events:none;transition:.2s;z-index:30;max-width:90vw}#toast.on{opacity:1;transform:translate(-50%,0)}table.gt .cpl{height:30px;font-size:12.5px;white-space:nowrap}.msg{color:var(--mute)}
 /* ── 넓은 화면 (PC): 조회 한 줄 · 표 + 오른쪽 상세 패널 ── */
 html.wide body{font-size:13px}html.wide main{max-width:none;padding:12px 16px 40px}html.wide .ctx{display:none}
 html.wide header{position:static}html.wide #ctr{order:0;flex-basis:auto;height:30px;font-size:14px;margin-left:12px}html.wide #ctr .pv{display:none}html.wide .tabs{max-width:560px}html.wide #flt{position:sticky;top:0;z-index:4;padding:8px 16px}html.wide [data-a=tgla]{display:none}html.wide #flt>div{margin:0;max-width:none}
@@ -159,7 +159,7 @@ table.gt .n{text-align:right;white-space:nowrap}table.gt .nm{font-weight:600}tab
 </style>
 </head>
 <body>
-<header><div class="h1"><div class="tt"><b>타이어케어 출고 관리</b><small>v2.16 · 2026-11-26</small></div><button id="ctr" title="거점 바꾸기"></button><button id="whoB"></button></div>
+<header><div class="h1"><div class="tt"><b>타이어케어 출고 관리</b><small>v2.17 · 2026-11-26</small></div><button id="ctr" title="거점 바꾸기"></button><button id="whoB"></button></div>
 <div class="tabs"><button data-tab="list">지시서 목록</button><button data-tab="out">출고 관리</button><button data-tab="ntc">공지</button></div></header>
 <div id="flt" hidden><div class="f1"><label>거점</label><select id="fc"></select></div><div class="fb"><label>기준</label><div class="seg"><button data-by="iss">지시일</button><button data-by="due">출고예정일</button></div></div><div class="f2"><label>날짜</label><button class="b nv" data-dd="-1" title="하루 앞">‹</button><input type="date" id="ff"><span id="fsep">~</span><input type="date" id="ft"><button class="b nv" data-dd="1" title="하루 뒤">›</button><button class="b rg" id="frg" title="여러 날을 한꺼번에 보기">기간</button></div><div class="f3"><button class="b p" id="fg">조회</button><button class="b" data-q="0">오늘</button><button class="b" data-q="1">내일</button><button class="b" id="f7">최근 7일</button><button class="b" id="fr">새로고침</button></div><div id="fst"></div></div>
 <main id="m"><div class="msg">여는 중…</div></main><div id="busy" hidden>최신 내용 확인 중…</div>
@@ -182,7 +182,7 @@ const T0=ymd(new Date()),F={from:T0,to:T0,center:ls('center')||'',by:ls('by')||'
 /* 고른 기간은 같은 날 같은 탭 안에서만 유지 (지시서를 열었다 돌아와도 그대로) */
 try{const r=JSON.parse(sessionStorage.getItem('wh_range')||'null');if(r&&r.day===T0){F.from=r.from;F.to=r.to;F.rng=r.from!==r.to}}catch(e){}
 function keepRange(){try{sessionStorage.setItem('wh_range',JSON.stringify({day:T0,from:F.from,to:F.to}))}catch(e){}}
-const PV='v2.16';
+const PV='v2.17';
 /* 새 판이 올라왔는데 브라우저가 예전 판을 보여 주면 자동으로 새로 읽는다 (GitHub Pages 캐시 대비) */
 function verCheck(){fetch(location.pathname+'?_='+Date.now(),{cache:'no-store'}).then(r=>r.text()).then(t=>{const m=t.match(/const PV='([^']+)'/);if(m&&m[1]!==PV&&!sessionStorage.getItem('wh_upd_'+m[1])){sessionStorage.setItem('wh_upd_'+m[1],'1');const u=new URL(location.href);u.searchParams.set('v',m[1]);location.replace(u.toString())}}).catch(()=>{})}
 let SHOWCX=false,SHOWCXS=false,D={srv:[],trk:[],ntc:[],role:''},LOADED=false,PEND=0,SEQ=0,FOCUS='',WIDE=false;
@@ -231,12 +231,12 @@ function setMode(){const h=document.documentElement;h.classList.toggle('wide',WD
 const inPane=f=>{FORCE=true;try{return f()}finally{FORCE=false}};
 function pickSel(g,keys){if(FOCUS&&keys.indexOf(FOCUS)>=0)SEL[g]=FOCUS;if(keys.indexOf(SEL[g])<0)SEL[g]=keys[0]||'';return SEL[g]}
 const split=(t,p)=>`<div class="split"><div class="tbw"><table class="gt">${t}</table></div><aside class="pane">${p||'<div class="msg">왼쪽 목록에서 고르세요.</div>'}</aside></div>`;
-function wideList(L,gk){const keys=L.map(x=>x.r.M.no),sel=pickSel('list',keys),all=!F.center,cs=all?7:6;let h=`<thead><tr><th>지시서</th><th>${F.by==='due'?'발행':'출고일'}</th>${all?'<th>거점</th>':''}<th class="n">대 · 본</th><th>폰 체크</th><th>인쇄</th><th>출고 · 상태</th></tr></thead><tbody>`,pd='',pane='';
+function wideList(L,gk){const keys=L.map(x=>x.r.M.no),sel=pickSel('list',keys),all=!F.center,cs=all?8:7;let h=`<thead><tr><th>지시서</th><th>${F.by==='due'?'발행':'출고일'}</th>${all?'<th>거점</th>':''}<th class="n">대 · 본</th><th>폰 체크</th><th>인쇄</th><th>출고 · 상태</th><th>전달</th></tr></thead><tbody>`,pd='',pane='';
  L.forEach(x=>{const r=x.r,M=r.M,d=gk(x);if(d!==pd){h+=`<tr class="gh"><td colspan="${cs}">${F.by==='due'?'출고예정일':'지시일'} ${d} (${dow(d)}) · ${L.filter(y=>gk(y)===d).length}건</td></tr>`;pd=d}
   const fl=r.fl||{},cx=fl.cancel,n=tot(M),cars=new Set(M.lines.map(VK)).size,chk=r.checked||0,pc=n?Math.round(chk/n*100):0,T=trkOf(M),ttl=(fl.title||{}).text||'',mmN=(r.mm||[]).length,done=fl.pick||(n&&chk>=n);
   const st=cx?'<span class="bd o">취소됨</span>':(T.length?T.map(({t})=>{const p=t.st.steps||{};return `<span class="bd ${(p.depart||p.hand)?'g':t.plate?'w':'o'}">${esc(t.status)}</span>`}).join(' '):'<span class="bd">기사출고</span>')+(done?' <span class="bd g">피킹 완료</span>':'');
-  h+=`<tr class="rw${M.no===sel?' on':''}${cx?' cx':''}" data-a="sel" data-g="list" data-k="${esc(M.no)}" data-f="${esc(M.no)}"><td><span class="ty${M.tmp?' tp':''}">${M.tmp?'임시':'정식'}</span> <span class="nm">${esc(ttl||M.no)}</span>${mmN?` <span class="sb" title="메모">📝${mmN}</span>`:''}<div class="sb">${ttl?esc(M.no)+' · ':''}${M.n}차 · 발행 ${esc(at(M.issued||r.at))} ${esc(r.who||'')}</div></td><td class="nw">${F.by==='due'?esc(at(M.issued||r.at)):esc(M.date.slice(5))+' ('+dow(M.date)+')'}</td>${all?`<td class="nw">${esc(M.center)}</td>`:''}<td class="n">${cars} · <b>${n}</b></td><td class="nw">${chk}/${n}<div class="pgb"><u style="width:${pc}%"></u></div></td><td><span class="dot3" title="지시서 · 출고 운송장 · 회수 운송장"><i class="${fl.print?'on':''}"></i><i class="${fl.wo?'on':''}"></i><i class="${fl.wr?'on':''}"></i></span></td><td>${st}</td></tr>`;
-  if(M.no===sel)pane=inPane(()=>sheetCard(r,x.i))});
+  h+=`<tr class="rw${M.no===sel?' on':''}${cx?' cx':''}" data-a="sel" data-g="list" data-k="${esc(M.no)}" data-f="${esc(M.no)}"><td><span class="ty${M.tmp?' tp':''}">${M.tmp?'임시':'정식'}</span> <span class="nm">${esc(ttl||M.no)}</span>${mmN?` <span class="sb" title="메모">📝${mmN}</span>`:''}<div class="sb">${ttl?esc(M.no)+' · ':''}${M.n}차 · 발행 ${esc(at(M.issued||r.at))} ${esc(r.who||'')}</div></td><td class="nw">${F.by==='due'?esc(at(M.issued||r.at)):esc(M.date.slice(5))+' ('+dow(M.date)+')'}</td>${all?`<td class="nw">${esc(M.center)}</td>`:''}<td class="n">${cars} · <b>${n}</b></td><td class="nw">${chk}/${n}<div class="pgb"><u style="width:${pc}%"></u></div></td><td><span class="dot3" title="지시서 · 출고 운송장 · 회수 운송장"><i class="${fl.print?'on':''}"></i><i class="${fl.wo?'on':''}"></i><i class="${fl.wr?'on':''}"></i></span></td><td>${st}</td><td class="nw">${cx?'':`<button class="b s cpl" data-a="cplk" data-i="${x.i}" title="이 지시서를 폰으로 여는 주소를 복사합니다 (작업자·기사 등 누구에게나 전달)">링크 복사</button>`}</td></tr>`;
+  if(M.no===sel){pane=inPane(()=>sheetCard(r,x.i));setTimeout(()=>prefetchLink(r).catch(()=>{}),0)}});
  return split(h+'</tbody>',pane)}
 function wideTrk(T){const keys=T.map(x=>x.id),sel=pickSel('trk',keys);let h=`<thead><tr><th>용차</th><th>상차</th><th>용차 차량 · 기사</th><th>하차지 · 받는 기사</th><th class="n">대 · 본</th><th>진행</th><th>명세서</th></tr></thead><tbody>`,pane='',pd='';
  T.forEach(x=>{const p=x.st.steps||{},d=x.st.cancel?'취소':(p.depart||p.hand)?'출고 완료':'상차 '+x.loadAt.slice(0,10)+' ('+dow(x.loadAt.slice(0,10))+')';if(d!==pd){h+=`<tr class="gh"><td colspan="7">${d}</td></tr>`;pd=d}
@@ -267,7 +267,7 @@ function sheetCard(r,i){const cx=(r.fl||{}).cancel;if(cx)return cxCard(r,i);cons
  ${op?`<div class="dtl"><div class="row"><span>인쇄</span><div class="fls">${flHtml(r,i)}</div></div>
  <div class="row"><span>용차</span><div>${T.map(({t,n:tn})=>`<div class="tl${t.st.cancel?' cx':''}"><b>${esc(t.id)}</b><span class="bd${t.plate?'':' o'}">${esc(t.status)}</span> ${esc(t.plate||'차량 미배정')} ${esc(t.driver)}<br>상차 <b>${dt(t.loadAt)}</b> → 하차 <b>${dt(t.unloadAt)}</b><br>하차지 <b>${esc(t.dest||'-')}</b><br>받는 기사 <b>${esc(t.recv||'-')}</b> · ${tn}/${n}본<div class="act" style="margin-top:8px"><button class="b s" data-a="tedit" data-id="${esc(t.id)}">수정</button><button class="b s" style="color:var(--crit)" data-a="tdel" data-id="${esc(t.id)}" data-i="${i}">삭제</button></div></div>`).join('')||'<span class="mu">등록 없음 (기사출고)</span>'}</div></div>
  <div class="row"><span>메모</span><div>${memoBox('iss',M.no,r.mm,r.fl)}</div></div>
- <div class="act"><button class="b p" data-a="open" data-i="${i}">피킹 지시서 열기</button><button class="b" data-a="treg" data-i="${i}">${T.length?'용차 추가·변경':'용차 등록'}</button><button class="b" data-a="memo" data-kind="iss" data-ref="${esc(M.no)}">메모 추가</button><button class="lk" data-a="scx" data-i="${i}">지시서 취소</button></div></div>`:''}</div>`}
+ <div class="act"><button class="b p" data-a="open" data-i="${i}">피킹 지시서 열기</button><button class="b" data-a="treg" data-i="${i}">${T.length?'용차 추가·변경':'용차 등록'}</button><button class="b" data-a="memo" data-kind="iss" data-ref="${esc(M.no)}">메모 추가</button><button class="b" data-a="cplk" data-i="${i}">전달 링크 복사</button><button class="lk" data-a="scx" data-i="${i}">지시서 취소</button></div></div>`:''}</div>`}
 function cxCard(r,i){const M=r.M,c=r.fl.cancel,n=tot(M);return `<div class="c cx" data-f="${esc(M.no)}"><div class="r1"><span class="ty">${M.tmp?'임시':'정식'}</span><span class="no" style="text-decoration:line-through">${esc(M.no)}</span><span class="bd o">취소됨</span><span class="qty">${n}본</span></div><div class="r2">${esc(M.center)} · 발행 ${esc(at(M.issued||r.at))} ${esc(r.who||'')}<br><b style="color:var(--crit)">취소 ${esc(at(c.at))} ${esc(c.by||'')} · 사유 ${esc(c.why||'-')}</b></div><div class="act"><button class="b s" data-a="sux" data-i="${i}">취소 되돌리기</button></div></div>`}
 /* 지시서 취소: 기록은 남기고 목록·중복 확인에서 뺀다. 이 지시서 물건만 실린 용차는 함께 삭제할 수 있다 */
 function cancelSheet(r){if(!needWho())return;const M=r.M,n=tot(M),chk=r.checked||0,w=new Set(M.lines.flatMap(g=>g.w)),T=trkOf(M).map(e=>e.t),own=T.filter(t=>t.lines.every(g=>g.w.every(v=>w.has(v)))),gone=own.filter(t=>{const p=t.st.steps||{};return p.depart||p.unload||p.hand});
@@ -415,7 +415,24 @@ function draw(){head();$('#flt').hidden=false;const cs=[...new Set(D.srv.map(r=>
  $('#m').innerHTML=h;window.scrollTo(0,sc);if(FOCUS){const el=[...document.querySelectorAll('[data-f]')].find(e=>e.dataset.f===FOCUS);if(!el&&LOADED&&!WIDE&&$('#busy').hidden){WIDE=true;const t=ymd(new Date());F.from=addD(t,-14);F.to=addD(t,14);keepRange();LOADED=false;load();return}if(el&&el.dataset.tk&&!OPEN.has(el.dataset.tk)){OPEN.add(el.dataset.tk);keepOpen();draw();return}if(el){FOCUS='';el.style.outline='2px solid var(--acc)';el.scrollIntoView({block:'center'});setTimeout(()=>{el.style.outline=''},4000)}}}
 function toObj(M){const L=M.lines,Dr=[...new Set(L.map(g=>g.drv))].sort(kc),P=[...new Set(L.map(g=>g.sup))];
  return{v:1,no:M.no,n:M.n,d:M.date,c:M.center,i:M.issued,w:M.who,u:M.due,t:M.tmp?1:0,f:M.drvLabel,D:Dr,P,L:L.map(g=>[g.zone,P.indexOf(g.sup),g.veh,g.model,g.pn,Dr.indexOf(g.drv),g.w,g.on,g.ri||0,g.sub?1:0,g.ot||'',g.kp?1:0,g.kp?g.xw:0]),X:(M.ex||[]).map(x=>[x[0],x[1],x[3],x[4],x[6]])}}
-async function openSheet(r){const lk=ls('lnk')||{};let k=lk[r.M.no],w=null;if(BR||WD()){try{w=window.open('','_blank')}catch(e){}}try{if(!k){$('#busy').hidden=false;$('#busy').textContent='지시서 여는 중…';k=(await post({a:'link',key:r.M.no,target:'전체',reuse:1,o:toObj(r.M)},true)).id;lk[r.M.no]=k;ls('lnk',lk)}const u=new URL(PICK+'?k='+k,location.href).href;if(w){w.location.href=u}else location.href=u}catch(e){if(w)w.close();alert('지시서를 열지 못했습니다.\n'+e.message)}finally{$('#busy').hidden=true;$('#busy').textContent='최신 내용 확인 중…'}}
+/* 지시서 링크: 한 번 받은 번호는 이 기기에 기억, 지시서를 고르거나 펼치면 미리 받아 둔다 */
+const LKP={};function linkOf(r){return (ls('lnk')||{})[r.M.no]||''}
+function prefetchLink(r){const no=r.M.no,k=linkOf(r);if(k)return Promise.resolve(k);if(!KEY)return Promise.reject(new Error('로그인 필요'));if(LKP[no])return LKP[no];
+ return LKP[no]=post({a:'link',key:no,target:'전체',reuse:1,o:toObj(r.M)},true).then(j=>{const lk=ls('lnk')||{};lk[no]=j.id;ls('lnk',lk);return j.id}).catch(e=>{delete LKP[no];throw e})}
+async function hashOf(o){const by=new TextEncoder().encode(JSON.stringify(o));let out=by,z='0';if(window.CompressionStream){out=new Uint8Array(await new Response(new Blob([by]).stream().pipeThrough(new CompressionStream('deflate-raw'))).arrayBuffer());z='1'}let b='';for(let i=0;i<out.length;i+=8192)b+=String.fromCharCode.apply(null,out.subarray(i,i+8192));return z+btoa(b).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'')}
+async function openSheet(r){let w=null;if(BR||WD()){try{w=window.open('','_blank')}catch(e){}}const slow=!linkOf(r);
+ try{if(slow){$('#busy').hidden=false;$('#busy').textContent='지시서 여는 중…'}const [k,h]=await Promise.all([prefetchLink(r),hashOf(toObj(r.M)).catch(()=>'')]);const u=new URL(PICK+'?k='+k+(h?'#'+h:''),location.href).href;if(w){w.location.href=u}else location.href=u}
+ catch(e){if(w)w.close();alert('지시서를 열지 못했습니다.\n'+e.message)}finally{if(slow){$('#busy').hidden=true;$('#busy').textContent='최신 내용 확인 중…'}}}
+/* 전달 링크 복사: 작업자·기사 등 누구에게나 보낼 폰 지시서 주소만 복사 */
+function copyText(t){let ok=false;try{const ta=document.createElement('textarea');ta.value=t;ta.setAttribute('readonly','');ta.style.cssText='position:fixed;top:0;left:0;opacity:0';document.body.appendChild(ta);ta.select();ok=document.execCommand('copy');ta.remove()}catch(e){}
+ if(ok)return Promise.resolve(true);return navigator.clipboard?navigator.clipboard.writeText(t).then(()=>true,()=>false):Promise.resolve(false)}
+function toast(m){let e=$('#toast');if(!e){e=document.createElement('div');e.id='toast';document.body.appendChild(e)}e.textContent=m;e.classList.remove('on');void e.offsetWidth;e.classList.add('on');clearTimeout(toast.t);toast.t=setTimeout(()=>e.classList.remove('on'),2600)}
+async function copyLink(r,btn){const old=btn.textContent;btn.disabled=true;if(!linkOf(r))btn.textContent='링크 만드는 중…';
+ try{const k=await prefetchLink(r),u=new URL(PICK+'?k='+k,location.href).href,nm=((r.fl||{}).title||{}).text||'',tx=(nm?nm:'피킹 지시서 · '+r.M.no)+'\n'+u,ok=await copyText(tx);btn.disabled=false;
+  if(ok){btn.textContent='✓ 복사됨';toast((nm?'「'+nm+'」 ':'')+'전달 링크를 복사했습니다 — 카톡 등에 붙여 넣으세요');setTimeout(()=>{btn.textContent=old},1800);return}
+  btn.textContent=old;dlg(`<h3>전달 링크 — ${esc(r.M.no)}</h3><div class="mu">아래 내용을 복사해 전달하세요.</div><textarea id="lk_u" readonly style="margin-top:10px;min-height:80px">${esc(tx)}</textarea><div class="act" style="justify-content:flex-end"><button class="b" data-x>닫기</button><button class="b p" id="lk_c">복사</button></div>`);const ip=$('#lk_u');ip.focus();ip.select();
+  $('#lk_c').onclick=async()=>{ip.select();if(await copyText(tx)){close();toast('전달 링크를 복사했습니다')}else{ip.select();$('#lk_c').textContent='Ctrl+C로 복사'}}}
+ catch(e){btn.disabled=false;btn.textContent=old;alert('링크를 만들지 못했습니다.\n'+e.message)}}
 const FIELDS=['loadAt','unloadAt','plate','driver','phone','dest','recv','memo'];
 function dtIn(id,val){const d=String(val||'').slice(0,10),h=String(val||'').slice(11,13),m=String(val||'').slice(14,16),ms=['00','10','20','30','40','50'];if(m&&ms.indexOf(m)<0)ms.push(m);
  return `<div class="dti"><input type="date" id="${id}_d" value="${esc(d)}"><select id="${id}_h">${Array.from({length:24},(_,i)=>pad(i)).map(x=>`<option${x===(h||'08')?' selected':''}>${x}</option>`).join('')}</select>시<select id="${id}_m">${ms.sort().map(x=>`<option${x===(m||'00')?' selected':''}>${x}</option>`).join('')}</select>분</div>`}
@@ -485,7 +502,7 @@ document.addEventListener('click',e=>{const t=e.target.closest('[data-a],[data-t
  if(a==='type'){TYPE=t.dataset.k;draw();return}if(a==='cx'){SHOWCX=!SHOWCX;draw();return}if(a==='cxs'){SHOWCXS=!SHOWCXS;draw();return}
  if(a==='scx'&&r){cancelSheet(r);return}
  if(a==='sux'&&r){if(!needWho())return;if(!confirm(r.M.no+' 취소를 되돌릴까요?\n다시 중복 확인 대상이 됩니다.'))return;save(()=>{r.fl=Object.assign({},r.fl||{});delete r.fl.cancel},{a:'iss_set',no:r.M.no,key:'cancel',on:0,by:WHO},true);return}if(a==='kind'){KIND=t.dataset.k;draw();return}
- if(a==='open'&&r){openSheet(r);return}if(a==='treg'&&r){regTruck(r);return}
+ if(a==='open'&&r){openSheet(r);return}if(a==='cplk'&&r){copyLink(r,t);return}if(a==='treg'&&r){regTruck(r);return}
  if(a==='tedit'){const y=D.trk.find(z=>z.id===t.dataset.id);if(y)editTruck(y);return}
  if(a==='tdel'){const y=D.trk.find(z=>z.id===t.dataset.id);if(y&&r)delTruck(y,trkOf(r.M).map(e=>e.t));return}
  if(a==='fl'&&r){if(!needWho())return;const k=t.dataset.k,on=!(r.fl||{})[k];save(()=>{r.fl=Object.assign({},r.fl||{});if(on)r.fl[k]={at:now(),by:WHO};else delete r.fl[k]},{a:'iss_set',no:r.M.no,key:k,on:on?1:0,by:WHO},true);return}
@@ -500,7 +517,7 @@ document.addEventListener('click',e=>{const t=e.target.closest('[data-a],[data-t
  if(a==='prt'&&r){printDoc(r,t.dataset.k);return}
  if(a==='sel'){SEL[t.dataset.g]=t.dataset.k;draw();return}
  if(a==='tgl'&&t.closest('.pane'))return;
- if(a==='tgl'){const k=t.dataset.k;OPEN.has(k)?OPEN.delete(k):OPEN.add(k);keepOpen();draw();return}
+ if(a==='tgl'){const k=t.dataset.k;OPEN.has(k)?OPEN.delete(k):OPEN.add(k);keepOpen();draw();if(OPEN.has(k)){const rr=D.srv.find(z=>z.M.no===k);if(rr&&!(rr.fl||{}).cancel)prefetchLink(rr).catch(()=>{})}return}
  if(a==='tgla'){const K=[...document.querySelectorAll('[data-tk]')].map(e=>e.dataset.tk),all=K.length&&K.every(k=>OPEN.has(k));K.forEach(k=>all?OPEN.delete(k):OPEN.add(k));keepOpen();draw();return}
  if(a==='ttl'&&r){nameDlg('지시서 명칭 — '+r.M.no,((r.fl||{}).title||{}).text||'','피킹 지시서 이름으로 쓰입니다. 목록·폰 지시서·A4 인쇄물 제목에 나오고, 이 지시서로 만든 용차 명세서도 기본으로 이 이름을 따라갑니다.',text=>save(()=>{r.fl=Object.assign({},r.fl||{});if(text)r.fl.title={text,at:nowS(),by:WHO};else delete r.fl.title},{a:'iss_set',no:r.M.no,key:'title',on:1,text,by:WHO},true));return}
  if(a==='tttl'&&x){const df=srcTitle(x);nameDlg('용차 명세서 명칭 — '+x.id,x.title||'',(df?'비워 두면 지시서 명칭 「'+esc(df)+'」을 따라갑니다.':'비워 두면 「용차 인수인계 명세서」로 나옵니다.')+' 명세서 제목에 쓰입니다.',text=>save(()=>{x.title=text;x.st.info=Object.assign({},x.st.info||{},{title:text})},{a:'trk_set',id:x.id,info:{title:text},rev:(x.st||{}).rev||0,by:WHO},false,res=>{const i=D.trk.findIndex(y=>y.id===x.id);if(i>=0&&res.item)D.trk[i]=res.item}));return}
