@@ -1,4 +1,4 @@
-/* 루티 주문현황 대시보드 v45 · 2026-11-26 — 루티 관리자 화면에서 로더 북마크로 불러 씀 */
+/* 루티 주문현황 대시보드 v46 · 2026-11-26 — 루티 관리자 화면에서 로더 북마크로 불러 씀 */
 (function(){function dash(){
 const API='https://api-prod.flowfix.co.kr/api/v1/admin/orders',SELLER=62,SUP='https://api-prod.flowfix.co.kr/api/v1/suppliers',CK='flowfix-admin-access-token';
 const WS={PENDING_RECEIPT:'접수대기',RECEIPT_CONFIRMED:'접수확정',GATHERING_INBOUND_COMPLETED:'집하입고완료',INBOUND_COMPLETED:'입고완료',DRIVER_OUTBOUND_WAITING:'기사출고대기',CENTER_OUTBOUND_COMPLETED:'센터출고',DRIVER_OUTBOUND_COMPLETED:'기사출고',WORK_IN_PROGRESS:'작업중',WORK_COMPLETED:'작업완료',COLLECTING:'회수중',COLLECTION_COMPLETED:'회수완료',RETURN_COMPLETED:'반납완료',CANCELLED:'취소'};
@@ -91,7 +91,7 @@ tr.now td{background:var(--soft)}tr.bad td:first-child{color:var(--crit)}
 .chk{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px}.chk b{display:block;font-size:18px}.chk small{color:var(--mute);font-size:11.5px}
 @media print{header .ctl,.tabs{display:none}.tp[hidden]{display:block!important}.tp h3{display:block}}`;
 document.head.insertAdjacentHTML('beforeend','<meta name="viewport" content="width=device-width,initial-scale=1"><style>'+CSS+'</style>');
-document.body.innerHTML='<header><b>루티 현황</b><span id="ver" title="대시보드 버전">v45 · 2026-11-26</span><div class="ctl"><label>거래처 <select id="sel"></select></label><label>접수일 <input type="date" id="df"> ~ <input type="date" id="dt"></label><button id="dx" title="전체 기간 조회 — 서버 부담이 커서 마스터 관리자 비밀번호가 필요합니다">전체 🔒</button><label title="센터를 고르면 그 센터만 서버에서 받아옵니다">센터 <select id="cen"></select></label></div><span id="pb" hidden><i></i></span><span id="stamp"><i></i>불러오는 중…</span><div class="ctl"><label>자동 <select id="iv"><option value="0">끄기</option><option value="30">30분</option><option value="60">60분</option></select></label><button id="snap">스냅샷 저장</button><button class="pri" id="re">새로고침</button></div></header><main id="app"></main>';
+document.body.innerHTML='<header><b>루티 현황</b><span id="ver" title="대시보드 버전">v46 · 2026-11-26</span><div class="ctl"><label>거래처 <select id="sel"></select></label><label>접수일 <input type="date" id="df"> ~ <input type="date" id="dt"></label><button id="dx" title="전체 기간 조회 — 서버 부담이 커서 마스터 관리자 비밀번호가 필요합니다">전체 🔒</button><label title="센터를 고르면 그 센터만 서버에서 받아옵니다">센터 <select id="cen"></select></label></div><span id="pb" hidden><i></i></span><span id="stamp"><i></i>불러오는 중…</span><div class="ctl"><label>자동 <select id="iv"><option value="0">끄기</option><option value="30">30분</option><option value="60">60분</option></select></label><button id="snap">스냅샷 저장</button><button class="pri" id="re">새로고침</button></div></header><main id="app"></main>';
 const $=s=>document.querySelector(s);
 $('#iv').value=String(S.min);
 S.to=today();S.from=addD(S.to,-10);$('#df').value=S.from;$('#dt').value=S.to;
@@ -239,9 +239,11 @@ function draw(){
  const lkA=addD(td,-LKD[0]),lkB=addD(td,LKD[1]),nrc=x=>String(x).replace(/[\s-]/g,'').toUpperCase(),LKA=[],LKG=[];S.LK={};
  if(!S.tk){const src=(S.lkRows||S.rows).filter(r=>(!S.center||r.c===S.center)&&!r.k&&!r.x&&r.ap&&r.ap>=lkA&&r.ap<=lkB&&r.rc&&(r.m==='교체출고'||r.m==='교체회수'));
   for(const L of group(src,r=>r.v+'|'+nrc(r.rc)+'|'+r.ap).values()){const O=L.filter(r=>r.m==='교체출고'),C=L.filter(r=>r.m==='교체회수');if(!O.length||!C.length)continue;
-   for(const [me,ot] of [[O,C],[C,O]]){const pg=ot.filter(x=>x.g||x.e),pa=ot.filter(x=>x.a||x.g||x.e);
-    for(const r of me){if(r.g||r.e)continue;if(!r.a&&pa.length){const q=pg[0]||pa[0];S.LK[r.id]={k:'배정 누락',p:q,since:String(q.g||q.e?(q.od||q.ad||r.ap):(q.ad||r.ap)).slice(0,10)};LKA.push(r)}
-     else if(r.a&&pg.length){const q=pg[0];S.LK[r.id]={k:'출고 누락',p:q,since:String(q.od||r.ap).slice(0,10)};LKG.push(r)}}}}}
+   const wbs=(a,b)=>String(a.wb||'~')<String(b.wb||'~')?-1:String(a.wb||'~')>String(b.wb||'~')?1:0;O.sort(wbs);C.sort(wbs);
+   for(const [me,ot] of [[O,C],[C,O]]){const okG=x=>x.g||x.e,okA=x=>x.a||x.g||x.e,used=new Set();
+    me.forEach((r,i)=>{if(r.g||r.e)return;const m=ot[i],pick=ok=>(m&&ok(m)&&!used.has(m))?m:(ot.find(x=>ok(x)&&!used.has(x))||ot.find(ok));
+     if(!r.a){const q=pick(okA);if(q){used.add(q);S.LK[r.id]={k:'배정 누락',p:q,since:String(q.g||q.e?(q.od||q.ad||r.ap):(q.ad||r.ap)).slice(0,10)};LKA.push(r)}}
+     else{const q=pick(okG);if(q){used.add(q);S.LK[r.id]={k:'출고 누락',p:q,since:String(q.od||r.ap).slice(0,10)};LKG.push(r)}}})}}}
  const lkAll=LKA.concat(LKG),lkc=lkAll.length?'up':'';
  const lkCard=S.tk?'':'<div class="kpi lkk" title="약속일 '+lkA.slice(5)+' ~ '+lkB.slice(5)+' · 판매처·수취인(차량번호)·약속일이 같은 교체출고·교체회수 중 한쪽만 기사배정 또는 출고된 건'+(S.lkRows?'':' · 서버에서 따로 받지 못해 지금 불러온 데이터 안에서만 찾음')+'"><div class="l">연계주문 누락</div><div class="v">'+N('kpi:lk','연계주문 누락',lkAll,{t:1,lk:1,cls:lkc})+'<small>\u0001</small></div><div class="d">배정 누락 '+N('lk:a','연계주문 누락 · 배정 누락',LKA,{t:1,lk:1,cls:LKA.length?'up':''})+' · 출고 누락 '+N('lk:g','연계주문 누락 · 출고 누락',LKG,{t:1,lk:1,cls:LKG.length?'up':''})+'</div></div>';
  h+='<div class="kpis">'+kpi('남은 물량','rem',rem,'취소·종결 제외',1)+kpi('기사 미배정','una',unasL,'남은 물량의 '+pct(unasL.length,rem.length)+'%',1)+kpi('종결','done',doneL,'진도율 '+pct(T.e,T.live)+'%')+kpi('전체 운송장','all',R,'주문 '+f(orders)+'건 · 취소 '+f(T.x))+kpi('출고·설치','out',outL,ag(outL))+kpi('회수','col',colL,ag(colL))+lkCard+'</div>';
