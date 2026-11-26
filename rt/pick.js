@@ -1,6 +1,6 @@
-/* 피킹 지시서 v48 · 2026-11-26 — 루티 관리자 화면에서 북마크로 불러 씀 */
+/* 피킹 지시서 v49 · 2026-11-26 — 루티 관리자 화면에서 북마크로 불러 씀 */
 (function(){function pick(){
-const API='https://api-prod.flowfix.co.kr/api/v1/admin/orders',CK='flowfix-admin-access-token',VER='v48 · 2026-11-26',MOB='https://hanunpark.github.io/zonescan/pick.html',GAS0='https://script.google.com/macros/s/AKfycby33E3x2WOVkZd_Kh4LSumPMT-KKbNa292E9WNKKTdx40WjCxsVgpSTq2R7oJby6XDF/exec';
+const API='https://api-prod.flowfix.co.kr/api/v1/admin/orders',CK='flowfix-admin-access-token',VER='v49 · 2026-11-26',MOB='https://hanunpark.github.io/zonescan/pick.html',GAS0='https://script.google.com/macros/s/AKfycby33E3x2WOVkZd_Kh4LSumPMT-KKbNa292E9WNKKTdx40WjCxsVgpSTq2R7oJby6XDF/exec';
 const $=s=>document.querySelector(s),esc=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const LS=(k,v)=>{try{if(v===undefined)return JSON.parse(localStorage.getItem('tcpk_'+k)||'null');if(v===null)localStorage.removeItem('tcpk_'+k);else localStorage.setItem('tcpk_'+k,JSON.stringify(v))}catch(e){return null}};
 const pad=n=>String(n).padStart(2,'0'),ymd=d=>d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());
@@ -118,7 +118,7 @@ body{background:var(--sub);color:var(--ink);font:13.5px/1.5 -apple-system,"Apple
 .bar{background:var(--hd);padding:8px 16px;gap:8px 12px}.bar .ver,.ttl .ver{color:var(--hdmu);opacity:1}
 input,select,button,summary{border-color:var(--line2);background:var(--bg);color:var(--ink);border-radius:8px}button:hover{border-color:var(--mute)}
 button.pri{background:var(--acc);border-color:var(--acc);color:var(--onacc);font-weight:600}button.pri:hover{background:var(--acch)}
-.tabs{border:0;gap:2px;border-radius:0}.tabs button{color:var(--hdmu);border-radius:8px!important;height:32px;padding:0 12px;font-weight:500}.tabs button:hover{color:#fff}.tabs button.on{background:#2f3354;color:#fff;font-weight:600}
+.tabs{border:0;gap:2px;border-radius:0}.tabs button{color:var(--hdmu);border-radius:8px!important;height:32px;padding:0 12px;font-weight:500}.tabs button:hover{color:#fff}.tabs button.on{background:#2f3354;color:#fff;font-weight:600}.tabs button.aux{margin-left:12px;position:relative;color:#d9b36a}.tabs button.aux::before{content:'';position:absolute;left:-7px;top:8px;bottom:8px;width:1px;background:#ffffff33}.tabs button.aux.on{background:#5a3f0a;color:#ffd98a}
 .bar2{background:var(--bg);border-bottom:1px solid var(--line)}details>div{background:var(--bg);border-color:var(--line2)}
 .lk{color:var(--acc)}.lk.del{color:var(--crit)}.mu{color:var(--ink2)}#sum{color:var(--ink)}
 #dup{background:var(--warnbg);border-color:var(--warn);color:var(--warn)}#msg{background:var(--card);border:1px solid var(--line)}
@@ -131,7 +131,7 @@ button.pri{background:var(--acc);border-color:var(--acc);color:var(--onacc);font
 .wrap.lw .panel{background:var(--sub)}.sheet{color:#111}
 </style>`);
 document.title='피킹 지시서';
-document.body.innerHTML=`<div class="bar noprint"><div class="ttl"><b>피킹 지시서</b><span class="ver">${VER}</span></div><div class="tabs"><button data-t="make">지시서 만들기</button><button data-t="tmp">임시 (루티 체크건)</button><button data-t="list">지시서 목록 <span id="lc"></span></button><button data-t="trk">출고 관리</button><button data-t="ntc">공지 <span id="nc"></span></button></div><button id="gs" style="height:30px;font-size:12.5px"></button>
+document.body.innerHTML=`<div class="bar noprint"><div class="ttl"><b>피킹 지시서</b><span class="ver">${VER}</span></div><div class="tabs"><button data-t="make">지시서 만들기</button><button data-t="list">지시서 목록 <span id="lc"></span></button><button data-t="trk">출고 관리</button><button data-t="ntc">공지 <span id="nc"></span></button><button data-t="tmp" class="aux" title="기사가 정해지지 않아 정식 발행이 안 될 때만 쓰는 임시 작업">기사 미확정 임시 피킹</button></div><button id="gs" style="height:30px;font-size:12.5px"></button>
 <span id="mk" style="display:contents"><label>출고예정일(약속일) <input type="date" id="dt"></label><label>거점 <select id="cen"></select></label><button id="go" class="pri">조회</button><span id="st" style="font-size:13px"></span></span></div>
 <div class="bar2 noprint" id="opt" hidden><details id="sd"><summary>거래처 <span id="sn"></span></summary><div id="sups"></div></details><details id="dd"><summary>기사(메인기사) <span id="dn"></span></summary><div id="drvs"></div></details>
 <label><input type="checkbox" id="nd"> 이미 발행한 운송장 빼기</label><label>발행자 <input id="who" size="7" placeholder="필수"></label><label>피킹 마감 <select id="due">${Array.from({length:48},(_,i)=>pad(i>>1)+':'+(i%2?'30':'00')).map(x=>`<option${x==='08:00'?' selected':''}>${x}</option>`).join('')}</select></label>
