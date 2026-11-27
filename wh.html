@@ -156,11 +156,38 @@ table.gt .n{text-align:right;white-space:nowrap}table.gt .nm{font-weight:600}tab
 .pgb{width:84px;height:5px;background:var(--line);border-radius:3px;overflow:hidden;margin-top:3px}.pgb u{display:block;height:100%;background:var(--good)}
 .pane{position:sticky;top:62px;max-height:calc(100vh - 74px);overflow:auto;background:var(--card);border:1px solid var(--line);border-radius:10px;padding:12px 14px}
 .pane .c{border:0;padding:0;margin:0;background:none;border-radius:0}.pane .tg{display:none}.pane .sm,.pane .sc,.pane .pmv{cursor:default}
+/* v2.19 입고예정 */
+.ibc .ibh{display:flex;align-items:center;gap:8px}
+.ibc .ibd{font-size:14px;color:var(--ink2)}.ibc .ibd b{font-size:17px;color:var(--ink);margin-left:2px}
+.ibc .ibm{display:flex;align-items:flex-end;gap:12px;margin-top:10px}
+.ibc .ibn{font-size:18px;font-weight:700;letter-spacing:-.02em}
+.ibc .ibl{font-size:13.5px;color:var(--ink2);margin-top:3px}
+.ibc .ibq{margin-left:auto;white-space:nowrap;font-size:14px;color:var(--ink2)}.ibc .ibq b{font-size:22px;color:var(--ink);margin-right:1px}
+.ibc .ibs{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px}
+.ibc .ibs span{background:var(--fill);border-radius:8px;padding:5px 9px;font-size:13px}
+.ibc dl{display:grid;grid-template-columns:auto 1fr;gap:5px 12px;margin:12px 0 0;font-size:13.5px}
+.ibc dt{color:var(--mute)}.ibc dd{margin:0}.ibc dd a{color:var(--acc);font-weight:600;text-decoration:none}
+.ibc .ibmm{margin-top:12px;background:var(--fill);border-radius:12px;padding:10px 12px;font-size:13.5px;white-space:pre-wrap}
+.ibc .ibst{margin-top:10px;font-size:12.5px;color:var(--mute)}
+.ibc.dn .ibn{color:var(--ink2)}
+.chips .ibnew{margin-left:auto}
+.ibg{display:inline-block;min-width:17px;height:17px;line-height:17px;border-radius:9px;background:var(--fill);color:var(--ink2);font-size:10.5px;font-style:normal;margin-left:4px;padding:0 5px;vertical-align:1px}
+.on .ibg{background:var(--acc);color:var(--onacc)}
+#dlg .ibf input,#dlg .ibf textarea{width:100%;height:48px;border:0;background:var(--fill);border-radius:12px;padding:0 12px;font-size:15.5px;color:var(--ink);font-family:inherit;box-sizing:border-box}
+#dlg .ibf textarea{height:auto;min-height:64px;padding:12px}
+#dlg .ibf .req{color:var(--crit);font-weight:700}
+#dlg .ibf label small{font-weight:400;color:var(--mute);margin-left:4px}
+#dlg .ib2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+#dlg .ibr{display:grid;grid-template-columns:1fr 84px 40px;gap:6px;margin-top:6px}
+#dlg .ibr .b{height:48px;padding:0;margin:0}
+#dlg #ib_add{margin-top:8px}
+/* 좁은 폰에서 탭 4개 + 배지가 넘치면 옆으로 밀어 보기 */
+@media(max-width:899px){.tabs{overflow-x:auto;scrollbar-width:none}.tabs::-webkit-scrollbar{display:none}.tabs button{flex:none;white-space:nowrap}}
 </style>
 </head>
 <body>
-<header><div class="h1"><div class="tt"><b>타이어케어 출고 관리</b><small>v2.18 · 2026-11-26</small></div><button id="ctr" title="거점 바꾸기"></button><button id="whoB"></button></div>
-<div class="tabs"><button data-tab="list">지시서 목록</button><button data-tab="out">출고 관리</button><button data-tab="ntc">공지</button></div></header>
+<header><div class="h1"><div class="tt"><b>타이어케어 출고 관리</b><small>v2.19 · 2026-11-27</small></div><button id="ctr" title="거점 바꾸기"></button><button id="whoB"></button></div>
+<div class="tabs"><button data-tab="list">지시서 목록</button><button data-tab="out">출고 관리</button><button data-tab="ib">입고예정</button><button data-tab="ntc">공지</button></div></header>
 <div id="flt" hidden><div class="f1"><label>거점</label><select id="fc"></select></div><div class="fb"><label>기준</label><div class="seg"><button data-by="iss">지시일</button><button data-by="due">출고예정일</button></div></div><div class="f2"><label>날짜</label><button class="b nv" data-dd="-1" title="하루 앞">‹</button><input type="date" id="ff"><span id="fsep">~</span><input type="date" id="ft"><button class="b nv" data-dd="1" title="하루 뒤">›</button><button class="b rg" id="frg" title="여러 날을 한꺼번에 보기">기간</button></div><div class="f3"><button class="b p" id="fg">조회</button><button class="b" data-q="0">오늘</button><button class="b" data-q="1">내일</button><button class="b" id="f7">최근 7일</button><button class="b" id="fr">새로고침</button></div><div id="fst"></div></div>
 <main id="m"><div class="msg">여는 중…</div></main><div id="busy" hidden>최신 내용 확인 중…</div>
 <script>
@@ -182,11 +209,11 @@ const T0=ymd(new Date()),F={from:T0,to:T0,center:ls('center')||'',by:ls('by')||'
 /* 고른 기간은 같은 날 같은 탭 안에서만 유지 (지시서를 열었다 돌아와도 그대로) */
 try{const r=JSON.parse(sessionStorage.getItem('wh_range')||'null');if(r&&r.day===T0){F.from=r.from;F.to=r.to;F.rng=r.from!==r.to}}catch(e){}
 function keepRange(){try{sessionStorage.setItem('wh_range',JSON.stringify({day:T0,from:F.from,to:F.to}))}catch(e){}}
-const PV='v2.18';
+const PV='v2.19';
 /* 새 판이 올라왔는데 브라우저가 예전 판을 보여 주면 자동으로 새로 읽는다 (GitHub Pages 캐시 대비) */
 let VC=0;function verCheck(){if(Date.now()-VC<600000)return;VC=Date.now();fetch(location.pathname+'?_='+Date.now(),{cache:'no-store'}).then(r=>r.text()).then(t=>{const m=t.match(/const PV='([^']+)'/);if(m&&m[1]!==PV&&!sessionStorage.getItem('wh_upd_'+m[1])){sessionStorage.setItem('wh_upd_'+m[1],'1');const u=new URL(location.href);u.searchParams.set('v',m[1]);location.replace(u.toString())}}).catch(()=>{})}
-let SHOWCX=false,SHOWCXS=false,D={srv:[],trk:[],ntc:[],role:''},LOADED=false,PEND=0,SEQ=0,FOCUS='',WIDE=false;
-{const q=new URLSearchParams(location.search),t=q.get('tab');if(t==='list'||t==='out'||t==='ntc'){TAB=t;if(q.get('trk')){KIND='trk';FOCUS=q.get('trk')}else if(q.get('no')){FOCUS=q.get('no');if(t==='out')KIND='drv'}}else if(q.get('no')){TAB='list';FOCUS=q.get('no')}if(location.search)history.replaceState(null,'',location.pathname+location.hash)}
+let SHOWCX=false,SHOWCXS=false,D={srv:[],trk:[],ntc:[],role:'',ib:[]},LOADED=false,PEND=0,SEQ=0,FOCUS='',WIDE=false;
+{const q=new URLSearchParams(location.search),t=q.get('tab');if(t==='list'||t==='out'||t==='ntc'||t==='ib'){TAB=t;if(q.get('trk')){KIND='trk';FOCUS=q.get('trk')}else if(q.get('no')){FOCUS=q.get('no');if(t==='out')KIND='drv'}}else if(q.get('no')){TAB='list';FOCUS=q.get('no')}if(location.search)history.replaceState(null,'',location.pathname+location.hash)}
 {const h=location.hash.slice(1);if(h){KEY=decodeURIComponent(h);ls('key',KEY);history.replaceState(null,'',location.pathname+location.search)}}
 const jfetch=async(u,o,tries)=>{tries=tries||3;for(let n=0;;n++){let t='',net=false;const ac=window.AbortController?new AbortController():null,tm=ac?setTimeout(()=>ac.abort(),25000):0;try{const r=await fetch(u,ac?Object.assign({},o,{signal:ac.signal}):o);t=await r.text();clearTimeout(tm);return JSON.parse(t)}catch(e){clearTimeout(tm);net=!t}if(n<tries-1){await new Promise(r=>setTimeout(r,[1200,2500,4000][n]||4000));continue}const er=new Error(net?'통신 상태를 확인해 주세요.':'구글 서버가 잠시 응답하지 않습니다 (서버 오류). 잠시 뒤 다시 시도해 주세요.');er.srv=!net;throw er}};
 async function get(q,tries){const j=await jfetch(GAS+'?'+q+(KEY?'&t='+encodeURIComponent(KEY):''),undefined,tries);if(!j.ok)throw new Error(j.err||'오류');return j}
@@ -198,13 +225,13 @@ function fkey(){return F.from+'|'+F.to}
 let BB=null;function busyBtn(b){if(BB){BB.textContent=BB.dataset.t;BB.disabled=false;BB=null}if(b){BB=b;b.dataset.t=b.textContent;b.textContent='불러오는 중…';b.disabled=true}}
 /* 오늘·내일은 미리 받아 두어 누르면 바로 보이게 */
 let PF=false;function prefetch(){if(PF)return;PF=true;const t=ymd(new Date());[[t,t],[addD(t,1),addD(t,1)]].forEach(([a,b])=>{const k=a+'|'+b;if(MC[k]||k===fkey())return;const sv=[F.from,F.to];F.from=a;F.to=b;fetchAll().then(n=>{MC[n.k]=n}).catch(()=>{});F.from=sv[0];F.to=sv[1]})}
-function fetchAll(quiet){const k=fkey(),t=quiet?1:3;return Promise.all([getR('a=list&from='+addD(F.from,-7)+'&to='+addD(F.to,7)+'&ifrom='+F.from+'&ito='+F.to,t),getR('a=trk_list&from='+addD(F.from,-10)+'&to='+addD(F.to,10),t)]).then(([[l,s1],[tr,s2]])=>({k,srv:l.items.filter(x=>x.M),trk:tr.items,ntc:l.ntc||[],role:l.role||'',same:s1&&s2}))}
+function fetchAll(quiet){const k=fkey(),t=quiet?1:3;const ibP=IBOFF&&TAB!=='ib'?Promise.resolve({ib:[],unsup:1,s:true}):getR('a=ib_list&from='+F.from+'&to='+F.to,t).then(([j,s])=>{IBOFF=false;return {ib:j.items||[],s}},e=>/unknown action/.test(e.message)?(IBOFF=true,{ib:[],unsup:1,s:true}):{ib:((MC[k]||{}).ib)||[],err:e.message,s:false});return Promise.all([ibP,getR('a=list&from='+addD(F.from,-7)+'&to='+addD(F.to,7)+'&ifrom='+F.from+'&ito='+F.to,t),getR('a=trk_list&from='+addD(F.from,-10)+'&to='+addD(F.to,10),t)]).then(([I,[l,s1],[tr,s2]])=>({k,srv:l.items.filter(x=>x.M),trk:tr.items,ntc:l.ntc||[],role:l.role||'',ib:I.ib,ibUnsup:!!I.unsup,ibErr:I.err||'',same:s1&&s2&&I.s}))}
 const MC={};
-let LOADING=0,FAILS=0,SKIP=0,WSEQ=0;
+let LOADING=0,FAILS=0,SKIP=0,WSEQ=0,IBOFF=false;
 async function load(quiet){const seq=++SEQ,key=fkey(),w0=WSEQ;if(!LOADED){const c=MC[key]||(()=>{const s=ls('cache');return s&&s.k===key?s:null})();if(c){D=c;LOADED=true;draw()}}
  if(!LOADED&&$('#m').querySelector('.c,.kind')){$('#m').style.opacity=.45;LOADED=true}
  if(!LOADED)$('#m').innerHTML='<div class="msg">불러오는 중…</div>';else if(!quiet)$('#busy').hidden=false;
- if(!quiet)stamp('ld','불러오는 중…');LOADING++;try{const n=await fetchAll(quiet);FAILS=0;MC[n.k]=n;if(seq!==SEQ||key!==fkey())return;if(w0!==WSEQ)return;/* 불러오는 사이 저장이 있었으면 이 응답(저장 전 내용)은 버린다 — 다음 새로고침에 반영 */$('#busy').hidden=true;{const d=new Date();stamp('ok','✓ '+pad(d.getHours())+':'+pad(d.getMinutes())+':'+pad(d.getSeconds())+' 최신으로 불러옴')}$('#m').style.opacity='';busyBtn();prefetch();if(PEND||$('#dlg'))return;const same=LOADED&&(n.same&&D.k===n.k||JSON.stringify([D.srv,D.trk,D.ntc])===JSON.stringify([n.srv,n.trk,n.ntc]));D=n;LOADED=true;if(!same){ls('cache',n);draw()}ntcPop()}
+ if(!quiet)stamp('ld','불러오는 중…');LOADING++;try{const n=await fetchAll(quiet);FAILS=0;MC[n.k]=n;if(seq!==SEQ||key!==fkey())return;if(w0!==WSEQ)return;/* 불러오는 사이 저장이 있었으면 이 응답(저장 전 내용)은 버린다 — 다음 새로고침에 반영 */$('#busy').hidden=true;{const d=new Date();stamp('ok','✓ '+pad(d.getHours())+':'+pad(d.getMinutes())+':'+pad(d.getSeconds())+' 최신으로 불러옴')}$('#m').style.opacity='';busyBtn();prefetch();if(PEND||$('#dlg'))return;const same=LOADED&&(n.same&&D.k===n.k||JSON.stringify([D.srv,D.trk,D.ntc,D.ib])===JSON.stringify([n.srv,n.trk,n.ntc,n.ib]));D=n;LOADED=true;if(!same){ls('cache',n);draw()}ntcPop()}
  catch(e){if(quiet){FAILS++;SKIP=Math.min(Math.pow(2,FAILS)-1,10)}$('#busy').hidden=true;$('#m').style.opacity='';busyBtn();if(seq!==SEQ)return;stamp('','⚠ 불러오지 못했습니다 — '+e.message);if(!LOADED)$('#m').innerHTML='<div class="msg">불러오지 못했습니다.<br><small>'+esc(e.message)+'</small><br><br><button class="b" onclick="location.reload()">다시 시도</button>'+'</div>';if(/키가 맞지/.test(e.message)){KEY='';ls('key','');pinPad(KEY0?'비밀번호가 바뀌었습니다. 새 비밀번호를 눌러 주세요.':'')}}}
 const load0=load;load=async function(q){try{return await load0(q)}finally{LOADING=Math.max(0,LOADING-1)}};
 const KEY0=KEY;
@@ -222,7 +249,7 @@ function askWho(){dlg(`<h3>이름</h3><div class="mu">체크·수정한 사람�
  $('#d_ok').onclick=()=>{const v=$('#d_who').value.trim();if(!v){$('#d_e').textContent='이름을 넣어 주세요.';return}WHO=v;ls('who',v);close();head()}}
 function dlg(h){close();const d=document.createElement('div');d.id='dlg';d.innerHTML='<div>'+h+'</div>';document.body.appendChild(d);d.addEventListener('click',e=>{if(e.target===d||e.target.hasAttribute('data-x'))close()})}
 function close(){const d=$('#dlg');if(d)d.remove()}
-function head(){$('#ctr').innerHTML='<small>작업 거점</small>'+esc(F.center||'전체 거점')+'<span class="pv">'+PV+'</span>';$('#ctr').classList.toggle('all',!F.center);$('#whoB').textContent=WHO?WHO:'이름 입력';$('#whoB').classList.toggle('need',!WHO);{const u=unread().length,b=document.querySelector('[data-tab=ntc]');if(b)b.innerHTML='공지'+(u?'<i class="nbg">'+u+'</i>':'')}document.querySelectorAll('[data-tab]').forEach(b=>b.classList.toggle('on',b.dataset.tab===TAB))}
+function head(){$('#ctr').innerHTML='<small>작업 거점</small>'+esc(F.center||'전체 거점')+'<span class="pv">'+PV+'</span>';$('#ctr').classList.toggle('all',!F.center);$('#whoB').textContent=WHO?WHO:'이름 입력';$('#whoB').classList.toggle('need',!WHO);{const u=unread().length,b=document.querySelector('[data-tab=ntc]');if(b)b.innerHTML='공지'+(u?'<i class="nbg">'+u+'</i>':'')}{const b=document.querySelector('[data-tab=ib]'),n=D.ibUnsup?0:(D.ib||[]).filter(x=>x.st==='plan'&&inC(x.center)&&inR(x.date)).length;if(b)b.innerHTML='입고예정'+(n?'<i class="ibg">'+n+'</i>':'')}document.querySelectorAll('[data-tab]').forEach(b=>b.classList.toggle('on',b.dataset.tab===TAB))}
 const isd=r=>{const s=String(r.M.issued||r.at||'');if(/^\d{4}-\d\d-\d\d/.test(s))return s.slice(0,10);const d=new Date(s);return isNaN(d)?'':ymd(d)},inR=d=>!!d&&d>=F.from&&d<=F.to,inRng=r=>F.by==='due'?(r.M.dates&&r.M.dates.length?r.M.dates:[r.M.date]).some(inR):inR(isd(r)),trkIn=x=>{if(F.by==='due')return inR(String(x.loadAt).slice(0,10));const s=D.srv.find(r=>r.M.no===x.src);return inR(s?isd(s):String(x.at||'').slice(0,10))};
 const inC=c=>!F.center||c===F.center,tot=M=>M.lines.reduce((s,g)=>s+g.w.length,0);
 function trkOf(M){const w=new Set(M.lines.flatMap(g=>g.w));return D.trk.filter(t=>!t.st.cancel&&t.lines.some(g=>g.w.some(x=>w.has(x)))).map(t=>({t,n:t.lines.reduce((s,g)=>s+g.w.filter(x=>w.has(x)).length,0)}))}
@@ -230,7 +257,7 @@ function tstatus(x){const st=x.st||{},p=st.steps||{};if(st.cancel)return '취소
 function flHtml(r,i){return FL.map(([k,l])=>{const f=(r.fl||{})[k];return `<span class="pr"><button class="pb" data-a="prt" data-i="${i}" data-k="${k}">${l} 인쇄</button><button class="ck${f?' on':''}" data-a="fl" data-i="${i}" data-k="${k}" title="${f?esc('출력함 · '+at(f.at)+' '+(f.by||''))+' — 누르면 해제':'출력했으면 눌러 표시'}">${f?'✓':''}</button></span>`}).join('')}
 /* 목록은 접어서 요약만, [상세보기]로 펼침 (펼친 상태는 이 탭에서 유지) */
 /* ── 넓은 화면(PC): 표 + 오른쪽 상세 패널. 상세 패널은 기존 카드를 펼친 채로 재사용 ── */
-const WD=()=>innerWidth>=900;let FORCE=false;const SEL={list:'',trk:'',drv:''};
+const WD=()=>innerWidth>=900;let FORCE=false;const SEL={list:'',trk:'',drv:'',ib:''};
 function setMode(){const h=document.documentElement;h.classList.toggle('wide',WD());h.classList.toggle('pc',!!BR||(WD()&&matchMedia('(pointer:fine)').matches))}
 const inPane=f=>{FORCE=true;try{return f()}finally{FORCE=false}};
 function pickSel(g,keys){if(FOCUS&&keys.indexOf(FOCUS)>=0)SEL[g]=FOCUS;if(keys.indexOf(SEL[g])<0)SEL[g]=keys[0]||'';return SEL[g]}
@@ -367,6 +394,71 @@ function ttlLine(own,df,attr){const pc=myR()==='pc',t=own||df;if(!t&&!pc)return 
 function nameDlg(h,v,note,go){if(myR()!=='pc'){alert('명칭은 지시자(PC 도구)만 바꿀 수 있습니다.');return}if(!needWho())return;
  dlg(`<h3>${esc(h)}</h3><input id="nm_t" maxlength="40" value="${esc(v)}" placeholder="예: 일산 오전 교체 1차"><div class="mu" style="margin-top:6px">${note}<br>비우고 저장하면 기본 이름으로 돌아갑니다.</div><div class="act" style="justify-content:flex-end"><button class="b" data-x>닫기</button><button class="b p" id="nm_ok">저장</button></div>`);
  const i=$('#nm_t');i.focus();i.select();$('#nm_ok').onclick=()=>{const t=i.value.trim();close();go(t)};i.onkeydown=e=>{if(e.key==='Enter')$('#nm_ok').click()}}
+/* ───────── 입고예정 (v2.19, 서버 v2.11부터) ─────────
+ * 지시자(PC)가 거점으로 들어올 물량을 등록 · 창고는 날짜·거점별로 보고 [입고 확인].
+ * 필수: 입고거점 · 거래처 · 입고예정일 · 예정시간 · 수량. 나머지는 선택. */
+let SHOWIBX=false;
+const IBS={plan:['예정','w'],done:['입고 완료','g'],cancel:['취소','o']};
+function ibOf(){return (D.ib||[]).filter(x=>inC(x.center)&&inR(x.date))}
+function ibSpecs(x){return (x.specs||[]).filter(s=>s[0]||s[1]).map(s=>`<span>${esc(s[0]||'규격 미기재')}${s[1]?' × <b>'+s[1]+'</b>':''}</span>`).join('')}
+function ibLine(x){const a=[];if(x.from)a.push('발송 '+esc(x.from));a.push('입고 '+esc(x.center));return a.join(' → ')}
+function ibStatus(x){const L=x.log||{};if(x.st==='done'&&L.done)return `입고 확인 ${esc(String(L.done.at).slice(5,16))} · ${esc(L.done.by||'')}`;if(x.st==='cancel'&&L.cancel)return `취소 ${esc(String(L.cancel.at).slice(5,16))} · ${esc(L.cancel.by||'')}${L.cancel.why?' — '+esc(L.cancel.why):''}`;return `등록 ${esc(String(x.at).slice(5,16))} · ${esc(x.by||'')}`}
+function ibCard(x){const s=IBS[x.st]||IBS.plan,pc=myR()==='pc',tel=String(x.phone||'').replace(/[^\d+]/g,'');
+ const info=[x.recv&&['수취인',esc(x.recv)],x.plate&&['용차',esc(x.plate)],x.phone&&['기사 연락처',tel?`<a href="tel:${esc(tel)}">${esc(x.phone)}</a>`:esc(x.phone)]].filter(Boolean);
+ return `<div class="c ibc${x.st==='cancel'?' cx':''}${x.st==='done'?' dn':''}" data-ib="${esc(x.id)}" data-f="${esc(x.id)}">
+ <div class="ibh"><span class="bd ${s[1]}">${s[0]}</span><span class="ibd">${esc(x.date.slice(5).replace('-','/'))} (${dow(x.date)}) <b>${esc(x.time)}</b></span></div>
+ <div class="ibm"><div><div class="ibn">${esc(x.client)}</div><div class="ibl">${ibLine(x)}</div></div><div class="ibq"><b>${x.qty}</b>본</div></div>
+ ${(x.specs||[]).length?`<div class="ibs">${ibSpecs(x)}</div>`:''}
+ ${info.length?`<dl>${info.map(([k,v])=>`<dt>${k}</dt><dd>${v}</dd>`).join('')}</dl>`:''}
+ ${x.memo?`<div class="ibmm">${esc(x.memo)}</div>`:''}
+ <div class="ibst">${ibStatus(x)}</div>
+ <div class="act">${x.st==='cancel'?(pc?'<button class="b" data-a="ibrs">취소 되돌리기</button>':''):x.st==='done'?'<button class="b" data-a="ibundo">입고 확인 취소</button>':'<button class="b p" data-a="ibdone">입고 확인</button>'}${pc&&x.st!=='cancel'?'<button class="b" data-a="ibedit">수정</button><button class="lk" data-a="ibcx">입고예정 취소</button>':''}</div></div>`}
+function wideIb(L){const keys=L.map(x=>x.id),sel=pickSel('ib',keys),all=!F.center;let h=`<thead><tr><th>입고 예정</th><th>거래처</th>${all?'<th>입고거점</th>':''}<th>발송지</th><th class="n">수량</th><th>용차</th><th>상태</th></tr></thead><tbody>`,pane='',pd='';
+ L.forEach(x=>{if(x.date!==pd){h+=`<tr class="gh"><td colspan="${all?7:6}">입고예정일 ${x.date} (${dow(x.date)})</td></tr>`;pd=x.date}const s=IBS[x.st]||IBS.plan;
+  h+=`<tr class="rw${x.id===sel?' on':''}${x.st==='cancel'?' cx':''}" data-a="sel" data-g="ib" data-k="${esc(x.id)}" data-f="${esc(x.id)}"><td class="nw"><b>${esc(x.time)}</b></td><td><span class="nm">${esc(x.client)}</span>${x.recv?'<div class="sb">'+esc(x.recv)+'</div>':''}</td>${all?'<td>'+esc(x.center)+'</td>':''}<td>${esc(x.from||'-')}</td><td class="n"><b>${x.qty}</b></td><td>${x.plate?esc(x.plate):'-'}<div class="sb">${esc(x.phone||'')}</div></td><td><span class="bd ${s[1]}">${s[0]}</span></td></tr>`;
+  if(x.id===sel)pane=inPane(()=>ibCard(x))});
+ return split(h+'</tbody>',pane)}
+function ibView(){if(D.ibUnsup)return '<div class="msg">입고예정은 공유 저장소(Apps Script)를 v2.11로 업데이트한 뒤 사용할 수 있습니다.</div>';
+ const A=ibOf(),ncx=A.filter(x=>x.st==='cancel').length,L=(SHOWIBX?A:A.filter(x=>x.st!=='cancel')).slice().sort((a,b)=>kc(a.date+a.time,b.date+b.time)),pc=myR()==='pc';
+ let h=`<div class="chips"><span>예정 <b>${A.filter(x=>x.st==='plan').length}</b></span><span>입고 완료 <b>${A.filter(x=>x.st==='done').length}</b></span><span class="mu">수량 합계 ${A.filter(x=>x.st!=='cancel').reduce((n,x)=>n+(x.qty||0),0)}</span>${ncx?`<button data-a="ibxs" class="${SHOWIBX?'on':''}">${SHOWIBX?'취소 '+ncx+'건 숨기기':'취소 '+ncx+'건 보기'}</button>`:''}${pc?'<button class="b p ibnew" data-a="ibnew">+ 입고예정 등록</button>':''}</div>`;
+ if(!L.length)return h+`<div class="msg">이 조건에 입고예정이 없습니다.${pc?'<br><small>[+ 입고예정 등록]으로 올리세요.</small>':''}</div>`;
+ if(WD())return h+wideIb(L);
+ let pd='';L.forEach(x=>{if(x.date!==pd){h+=`<div class="dh">입고예정일 ${x.date} (${dow(x.date)}) <small>${L.filter(y=>y.date===x.date).length}건</small></div>`;pd=x.date}h+=ibCard(x)});return h}
+function ibSpecRow(s){return `<div class="ibr"><input class="ibsz" placeholder="규격 (예: 245/45R18)" value="${esc((s||[])[0]||'')}"><input class="ibsq" type="number" min="0" inputmode="numeric" placeholder="수량" value="${esc((s||[])[1]||'')}"><button class="b s" data-x2>×</button></div>`}
+function ibForm(x){if(myR()!=='pc'){alert('입고예정은 지시자(PC 도구)만 등록·수정할 수 있습니다.');return}if(!needWho())return;x=x||{};const v=k=>esc(x[k]==null?'':x[k]);
+ const cs=[...new Set((ls('centers')||[]).concat(F.center?[F.center]:[]))].sort(kc),cl=[...new Set((D.ib||[]).map(y=>y.client).concat(ls('ibcl')||[]).filter(Boolean))].sort(kc),fr=[...new Set((D.ib||[]).map(y=>y.from).filter(Boolean))].sort(kc);
+ dlg(`<h3>${x.id?'입고예정 수정':'입고예정 등록'}</h3><div class="ibf"><div class="mu"><b class="req">*</b> 표시는 꼭 넣어야 합니다. 나머지는 아는 만큼만 넣으세요.</div>
+ <label>입고거점 <b class="req">*</b></label><input id="ib_center" list="ib_cs" value="${esc(x.center||F.center||'')}" placeholder="예: 일산FDC"><datalist id="ib_cs">${cs.map(c=>`<option value="${esc(c)}">`).join('')}</datalist>
+ <label>거래처 <b class="req">*</b></label><input id="ib_client" list="ib_cl" value="${v('client')}" placeholder="예: 레드캡"><datalist id="ib_cl">${cl.map(c=>`<option value="${esc(c)}">`).join('')}</datalist>
+ <div class="ib2"><div><label>입고예정일 <b class="req">*</b></label><input type="date" id="ib_date" value="${esc(x.date||F.from)}"></div><div><label>예정시간 <b class="req">*</b></label><input type="time" id="ib_time" step="600" value="${v('time')}"></div></div>
+ <label>수량 <b class="req">*</b> <small class="mu">규격별 수량만 넣으면 합계가 들어갑니다</small></label><input type="number" id="ib_qty" min="1" inputmode="numeric" value="${v('qty')}">
+ <label>규격별 수량</label><div id="ib_specs">${((x.specs||[]).length?x.specs:[['','']]).map(ibSpecRow).join('')}</div><button class="b s" id="ib_add" type="button">+ 규격 추가</button>
+ <label>수취인 (차량번호)</label><input id="ib_recv" value="${v('recv')}">
+ <label>발송지</label><input id="ib_from" list="ib_fr" value="${v('from')}" placeholder="예: 평택 물류센터"><datalist id="ib_fr">${fr.map(c=>`<option value="${esc(c)}">`).join('')}</datalist>
+ <div class="ib2"><div><label>용차 차량번호</label><input id="ib_plate" value="${v('plate')}"></div><div><label>기사 연락처</label><input type="tel" id="ib_phone" value="${v('phone')}"></div></div>
+ <label>메모</label><textarea id="ib_memo" rows="2">${v('memo')}</textarea>
+ <div class="er" id="ib_e"></div></div><div class="act" style="justify-content:flex-end"><button class="b" data-x>닫기</button><button class="b p" id="ib_ok">${x.id?'수정 저장':'등록'}</button></div>`);
+ const box=$('#ib_specs');$('#ib_add').onclick=()=>{box.insertAdjacentHTML('beforeend',ibSpecRow());box.lastElementChild.querySelector('input').focus()};
+ box.addEventListener('click',e=>{if(e.target.hasAttribute('data-x2')){const r=e.target.closest('.ibr');if(box.children.length>1)r.remove();else r.querySelectorAll('input').forEach(i=>i.value='')}});
+ const sum=()=>[...box.querySelectorAll('.ibr')].reduce((n,r)=>n+(Math.round(Number(r.querySelector('.ibsq').value))||0),0);
+ box.addEventListener('input',()=>{const q=$('#ib_qty');if(!q.dataset.touched){const s=sum();q.value=s>0?s:''}});$('#ib_qty').addEventListener('input',e=>{e.target.dataset.touched=e.target.value?'1':''});if(x.qty)$('#ib_qty').dataset.touched='1';
+ $('#ib_ok').onclick=async()=>{const g=id=>$('#'+id).value.trim(),er=$('#ib_e'),I={id:x.id||'',center:g('ib_center'),client:g('ib_client'),date:g('ib_date'),time:g('ib_time'),qty:Math.round(Number(g('ib_qty')))||0,recv:g('ib_recv'),from:g('ib_from'),plate:g('ib_plate'),phone:g('ib_phone'),memo:g('ib_memo'),
+   specs:[...box.querySelectorAll('.ibr')].map(r=>[r.querySelector('.ibsz').value.trim(),Math.round(Number(r.querySelector('.ibsq').value))||0]).filter(s=>s[0]||s[1])};
+  const miss=[!I.center&&'입고거점',!I.client&&'거래처',!I.date&&'입고예정일',!I.time&&'예정시간',!(I.qty>0)&&'수량'].filter(Boolean);
+  if(miss.length){er.textContent=miss.join(' · ')+'을(를) 넣어 주세요.';return}
+  const ss=I.specs.reduce((n,s)=>n+(s[1]||0),0);if(ss&&ss!==I.qty&&!confirm('규격별 수량 합계('+ss+')와 수량('+I.qty+')이 다릅니다. 그대로 저장할까요?'))return;
+  const b=$('#ib_ok');b.disabled=true;b.textContent='저장 중…';er.textContent='';
+  try{const j=await post({a:'ib_save',I,by:WHO});const L=ls('ibcl')||[];if(L.indexOf(I.client)<0){L.unshift(I.client);ls('ibcl',L.slice(0,30))}close();SEL.ib=j.id;
+   if(!inR(I.date)||!inC(I.center)){if(!inC(I.center)){F.center='';ls('center','')}if(!inR(I.date)){setDay(I.date,I.date);return}}load().then(()=>{const e=document.querySelector('[data-ib="'+j.id+'"]');if(e&&!WD())e.scrollIntoView({block:'center'})})}
+  catch(e){b.disabled=false;b.textContent=x.id?'수정 저장':'등록';er.textContent='저장하지 못했습니다 — '+e.message}};
+ $('#ib_center').focus()}
+function ibAct(a,x){if(!needWho())return;
+ if(a==='ibdone'){save(()=>{x.st='done';x.log=Object.assign({},x.log,{done:{at:nowS(),by:WHO}})},{a:'ib_set',id:x.id,op:'done',by:WHO},true);return}
+ if(a==='ibundo'){if(!confirm(x.client+' '+x.date+' '+x.time+' — 입고 확인을 취소할까요?'))return;save(()=>{x.st='plan';const l=Object.assign({},x.log);delete l.done;x.log=l},{a:'ib_set',id:x.id,op:'undo',by:WHO},true);return}
+ if(a==='ibcx'){const why=prompt('입고예정을 취소합니다. 사유를 적어 주세요 (비워도 됩니다).','');if(why===null)return;save(()=>{x.st='cancel';x.log=Object.assign({},x.log,{cancel:{at:nowS(),by:WHO,why}})},{a:'ib_set',id:x.id,op:'cancel',by:WHO,why},true);return}
+ if(a==='ibrs'){save(()=>{const l=Object.assign({},x.log);delete l.cancel;x.log=l;x.st=l.done?'done':'plan'},{a:'ib_set',id:x.id,op:'restore',by:WHO},true);return}
+ if(a==='ibedit'){ibForm(x);return}}
+
 /* ───── 용차 인수인계 명세서 (A4, 용차 1건 = 1장) ───── */
 function kpShort(x){x=String(x);const d=x.replace(/\D/g,''),h=x.indexOf('-')>0?x.slice(0,x.indexOf('-')):d.slice(0,4);return{h:'*'+h+'~',t:d.slice(-4)}}
 function truckDoc(x){const KP={};D.srv.forEach(r=>r.M.lines.forEach(g=>{if(g.kp)g.w.forEach(w=>{KP[w]=(g.xw&&g.xw[w])||w})}));
@@ -394,7 +486,7 @@ function printTruck(x){if(!needWho())return;const pw=window.open('','tctruck');i
  pw.document.open();pw.document.write(truckDoc(x));pw.document.close();const at=nowS();save(()=>{x.st.steps=x.st.steps||{};x.st.steps.mprt={at,by:WHO}},{a:'trk_set',id:x.id,step:{name:'mprt',on:1,at,by:WHO}},true)}
 /* ───── 조회 조건 (v2.12): 거점 강조, 기준(지시일·출고예정일, 기본 지시일), 하루(기본 오늘)·기간, 누르면 바로 반응 ───── */
 const dl=d=>d.slice(5).replace('-','/')+' ('+dow(d)+')',rel=d=>{const t=ymd(new Date());return d===t?'오늘':d===addD(t,1)?'내일':d===addD(t,-1)?'어제':''};
-function ctxBar(){const one=F.from===F.to;return `<div class="ctx"><span class="cn${F.center?'':' all'}">📍 ${esc(F.center||'전체 거점')}</span><span class="cd">${F.by==='due'?'출고예정일':'지시일'} ${one?dl(F.from)+(rel(F.from)?' · '+rel(F.from):''):dl(F.from)+' ~ '+dl(F.to)}<small>${TAB==='out'?(KIND==='trk'?(F.by==='due'?'용차는 상차일 기준':'용차는 지시서 발행일 기준'):'기사출고'):'지시서 목록'}</small></span></div>`}
+function ctxBar(){const one=F.from===F.to;return `<div class="ctx"><span class="cn${F.center?'':' all'}">📍 ${esc(F.center||'전체 거점')}</span><span class="cd">${TAB==='ib'?'입고예정일':F.by==='due'?'출고예정일':'지시일'} ${one?dl(F.from)+(rel(F.from)?' · '+rel(F.from):''):dl(F.from)+' ~ '+dl(F.to)}<small>${TAB==='ib'?'입고예정':TAB==='out'?(KIND==='trk'?(F.by==='due'?'용차는 상차일 기준':'용차는 지시서 발행일 기준'):'기사출고'):'지시서 목록'}</small></span></div>`}
 function fltSync(){const t=ymd(new Date());$('#fc').classList.toggle('all',!F.center);$('#flt .f1').classList.toggle('all',!F.center);document.querySelectorAll('[data-by]').forEach(b=>b.classList.toggle('on',b.dataset.by===F.by));
  $('#flt .f2').classList.toggle('one',!F.rng);$('#frg').classList.toggle('on',F.rng);document.querySelectorAll('[data-q]').forEach(b=>b.classList.toggle('sel',!F.rng&&F.from===addD(t,+b.dataset.q)&&F.to===F.from));$('#f7').classList.toggle('sel',F.from===addD(t,-6)&&F.to===t)}
 function stamp(st,txt){const e=$('#fst');if(!e)return;e.className=st;e.textContent=txt;if(st==='ok'){void e.offsetWidth}}
@@ -402,7 +494,8 @@ function kick(b){if(!b)return;b.classList.remove('kk');void b.offsetWidth;b.clas
 function setDay(a,b,btn){F.from=a;F.to=b||a;keepRange();LOADED=false;kick(btn);if(!MC[fkey()])busyBtn(btn);$('#busy').hidden=false;stamp('ld','불러오는 중…');draw();load()}
 function draw(){head();$('#flt').hidden=false;const cs=[...new Set(D.srv.map(r=>r.M.center).concat(D.trk.map(x=>x.center),ls('centers')||[],F.center?[F.center]:[]).filter(Boolean))].sort(kc);ls('centers',cs);
  $('#fc').innerHTML='<option value="">전체 거점</option>'+cs.map(c=>`<option${c===F.center?' selected':''}>${esc(c)}</option>`).join('');$('#ff').value=F.from;$('#ft').value=F.to;fltSync();
- const sc=window.scrollY;let h='',pd='';if(TAB==='ntc'){$('#flt').hidden=true;$('#m').innerHTML=ntcView();window.scrollTo(0,sc);return}h+=ctxBar()+banner();
+ const sc=window.scrollY;let h='',pd='';$('#flt .fb').style.display=TAB==='ib'?'none':'';if(TAB==='ntc'){$('#flt').hidden=true;$('#m').innerHTML=ntcView();window.scrollTo(0,sc);return}h+=ctxBar()+banner();
+ if(TAB==='ib'){h+=ibView();$('#m').innerHTML=h;window.scrollTo(0,sc);return}
  if(TAB==='list'){const B0=D.srv.map((r,i)=>({r,i})).filter(x=>inC(x.r.M.center)&&inRng(x.r)),ncs=B0.filter(x=>(x.r.fl||{}).cancel).length,B=B0.filter(x=>!(x.r.fl||{}).cancel),inT=x=>!TYPE||(TYPE==='tmp')===!!x.r.M.tmp;
   h+=`<div class="chips">${[['','전체',B.length],['pk','정식',B.filter(x=>!x.r.M.tmp).length],['tmp','임시',B.filter(x=>x.r.M.tmp).length]].map(([k,l,c])=>`<button data-a="type" data-k="${k}" class="${TYPE===k?'on':''}">${l} <b>${c}</b></button>`).join('')}<button data-a="tgla">모두 펼치기·접기</button><span class="mu">미출력 <b>${B.filter(x=>!(x.r.fl||{}).print).length}</b> · 용차 없음 <b>${B.filter(x=>!trkOf(x.r.M).length).length}</b></span>${ncs?`<button data-a="cxs" class="${SHOWCXS?'on':''}" style="margin-left:auto">${SHOWCXS?'취소 '+ncs+'건 숨기기':'취소 '+ncs+'건 보기'}</button>`:''}</div>`;
   const gk=x=>F.by==='due'?x.r.M.date:isd(x.r),L=(SHOWCXS?B0:B).filter(inT).sort((a,b)=>kc(gk(b),gk(a))||kc(String(b.r.M.issued||''),String(a.r.M.issued||'')));
@@ -503,6 +596,7 @@ async function editTruck(x){if(!needWho())return;const r=await trkForm('용차 �
  save(()=>{Object.assign(x,df);x.status=tstatus(x)},{a:'trk_set',id:x.id,info:df,rev:(x.st||{}).rev||0,by:WHO},false,res=>{const i=D.trk.findIndex(y=>y.id===x.id);if(i>=0){res.item._open=x._open;D.trk[i]=res.item}})}
 document.addEventListener('click',e=>{const t=e.target.closest('[data-a],[data-tab]');if(!t)return;if(t.dataset.tab){TAB=t.dataset.tab;ls('tab',TAB);window.scrollTo(0,0);if(LOADED)draw();return}
  const a=t.dataset.a,r=t.dataset.i!==undefined?D.srv[+t.dataset.i]:null,card=t.closest('[data-id]'),x=card?D.trk.find(y=>y.id===card.dataset.id):null;
+ if(a==='ibnew'){ibForm();return}if(a==='ibxs'){SHOWIBX=!SHOWIBX;draw();return}if(/^ib(done|undo|cx|rs|edit)$/.test(a)){const c=t.closest('[data-ib]'),y=c&&(D.ib||[]).find(z=>z.id===c.dataset.ib);if(y)ibAct(a,y);return}
  if(a==='type'){TYPE=t.dataset.k;draw();return}if(a==='cx'){SHOWCX=!SHOWCX;draw();return}if(a==='cxs'){SHOWCXS=!SHOWCXS;draw();return}
  if(a==='scx'&&r){cancelSheet(r);return}
  if(a==='sux'&&r){if(!needWho())return;if(!confirm(r.M.no+' 취소를 되돌릴까요?\n다시 중복 확인 대상이 됩니다.'))return;save(()=>{r.fl=Object.assign({},r.fl||{});delete r.fl.cancel},{a:'iss_set',no:r.M.no,key:'cancel',on:0,by:WHO},true);return}if(a==='kind'){KIND=t.dataset.k;draw();return}

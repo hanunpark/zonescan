@@ -1,6 +1,6 @@
-/* 피킹 지시서 v56 · 2026-11-27 — 루티 관리자 화면에서 북마크로 불러 씀 */
+/* 피킹 지시서 v57 · 2026-11-27 — 루티 관리자 화면에서 북마크로 불러 씀 */
 (function(){function pick(){
-const API='https://api-prod.flowfix.co.kr/api/v1/admin/orders',CK='flowfix-admin-access-token',VER='v56 · 2026-11-27',MOB='https://hanunpark.github.io/zonescan/pick.html',GAS0='https://script.google.com/macros/s/AKfycby33E3x2WOVkZd_Kh4LSumPMT-KKbNa292E9WNKKTdx40WjCxsVgpSTq2R7oJby6XDF/exec';
+const API='https://api-prod.flowfix.co.kr/api/v1/admin/orders',CK='flowfix-admin-access-token',VER='v57 · 2026-11-27',MOB='https://hanunpark.github.io/zonescan/pick.html',GAS0='https://script.google.com/macros/s/AKfycby33E3x2WOVkZd_Kh4LSumPMT-KKbNa292E9WNKKTdx40WjCxsVgpSTq2R7oJby6XDF/exec';
 const $=s=>document.querySelector(s),esc=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const LS=(k,v)=>{try{if(v===undefined)return JSON.parse(localStorage.getItem('tcpk_'+k)||'null');if(v===null)localStorage.removeItem('tcpk_'+k);else localStorage.setItem('tcpk_'+k,JSON.stringify(v))}catch(e){return null}};
 const pad=n=>String(n).padStart(2,'0'),ymd=d=>d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());
@@ -132,7 +132,7 @@ button.pri{background:var(--acc);border-color:var(--acc);color:var(--onacc);font
 .wrap.lw .panel{background:var(--sub)}.sheet{color:#111}
 </style>`);
 document.title='피킹 지시서';
-document.body.innerHTML=`<div class="bar noprint"><div class="ttl"><b>피킹 지시서</b><span class="ver">${VER}</span></div><div class="tabs"><button data-t="make">지시서 만들기</button><button data-t="list">지시서 목록 <span id="lc"></span></button><button data-t="trk">출고 관리</button><button data-t="ntc">공지 <span id="nc"></span></button><button data-t="tmp" class="aux" title="기사가 정해지지 않아 정식 발행이 안 될 때만 쓰는 임시 작업">기사 미확정 임시 피킹</button></div><button id="gs" style="height:30px;font-size:12.5px"></button>
+document.body.innerHTML=`<div class="bar noprint"><div class="ttl"><b>피킹 지시서</b><span class="ver">${VER}</span></div><div class="tabs"><button data-t="make">지시서 만들기</button><button data-t="list">지시서 목록 <span id="lc"></span></button><button data-t="trk">출고 관리</button><button data-t="ib">입고예정</button><button data-t="ntc">공지 <span id="nc"></span></button><button data-t="tmp" class="aux" title="기사가 정해지지 않아 정식 발행이 안 될 때만 쓰는 임시 작업">기사 미확정 임시 피킹</button></div><button id="gs" style="height:30px;font-size:12.5px"></button>
 <span id="mk" style="display:contents"><label>출고예정일(약속일) <input type="date" id="dt"></label><label>거점 <select id="cen"></select></label><button id="go" class="pri">조회</button><span id="st" style="font-size:13px"></span></span></div>
 <div class="bar2 noprint" id="opt" hidden><details id="sd"><summary>거래처 <span id="sn"></span></summary><div id="sups"></div></details><details id="dd"><summary>기사(메인기사) <span id="dn"></span></summary><div id="drvs"></div></details>
 <label><input type="checkbox" id="nd"> 이미 발행한 운송장 빼기</label><label>발행자 <input id="who" size="7" placeholder="필수"></label><label>피킹 마감 <select id="due">${Array.from({length:48},(_,i)=>pad(i>>1)+':'+(i%2?'30':'00')).map(x=>`<option${x==='08:00'?' selected':''}>${x}</option>`).join('')}</select></label>
@@ -603,9 +603,9 @@ $('#tp').onclick=()=>{const V=view();if(!V.ok.length){alert('출력할 대상이
 /* [지시서 목록]·[출고 관리]는 관리 페이지(wh.html)를 그대로 띄운다 — 폰·PC가 같은 화면. 이 창이 루티 연결(운송장 출력) 통로가 된다 */
 let MG=null;
 function mgPost(m){try{if(MG&&MG.contentWindow)MG.contentWindow.postMessage(m,'*')}catch(e){}}
-function mgShow(t){let box=$('#mgw');if(!box){box=document.createElement('div');box.id='mgw';box.innerHTML='<iframe id="mgf" title="관리 페이지" allow="clipboard-write" src="'+WH+'?tab='+(t==='trk'?'out':t==='ntc'?'ntc':'list')+'&_='+Date.now()+'"></iframe>';document.body.appendChild(box);MG=box.querySelector('iframe');
+function mgShow(t){let box=$('#mgw');if(!box){box=document.createElement('div');box.id='mgw';box.innerHTML='<iframe id="mgf" title="관리 페이지" allow="clipboard-write" src="'+WH+'?tab='+(t==='trk'?'out':t==='ntc'||t==='ib'?t:'list')+'&_='+Date.now()+'"></iframe>';document.body.appendChild(box);MG=box.querySelector('iframe');
   MG.onload=()=>{mgPost({t:'tc-hello',key:S.gk,who:S.who});mgPost({t:'tc-vis',on:box.hidden?0:1})}}
- else mgPost({t:'tc-tab',tab:t==='trk'?'out':t==='ntc'?'ntc':'list'});box.hidden=false;const bar=$('.bar');if(bar)box.style.top=bar.getBoundingClientRect().bottom+'px';$('#main').hidden=true;$('#opt').hidden=true;$('#sum').innerHTML='';$('#dup').hidden=true}
+ else mgPost({t:'tc-tab',tab:t==='trk'?'out':t==='ntc'||t==='ib'?t:'list'});box.hidden=false;const bar=$('.bar');if(bar)box.style.top=bar.getBoundingClientRect().bottom+'px';$('#main').hidden=true;$('#opt').hidden=true;$('#sum').innerHTML='';$('#dup').hidden=true}
 function mgHide(){const b=$('#mgw');if(b){b.hidden=true;mgPost({t:'tc-vis',on:0})}$('#main').hidden=false}
 window.addEventListener('message',async e=>{if(!MG||e.source!==MG.contentWindow)return;const d=e.data||{};
  if(d.t==='tc-wb'){let r;try{r=await rootyWaybills(d)}catch(x){r={ok:false,err:x.message}}mgPost({t:'tc-wb-done',id:d.id,ok:!!r.ok,err:r.err||''})}});
@@ -649,8 +649,8 @@ async function rootyLabels(d,kind,w){await loadJB();const all=await rootyFetch(d
  w.document.open();w.document.write('<!DOCTYPE html><html lang="ko"><head><meta charset="utf-8"><title>'+kind+' 운송장 '+L.length+'장 · '+esc(d.no)+'</title><style>'+LBCSS+'</style></head><body>'+body+'<script>setTimeout(function(){print()},400)<\/script></body></html>');w.document.close();
  return{ok:true,n:L.length}}
 function tab(t){S.tab=t;document.querySelectorAll('.tabs button').forEach(b=>b.classList.toggle('on',b.dataset.t===t));$('#mk').style.display=t==='make'?'contents':'none';showBtns();
- if((t==='list'||t==='trk'||t==='ntc')&&S.gas&&S.gk){mgShow(t);return}
- if(t==='ntc'){mgHide();$('#main').innerHTML='<div id="msg">공지는 공유 저장소 연결이 필요합니다. 상단 [공유 설정]을 먼저 해 주세요.</div>';return}
+ if((t==='list'||t==='trk'||t==='ntc'||t==='ib')&&S.gas&&S.gk){mgShow(t);return}
+ if(t==='ntc'||t==='ib'){mgHide();$('#main').innerHTML='<div id="msg">'+(t==='ib'?'입고예정은':'공지는')+' 공유 저장소 연결이 필요합니다. 상단 [공유 설정]을 먼저 해 주세요.</div>';return}
  mgHide();
  if(t==='trk'){renderTrk();return}
  if(t==='tmp'){loadTmp();return}
