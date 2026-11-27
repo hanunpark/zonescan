@@ -1,6 +1,6 @@
-/* 피킹 지시서 v55 · 2026-11-26 — 루티 관리자 화면에서 북마크로 불러 씀 */
+/* 피킹 지시서 v56 · 2026-11-27 — 루티 관리자 화면에서 북마크로 불러 씀 */
 (function(){function pick(){
-const API='https://api-prod.flowfix.co.kr/api/v1/admin/orders',CK='flowfix-admin-access-token',VER='v55 · 2026-11-26',MOB='https://hanunpark.github.io/zonescan/pick.html',GAS0='https://script.google.com/macros/s/AKfycby33E3x2WOVkZd_Kh4LSumPMT-KKbNa292E9WNKKTdx40WjCxsVgpSTq2R7oJby6XDF/exec';
+const API='https://api-prod.flowfix.co.kr/api/v1/admin/orders',CK='flowfix-admin-access-token',VER='v56 · 2026-11-27',MOB='https://hanunpark.github.io/zonescan/pick.html',GAS0='https://script.google.com/macros/s/AKfycby33E3x2WOVkZd_Kh4LSumPMT-KKbNa292E9WNKKTdx40WjCxsVgpSTq2R7oJby6XDF/exec';
 const $=s=>document.querySelector(s),esc=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const LS=(k,v)=>{try{if(v===undefined)return JSON.parse(localStorage.getItem('tcpk_'+k)||'null');if(v===null)localStorage.removeItem('tcpk_'+k);else localStorage.setItem('tcpk_'+k,JSON.stringify(v))}catch(e){return null}};
 const pad=n=>String(n).padStart(2,'0'),ymd=d=>d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());
@@ -152,9 +152,11 @@ function cls(r){const w=r.waybillStatus,o=r.orderStatus;
 const atC=r=>String(r.inventoryLocation||'').replace(/^FDC\s*/,'').trim()===(r.centerName||S.center);
 /* 보관품 판정 — 루티 화면의 '판매지점' 칸 = API salesBranch (2026-11-25 확인, 그리드 열 정의 accessorKey). 값이 "보관품"이면 보관품 재출고로 보고 운송장번호(외부)를 반전 표기. 공급처(purchaseSupplierName)는 더 이상 보지 않음 */
 function isKeep(r){return typeof r.salesBranch==='string'&&r.salesBranch.replace(/\s/g,'')==='보관품'} // 2026-11-25 규칙 변경: 루티 '판매지점'(salesBranch) = "보관품" 이면 운송장번호(외부) 표기 (이전: 공급처 purchaseSupplierName = '보관품 출고')
+/* v56: 실물 피킹 대상 작업유형 — 교체출고 · 단순배송 · 방문설치. 교체출고가 아닌 건은 제품명 앞에 [작업유형]을 붙여 지시서·폰·관리 화면 어디서나 구분되게 한다 */
+const PICK_TYPES=new Set(['교체출고','단순배송','방문설치']);
 function slim(r){const m=r.orderSpecificationMetadata||{},md=r.mainDriver&&r.mainDriver.name||'';
  /* 판매지점이 '보관품'이면 보관품 재출고 — 표기는 운송장번호(외부), 색 반전 */
- return{wb:String(r.waybillNumber||''),kp:isKeep(r),xw:String(r.externalWaybillNumber||''),on:r.orderNumber||'',veh:m.vehicleNumber||r.recipientName||'',model:m.vehicleModel||'',sup:r.supplierName||'',pn:r.productName||'',sku:r.sku||'',zone:r.zoneCode||'',
+ return{wb:String(r.waybillNumber||''),kp:isKeep(r),xw:String(r.externalWaybillNumber||''),on:r.orderNumber||'',veh:m.vehicleNumber||r.recipientName||'',model:m.vehicleModel||'',sup:r.supplierName||'',pn:(r.serviceMethod&&r.serviceMethod!=='교체출고'?'['+r.serviceMethod+'] ':'')+(r.productName||''),sm:r.serviceMethod||'',sku:r.sku||'',zone:r.zoneCode||'',
   drv:md,ad:String(r.orderAppointedDate||'').slice(0,10),cen:r.centerName||'',sub:r.hasSubDriver==='Y',ws:r.waybillStatus||'',k:cls(r),ri:r.waybillStatus==='RECEIPT_CONFIRMED'}}
 const hk=()=>'h_'+S.center+'_'+S.date,histL=()=>LS(hk())||[];
 /* 취소한 지시서는 중복 확인에서 뺀다 */
@@ -170,7 +172,7 @@ async function load(){if(S.busy)return;S.busy=true;S.date=$('#dt').value;S.cente
  try{const q='?driverUnassignedOnly=false&from='+S.date+'&to='+S.date+'&dateType=orderAppointedDate&centerNames='+encodeURIComponent(S.center)+'&size=1000';
   let p=1,tp=1;const R=[];let un=0,out=0;
   do{if(p>1)await new Promise(z=>setTimeout(z,300));const d=await api('',q+'&page='+p);tp=Math.min(d.totalPages||1,20);
-   for(const it of d.items||[]){if(it.serviceMethod!=='교체출고'||(it.centerName&&it.centerName!==S.center))continue;const x=slim(it);
+   for(const it of d.items||[]){if(!PICK_TYPES.has(it.serviceMethod)||(it.centerName&&it.centerName!==S.center))continue;const x=slim(it);
     if(x.k==='cx')continue;if(x.k==='out'){out++;continue}if(!x.drv){un++;continue}R.push(x)}p++}while(p<=tp);
   S.rows=R;S.un=un;S.out=out;S.at=nowS();S.off=new Set();S.drv=new Set(R.map(r=>r.drv));S.sup=new Set(R.map(r=>r.sup));S.shared=null;
   if(S.gas){try{S.shared=(await gget('a=list&c='+encodeURIComponent(S.center)+'&from='+S.date+'&to='+S.date)).items}catch(e){S.shared=null;$('#st').textContent='공유 저장소 연결 실패 — 이 PC 기록만으로 중복 확인'}}
@@ -233,7 +235,7 @@ function sheet(M){{const all=M.lines.filter(g=>!g.kp).flatMap(g=>g.w);let p=all[
    return `<div class="card"><div class="ch"><b>${esc(dn(d))}</b> 차량 ${new Set(L.map(VK)).size}대 · <b>${n}본</b><span>${esc(sup.map(s=>s+' '+L.filter(g=>supS(g.sup)===s).reduce((a,g)=>a+g.w.length,0)).join(' · '))}</span></div><table><colgroup><col style="width:7%"><col style="width:31%"><col style="width:18%"><col style="width:19%"><col style="width:17%"><col style="width:8%"></colgroup><tbody>
    ${(()=>{const m=new Map();L.forEach(g=>{const k=VK(g)+'|'+supS(g.sup)+'|'+sizeOf(g.pn)+'|'+(g.ot||'').split('·')[0];let x=m.get(k);if(!x)m.set(k,x={on:g.on,veh:g.veh,sup:g.sup,pn:g.pn,sub:g.sub,ot:g.ot,zs:[],w:[]});if(x.zs.indexOf(g.zone||'-')<0)x.zs.push(g.zone||'-');x.w=x.w.concat(g.w);if(g.sub)x.sub=true});return [...m.values()].map(x=>(x.zone=x.zs.join(', '),x.multi=x.zs.length>1,x))})().map((g,i)=>`<tr class="${i%2?'zb':''}"><td class="c" style="width:18px"><span class="bx"></span></td><td class="vc"><b class="veh">${esc(g.veh)}</b>${tkTag(M,g.on)}${g.sub?'<span class="tg b">서브</span>':''}${g.ot?'<span class="tg o">'+esc(g.ot.split('·')[0])+'</span>':''}</td><td class="g"><span class="cl2">${esc(supS(g.sup))}</span></td><td><b>${esc(sizeOf(g.pn))}</b></td><td class="cz"${g.multi?' style="white-space:normal"':''}>${esc(g.zone||'-')}</td><td class="n q">${g.w.length}</td></tr>`).join('')}</tbody></table></div>`}).join('')}</div>`}
  if(M.ex&&M.ex.length)h+=`<h4>예외 — 배정됐지만 꺼낼 수 없는 건 (재고위치가 이 거점이 아님 등)</h4><table class="t3"><thead><tr><th>구분</th><th>메인기사</th><th>업체</th><th>차량번호</th><th>제품명</th><th>운송장상태</th><th class="n">본</th></tr></thead><tbody>${M.ex.map(x=>`<tr><td class="dw">${esc(x[0])}</td><td>${esc(x[1])}</td><td>${esc(supS(x[2]))}</td><td><b>${esc(x[3])}</b></td><td>${pnHtml(x[4],x[3])}</td><td>${esc(x[5])}</td><td class="n">${x[6]}</td></tr>`).join('')}</tbody></table>`;
- h+=`<p class="g" style="margin:6px 0 0">${M.tmp?`루티 화면 체크 ${M.tmpInfo.badge}건 중 — 교체출고 외 작업유형 ${M.tmpInfo.other}건(교체회수 ${M.tmpInfo.rec}건 포함) 제외 · 운송장 없는 접수대기 ${M.tmpInfo.noWb}건 제외 · 취소 ${M.tmpInfo.cx}건 제외 · <b>출고건 ${M.tmpInfo.out}본 · 미입고 ${M.tmpInfo.ni||0}본 · 취소요청 ${M.tmpInfo.cq||0}본 포함(별도 표기)</b> · 기사는 배정 전이라 바뀔 수 있음`:`미배정 ${M.un}본은 피킹하지 않음 · 이미 기사출고 ${M.out}본 제외`}</p><div class="sign"><div>피킹자 · 시각</div><div>검수자 · 시각</div><div>인수기사 · 시각</div></div><div class="ft"><span>${esc(M.no)} · ${M.tmp?'임시':M.n+'차'} · ${VER}</span><span>${esc(M.center)} · 출고예정일 ${M.date}</span></div></div>`;
+ h+=`<p class="g" style="margin:6px 0 0">${M.tmp?`루티 화면 체크 ${M.tmpInfo.badge}건 중 — 피킹 대상(교체출고·단순배송·방문설치) 외 작업유형 ${M.tmpInfo.other}건(교체회수 ${M.tmpInfo.rec}건 포함) 제외 · 운송장 없는 접수대기 ${M.tmpInfo.noWb}건 제외 · 취소 ${M.tmpInfo.cx}건 제외 · <b>출고건 ${M.tmpInfo.out}본 · 미입고 ${M.tmpInfo.ni||0}본 · 취소요청 ${M.tmpInfo.cq||0}본 포함(별도 표기)</b> · 기사는 배정 전이라 바뀔 수 있음`:`미배정 ${M.un}본은 피킹하지 않음 · 이미 기사출고 ${M.out}본 제외`}</p><div class="sign"><div>피킹자 · 시각</div><div>검수자 · 시각</div><div>인수기사 · 시각</div></div><div class="ft"><span>${esc(M.no)} · ${M.tmp?'임시':M.n+'차'} · ${VER}</span><span>${esc(M.center)} · 출고예정일 ${M.date}</span></div></div>`;
  return h}
 function list(V){const by=new Map();V.vis.forEach(r=>{if(!by.has(r.drv))by.set(r.drv,new Map());const m=by.get(r.drv);if(!m.has(r.on))m.set(r.on,[]);m.get(r.on).push(r)});
  let h='<div class="lt">발행할 차량을 고르세요. 체크를 풀면 지시서에서 빠집니다.</div>';
@@ -587,7 +589,7 @@ async function loadTmp(){const W=window.opener,m=t=>{$('#main').innerHTML='<div 
    do{if(pg>1)await new Promise(z=>setTimeout(z,300));p.set('page',pg);m(`체크 ${R.badge}건을 읽었습니다. 상세 정보를 불러오는 중… (${pg}/${tp>1?tp:'?'}쪽)`);const d=await api('','?'+p.toString());tp=Math.min(d.totalPages||1,40);(d.items||[]).forEach(x=>{if(R.sel.has(String(x.waybillNumber||'')))it.push(x)});pg++}while(pg<=tp&&it.length<R.sel.size);
    if(it.length<R.sel.size){m(`체크한 ${R.sel.size}건 중 ${it.length}건만 찾았습니다. 루티에서 조회 조건을 좁힌 뒤 다시 시도하세요.`);return}}
   const I={badge:R.badge,noWb:R.noWb,other:0,rec:0,cx:0,out:0,ni:0,cq:0},rows=[];
-  it.forEach(x=>{if(x.serviceMethod!=='교체출고'){I.other++;if(x.serviceMethod==='교체회수')I.rec++;return}const y=slim(x);if(y.k==='cx'){I.cx++;return}if(y.k==='out'){I.out++;y.k='ok';y.ot='출고건·'+(OUTS.indexOf(x.waybillStatus)>=0?(WS[x.waybillStatus]||'출고'):'출고일 '+String(x.driverOutboundCompletedDate||'').slice(5,10))}else if(y.k==='noinv'){I.ni++;y.k='ok';y.ot='미입고'}else if(y.k==='creq'){I.cq++;y.k='ok';y.ot='취소요청'}rows.push(y)});
+  it.forEach(x=>{if(!PICK_TYPES.has(x.serviceMethod)){I.other++;if(x.serviceMethod==='교체회수')I.rec++;return}const y=slim(x);if(y.k==='cx'){I.cx++;return}if(y.k==='out'){I.out++;y.k='ok';y.ot='출고건·'+(OUTS.indexOf(x.waybillStatus)>=0?(WS[x.waybillStatus]||'출고'):'출고일 '+String(x.driverOutboundCompletedDate||'').slice(5,10))}else if(y.k==='noinv'){I.ni++;y.k='ok';y.ot='미입고'}else if(y.k==='creq'){I.cq++;y.k='ok';y.ot='취소요청'}rows.push(y)});
   if(!S.norm)S.norm={rows:S.rows,un:S.un,out:S.out,at:S.at,drv:S.drv,sup:S.sup,off:S.off,center:S.center,date:S.date};
   S.tmp=true;S.tmpInfo=I;S.rows=rows;S.un=0;S.out=I.out;S.at=nowS();S.off=new Set();S.drv=new Set(rows.map(r=>r.drv));S.sup=new Set(rows.map(r=>r.sup));
   const cs=[...new Set(rows.map(r=>r.cen).filter(Boolean))];S.center=cs.join(', ')||S.center;const ds=[...new Set(rows.map(r=>r.ad).filter(Boolean))].sort();S.date=ds[0]||S.date;
@@ -653,7 +655,7 @@ function tab(t){S.tab=t;document.querySelectorAll('.tabs button').forEach(b=>b.c
  if(t==='trk'){renderTrk();return}
  if(t==='tmp'){loadTmp();return}
  if(S.tmp){restoreNorm();if(S.at&&S.sup)boxes()}
- if(t==='list'){S.cur=null;renderList()}else{$('#opt').hidden=!S.at;if(S.at)render();else{$('#sum').innerHTML='';$('#dup').hidden=true;$('#main').innerHTML='<div id="msg">출고예정일(약속일)과 거점을 고르고 [조회]를 누르세요.<br><small class="mu">기사가 배정된 교체출고만 대상입니다. 발행한 지시서는 [지시서 목록]에 일자별로 쌓이고, 거기서 폰으로 전달할 수 있습니다.</small></div>'}}}
+ if(t==='list'){S.cur=null;renderList()}else{$('#opt').hidden=!S.at;if(S.at)render();else{$('#sum').innerHTML='';$('#dup').hidden=true;$('#main').innerHTML='<div id="msg">출고예정일(약속일)과 거점을 고르고 [조회]를 누르세요.<br><small class="mu">기사가 배정된 교체출고 · 단순배송 · 방문설치가 대상입니다. 발행한 지시서는 [지시서 목록]에 일자별로 쌓이고, 거기서 폰으로 전달할 수 있습니다.</small></div>'}}}
 $('#go').onclick=load;$('#nd').onchange=e=>{S.noDup=e.target.checked;render()};
 $('#who').onchange=e=>{S.who=e.target.value.trim();LS('who',S.who);e.target.classList.toggle('req',!S.who);render()};$('#due').onchange=()=>render();
 $('#pr').onclick=async e=>{e.target.disabled=true;try{await issueFlow(true)}finally{e.target.disabled=false}};
