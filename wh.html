@@ -186,7 +186,7 @@ table.gt .n{text-align:right;white-space:nowrap}table.gt .nm{font-weight:600}tab
 </style>
 </head>
 <body>
-<header><div class="h1"><div class="tt"><b>타이어케어 출고 관리</b><small>v2.19 · 2026-11-27</small></div><button id="ctr" title="거점 바꾸기"></button><button id="whoB"></button></div>
+<header><div class="h1"><div class="tt"><b>타이어케어 출고 관리</b><small>v2.20 · 2026-11-27</small></div><button id="ctr" title="거점 바꾸기"></button><button id="whoB"></button></div>
 <div class="tabs"><button data-tab="list">지시서 목록</button><button data-tab="out">출고 관리</button><button data-tab="ib">입고예정</button><button data-tab="ntc">공지</button></div></header>
 <div id="flt" hidden><div class="f1"><label>거점</label><select id="fc"></select></div><div class="fb"><label>기준</label><div class="seg"><button data-by="iss">지시일</button><button data-by="due">출고예정일</button></div></div><div class="f2"><label>날짜</label><button class="b nv" data-dd="-1" title="하루 앞">‹</button><input type="date" id="ff"><span id="fsep">~</span><input type="date" id="ft"><button class="b nv" data-dd="1" title="하루 뒤">›</button><button class="b rg" id="frg" title="여러 날을 한꺼번에 보기">기간</button></div><div class="f3"><button class="b p" id="fg">조회</button><button class="b" data-q="0">오늘</button><button class="b" data-q="1">내일</button><button class="b" id="f7">최근 7일</button><button class="b" id="fr">새로고침</button></div><div id="fst"></div></div>
 <main id="m"><div class="msg">여는 중…</div></main><div id="busy" hidden>최신 내용 확인 중…</div>
@@ -209,7 +209,7 @@ const T0=ymd(new Date()),F={from:T0,to:T0,center:ls('center')||'',by:ls('by')||'
 /* 고른 기간은 같은 날 같은 탭 안에서만 유지 (지시서를 열었다 돌아와도 그대로) */
 try{const r=JSON.parse(sessionStorage.getItem('wh_range')||'null');if(r&&r.day===T0){F.from=r.from;F.to=r.to;F.rng=r.from!==r.to}}catch(e){}
 function keepRange(){try{sessionStorage.setItem('wh_range',JSON.stringify({day:T0,from:F.from,to:F.to}))}catch(e){}}
-const PV='v2.19';
+const PV='v2.20';
 /* 새 판이 올라왔는데 브라우저가 예전 판을 보여 주면 자동으로 새로 읽는다 (GitHub Pages 캐시 대비) */
 let VC=0;function verCheck(){if(Date.now()-VC<600000)return;VC=Date.now();fetch(location.pathname+'?_='+Date.now(),{cache:'no-store'}).then(r=>r.text()).then(t=>{const m=t.match(/const PV='([^']+)'/);if(m&&m[1]!==PV&&!sessionStorage.getItem('wh_upd_'+m[1])){sessionStorage.setItem('wh_upd_'+m[1],'1');const u=new URL(location.href);u.searchParams.set('v',m[1]);location.replace(u.toString())}}).catch(()=>{})}
 let SHOWCX=false,SHOWCXS=false,D={srv:[],trk:[],ntc:[],role:'',ib:[]},LOADED=false,PEND=0,SEQ=0,FOCUS='',WIDE=false;
@@ -402,8 +402,8 @@ const IBS={plan:['예정','w'],done:['입고 완료','g'],cancel:['취소','o']}
 function ibOf(){return (D.ib||[]).filter(x=>inC(x.center)&&inR(x.date))}
 function ibSpecs(x){return (x.specs||[]).filter(s=>s[0]||s[1]).map(s=>`<span>${esc(s[0]||'규격 미기재')}${s[1]?' × <b>'+s[1]+'</b>':''}</span>`).join('')}
 function ibLine(x){const a=[];if(x.from)a.push('발송 '+esc(x.from));a.push('입고 '+esc(x.center));return a.join(' → ')}
-function ibStatus(x){const L=x.log||{};if(x.st==='done'&&L.done)return `입고 확인 ${esc(String(L.done.at).slice(5,16))} · ${esc(L.done.by||'')}`;if(x.st==='cancel'&&L.cancel)return `취소 ${esc(String(L.cancel.at).slice(5,16))} · ${esc(L.cancel.by||'')}${L.cancel.why?' — '+esc(L.cancel.why):''}`;return `등록 ${esc(String(x.at).slice(5,16))} · ${esc(x.by||'')}`}
-function ibCard(x){const s=IBS[x.st]||IBS.plan,pc=myR()==='pc',tel=String(x.phone||'').replace(/[^\d+]/g,'');
+function ibStatus(x){const L=x.log||{},rn=r=>r==='pc'?' (지시자)':r==='wh'?' (창고)':'';if(x.st==='done'&&L.done)return `입고 확인 ${esc(String(L.done.at).slice(5,16))} · ${esc(L.done.by||'')}${rn(L.done.r)}`;if(x.st==='cancel'&&L.cancel)return `취소 ${esc(String(L.cancel.at).slice(5,16))} · ${esc(L.cancel.by||'')}${rn(L.cancel.r)}${L.cancel.why?' — '+esc(L.cancel.why):''}`;const E=(L.edit||[]).slice(-1)[0];return `등록 ${esc(String(x.at).slice(5,16))} · ${esc(x.by||'')}${rn(L.r)}`+(E?` · 수정 ${esc(String(E.at).slice(5,16))} · ${esc(E.by||'')}${rn(E.r)}`:'')}
+function ibCard(x){const s=IBS[x.st]||IBS.plan,tel=String(x.phone||'').replace(/[^\d+]/g,'');
  const info=[x.recv&&['수취인',esc(x.recv)],x.plate&&['용차',esc(x.plate)],x.phone&&['기사 연락처',tel?`<a href="tel:${esc(tel)}">${esc(x.phone)}</a>`:esc(x.phone)]].filter(Boolean);
  return `<div class="c ibc${x.st==='cancel'?' cx':''}${x.st==='done'?' dn':''}" data-ib="${esc(x.id)}" data-f="${esc(x.id)}">
  <div class="ibh"><span class="bd ${s[1]}">${s[0]}</span><span class="ibd">${esc(x.date.slice(5).replace('-','/'))} (${dow(x.date)}) <b>${esc(x.time)}</b></span></div>
@@ -412,20 +412,20 @@ function ibCard(x){const s=IBS[x.st]||IBS.plan,pc=myR()==='pc',tel=String(x.phon
  ${info.length?`<dl>${info.map(([k,v])=>`<dt>${k}</dt><dd>${v}</dd>`).join('')}</dl>`:''}
  ${x.memo?`<div class="ibmm">${esc(x.memo)}</div>`:''}
  <div class="ibst">${ibStatus(x)}</div>
- <div class="act">${x.st==='cancel'?(pc?'<button class="b" data-a="ibrs">취소 되돌리기</button>':''):x.st==='done'?'<button class="b" data-a="ibundo">입고 확인 취소</button>':'<button class="b p" data-a="ibdone">입고 확인</button>'}${pc&&x.st!=='cancel'?'<button class="b" data-a="ibedit">수정</button><button class="lk" data-a="ibcx">입고예정 취소</button>':''}</div></div>`}
+ <div class="act">${x.st==='cancel'?'<button class="b" data-a="ibrs">취소 되돌리기</button>':x.st==='done'?'<button class="b" data-a="ibundo">입고 확인 취소</button>':'<button class="b p" data-a="ibdone">입고 확인</button>'}${x.st!=='cancel'?'<button class="b" data-a="ibedit">수정</button><button class="lk" data-a="ibcx">입고예정 취소</button>':''}</div></div>`}
 function wideIb(L){const keys=L.map(x=>x.id),sel=pickSel('ib',keys),all=!F.center;let h=`<thead><tr><th>입고 예정</th><th>거래처</th>${all?'<th>입고거점</th>':''}<th>발송지</th><th class="n">수량</th><th>용차</th><th>상태</th></tr></thead><tbody>`,pane='',pd='';
  L.forEach(x=>{if(x.date!==pd){h+=`<tr class="gh"><td colspan="${all?7:6}">입고예정일 ${x.date} (${dow(x.date)})</td></tr>`;pd=x.date}const s=IBS[x.st]||IBS.plan;
   h+=`<tr class="rw${x.id===sel?' on':''}${x.st==='cancel'?' cx':''}" data-a="sel" data-g="ib" data-k="${esc(x.id)}" data-f="${esc(x.id)}"><td class="nw"><b>${esc(x.time)}</b></td><td><span class="nm">${esc(x.client)}</span>${x.recv?'<div class="sb">'+esc(x.recv)+'</div>':''}</td>${all?'<td>'+esc(x.center)+'</td>':''}<td>${esc(x.from||'-')}</td><td class="n"><b>${x.qty}</b></td><td>${x.plate?esc(x.plate):'-'}<div class="sb">${esc(x.phone||'')}</div></td><td><span class="bd ${s[1]}">${s[0]}</span></td></tr>`;
   if(x.id===sel)pane=inPane(()=>ibCard(x))});
  return split(h+'</tbody>',pane)}
 function ibView(){if(D.ibUnsup)return '<div class="msg">입고예정은 공유 저장소(Apps Script)를 v2.11로 업데이트한 뒤 사용할 수 있습니다.</div>';
- const A=ibOf(),ncx=A.filter(x=>x.st==='cancel').length,L=(SHOWIBX?A:A.filter(x=>x.st!=='cancel')).slice().sort((a,b)=>kc(a.date+a.time,b.date+b.time)),pc=myR()==='pc';
- let h=`<div class="chips"><span>예정 <b>${A.filter(x=>x.st==='plan').length}</b></span><span>입고 완료 <b>${A.filter(x=>x.st==='done').length}</b></span><span class="mu">수량 합계 ${A.filter(x=>x.st!=='cancel').reduce((n,x)=>n+(x.qty||0),0)}</span>${ncx?`<button data-a="ibxs" class="${SHOWIBX?'on':''}">${SHOWIBX?'취소 '+ncx+'건 숨기기':'취소 '+ncx+'건 보기'}</button>`:''}${pc?'<button class="b p ibnew" data-a="ibnew">+ 입고예정 등록</button>':''}</div>`;
- if(!L.length)return h+`<div class="msg">이 조건에 입고예정이 없습니다.${pc?'<br><small>[+ 입고예정 등록]으로 올리세요.</small>':''}</div>`;
+ const A=ibOf(),ncx=A.filter(x=>x.st==='cancel').length,L=(SHOWIBX?A:A.filter(x=>x.st!=='cancel')).slice().sort((a,b)=>kc(a.date+a.time,b.date+b.time));
+ let h=`<div class="chips"><span>예정 <b>${A.filter(x=>x.st==='plan').length}</b></span><span>입고 완료 <b>${A.filter(x=>x.st==='done').length}</b></span><span class="mu">수량 합계 ${A.filter(x=>x.st!=='cancel').reduce((n,x)=>n+(x.qty||0),0)}</span>${ncx?`<button data-a="ibxs" class="${SHOWIBX?'on':''}">${SHOWIBX?'취소 '+ncx+'건 숨기기':'취소 '+ncx+'건 보기'}</button>`:''}<button class="b p ibnew" data-a="ibnew">+ 입고예정 등록</button></div>`;
+ if(!L.length)return h+`<div class="msg">이 조건에 입고예정이 없습니다.<br><small>[+ 입고예정 등록]으로 올리세요.</small></div>`;
  if(WD())return h+wideIb(L);
  let pd='';L.forEach(x=>{if(x.date!==pd){h+=`<div class="dh">입고예정일 ${x.date} (${dow(x.date)}) <small>${L.filter(y=>y.date===x.date).length}건</small></div>`;pd=x.date}h+=ibCard(x)});return h}
 function ibSpecRow(s){return `<div class="ibr"><input class="ibsz" placeholder="규격 (예: 245/45R18)" value="${esc((s||[])[0]||'')}"><input class="ibsq" type="number" min="0" inputmode="numeric" placeholder="수량" value="${esc((s||[])[1]||'')}"><button class="b s" data-x2>×</button></div>`}
-function ibForm(x){if(myR()!=='pc'){alert('입고예정은 지시자(PC 도구)만 등록·수정할 수 있습니다.');return}if(!needWho())return;x=x||{};const v=k=>esc(x[k]==null?'':x[k]);
+function ibForm(x){if(!needWho())return;x=x||{};const v=k=>esc(x[k]==null?'':x[k]);
  const cs=[...new Set((ls('centers')||[]).concat(F.center?[F.center]:[]))].sort(kc),cl=[...new Set((D.ib||[]).map(y=>y.client).concat(ls('ibcl')||[]).filter(Boolean))].sort(kc),fr=[...new Set((D.ib||[]).map(y=>y.from).filter(Boolean))].sort(kc);
  dlg(`<h3>${x.id?'입고예정 수정':'입고예정 등록'}</h3><div class="ibf"><div class="mu"><b class="req">*</b> 표시는 꼭 넣어야 합니다. 나머지는 아는 만큼만 넣으세요.</div>
  <label>입고거점 <b class="req">*</b></label><input id="ib_center" list="ib_cs" value="${esc(x.center||F.center||'')}" placeholder="예: 일산FDC"><datalist id="ib_cs">${cs.map(c=>`<option value="${esc(c)}">`).join('')}</datalist>
@@ -453,9 +453,9 @@ function ibForm(x){if(myR()!=='pc'){alert('입고예정은 지시자(PC 도구)�
   catch(e){b.disabled=false;b.textContent=x.id?'수정 저장':'등록';er.textContent='저장하지 못했습니다 — '+e.message}};
  $('#ib_center').focus()}
 function ibAct(a,x){if(!needWho())return;
- if(a==='ibdone'){save(()=>{x.st='done';x.log=Object.assign({},x.log,{done:{at:nowS(),by:WHO}})},{a:'ib_set',id:x.id,op:'done',by:WHO},true);return}
+ if(a==='ibdone'){save(()=>{x.st='done';x.log=Object.assign({},x.log,{done:{at:nowS(),by:WHO,r:myR()}})},{a:'ib_set',id:x.id,op:'done',by:WHO},true);return}
  if(a==='ibundo'){if(!confirm(x.client+' '+x.date+' '+x.time+' — 입고 확인을 취소할까요?'))return;save(()=>{x.st='plan';const l=Object.assign({},x.log);delete l.done;x.log=l},{a:'ib_set',id:x.id,op:'undo',by:WHO},true);return}
- if(a==='ibcx'){const why=prompt('입고예정을 취소합니다. 사유를 적어 주세요 (비워도 됩니다).','');if(why===null)return;save(()=>{x.st='cancel';x.log=Object.assign({},x.log,{cancel:{at:nowS(),by:WHO,why}})},{a:'ib_set',id:x.id,op:'cancel',by:WHO,why},true);return}
+ if(a==='ibcx'){const why=prompt('입고예정을 취소합니다. 사유를 적어 주세요 (비워도 됩니다).','');if(why===null)return;save(()=>{x.st='cancel';x.log=Object.assign({},x.log,{cancel:{at:nowS(),by:WHO,r:myR(),why}})},{a:'ib_set',id:x.id,op:'cancel',by:WHO,why},true);return}
  if(a==='ibrs'){save(()=>{const l=Object.assign({},x.log);delete l.cancel;x.log=l;x.st=l.done?'done':'plan'},{a:'ib_set',id:x.id,op:'restore',by:WHO},true);return}
  if(a==='ibedit'){ibForm(x);return}}
 
