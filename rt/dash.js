@@ -1,4 +1,4 @@
-/* 루티 주문현황 대시보드 v49 · 2026-11-27 — 루티 관리자 화면에서 로더 북마크로 불러 씀 */
+/* 루티 주문현황 대시보드 v50 · 2026-11-27 — 루티 관리자 화면에서 로더 북마크로 불러 씀 */
 (function(){function dash(){
 try{if(window.__rcKill)window.__rcKill()}catch(e){}
 const API='https://api-prod.flowfix.co.kr/api/v1/admin/orders',SELLER=62,SUP='https://api-prod.flowfix.co.kr/api/v1/suppliers',CK='flowfix-admin-access-token';
@@ -96,10 +96,12 @@ th.lkc,td.lkc{background:var(--critbg)}
 .chk{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px}.chk b{display:block;font-size:18px}.chk small{color:var(--mute);font-size:11.5px}
 @media print{header .ctl,.tabs{display:none}.tp[hidden]{display:block!important}.tp h3{display:block}}`;
 document.head.insertAdjacentHTML('beforeend','<meta name="viewport" content="width=device-width,initial-scale=1"><style>'+CSS+'</style>');
-document.body.innerHTML='<header><b>루티 현황</b><span id="ver" title="대시보드 버전">v49 · 2026-11-27</span><div class="ctl"><label>거래처 <select id="sel"></select></label><label>접수일 <input type="date" id="df"> ~ <input type="date" id="dt"></label><button id="dx" title="전체 기간 조회 — 서버 부담이 커서 마스터 관리자 비밀번호가 필요합니다">전체 🔒</button><label title="센터를 고르면 그 센터만 서버에서 받아옵니다">센터 <select id="cen"></select></label></div><span id="pb" hidden><i></i></span><span id="stamp"><i></i>불러오는 중…</span><div class="ctl"><label>자동 <select id="iv"><option value="0">끄기</option><option value="30">30분</option><option value="60">60분</option></select></label><button id="snap">스냅샷 저장</button><button class="pri" id="re">새로고침</button></div></header><main id="app"></main>';
+document.body.innerHTML='<header><b>루티 현황</b><span id="ver" title="대시보드 버전">v50 · 2026-11-27</span><div class="ctl"><label>거래처 <select id="sel"></select></label><label title="기간 기준 — 약속일 또는 접수일"><select id="pbs"><option value="ap">약속일</option><option value="dt">접수일</option></select> <input type="date" id="df"> ~ <input type="date" id="dt"></label><button id="dx" title="전체 기간 조회 — 서버 부담이 커서 마스터 관리자 비밀번호가 필요합니다">전체 🔒</button><label title="센터를 고르면 그 센터만 서버에서 받아옵니다">센터 <select id="cen"></select></label></div><span id="pb" hidden><i></i></span><span id="stamp"><i></i>불러오는 중…</span><div class="ctl"><label>자동 <select id="iv"><option value="0">끄기</option><option value="30">30분</option><option value="60">60분</option></select></label><button id="snap">스냅샷 저장</button><button class="pri" id="re">새로고침</button></div></header><main id="app"></main>';
 const $=s=>document.querySelector(s);
 $('#iv').value=String(S.min);
-S.to=today();S.from=addD(S.to,-10);$('#df').value=S.from;$('#dt').value=S.to;S.fol=true;
+const mx=()=>S.pb==='ap'?63:60,PBL=()=>S.pb==='ap'?'약속일':'접수일',pk=r=>S.pb==='ap'?r.ap:r.dt,addM=(d,n)=>{const [y,m,dd]=d.split('-').map(Number),t=new Date(y,m-1+n,1),last=new Date(t.getFullYear(),t.getMonth()+1,0).getDate(),x=new Date(t.getFullYear(),t.getMonth(),Math.min(dd,last));return x.getFullYear()+'-'+String(x.getMonth()+1).padStart(2,'0')+'-'+String(x.getDate()).padStart(2,'0')},defR=pb=>{const t=today();return pb==='ap'?[addM(t,-1),addM(t,1)]:[addD(t,-10),t]};
+try{S.pb=localStorage.getItem(LK('rcDashPb'))||'ap'}catch(e){S.pb='ap'}if(S.pb!=='dt')S.pb='ap';$('#pbs').value=S.pb;{const R=defR(S.pb);S.from=R[0];S.to=R[1]}$('#df').value=S.from;$('#dt').value=S.to;S.fol=S.pb==='dt';S.apDef=S.pb==='ap';
+$('#pbs').onchange=async e=>{S.pb=e.target.value==='dt'?'dt':'ap';try{localStorage.setItem(LK('rcDashPb'),S.pb)}catch(x){}S.ALL=null;const R=defR(S.pb);await setRange(R[0],R[1])};
 function token(){const c=document.cookie.split(';').map(x=>x.trim()).find(x=>x.indexOf(CK+'=')===0);return c?decodeURIComponent(c.slice(CK.length+1)):''}
 function ptype(r){const v=String(r.orderSpecificationType||'').trim(),M={TIRE:'타이어',ENGINE_OIL:'엔진오일',ENGINEOIL:'엔진오일',OIL:'엔진오일',BATTERY:'배터리',ETC:'기타',OTHER:'기타',OTHERS:'기타'};return v?(M[v.toUpperCase()]||v):'품목 미지정'}
 function adOf(r){if(S.adk===undefined||S.adk===null){for(const k in r){if(k!=='assignedToDriver'&&/assign/i.test(k)&&/(date|at|time)$/i.test(k)&&(r[k]==null||/^\d{4}-\d\d-\d\d/.test(String(r[k])))){S.adk=k;break}}if(S.adk===undefined)S.adk=null}return S.adk?d10(r[S.adk]):''}
@@ -112,7 +114,7 @@ function slim(r){if('mainDriver' in r||'mainDriverName' in r)S.mdk=true;const md
  g:!!r.driverOutboundCompletedDate||PAST_OUT.indexOf(w)>=0||CR.test(w),e:o==='COMPLETED'&&(wterm(m,t,w)||!!r.workCompletedDate)}}
 function needFull(){if(!S.cache||!S.fullAt||S.noRn)return true;const n=Date.now();if(!S.did5&&n-S.openAt>=5*3600e3)return true;
  const b=h=>{const t=new Date();t.setHours(h,0,0,0);return t.getTime()},bd=n>=b(14)?b(14):n>=b(5)?b(5):b(14)-864e5;return S.fullAt<bd}
-const sc=()=>S.center&&S.cOk!==false?S.center:'';const allKey=c=>(S.from||'')+'|'+(S.to||'')+'|'+(c||'')+'|'+today();
+const sc=()=>S.center&&S.cOk!==false?S.center:'';const allKey=c=>(S.pb||'')+'|'+(S.from||'')+'|'+(S.to||'')+'|'+(c||'')+'|'+today();
 const qs=()=>'?driverUnassignedOnly=false'+(S.seller?'&sellerIds='+encodeURIComponent(S.seller):'')+(sc()?'&centerNames='+encodeURIComponent(sc()):'');
 function stopLoad(){if(S.ac)S.ac.abort();return new Promise(r=>{const w=()=>S.busy?setTimeout(w,50):r();w()})}
 const sig=()=>S.ac?S.ac.signal:undefined,chk=()=>{if(S.ac&&S.ac.signal.aborted)throw new Error('ABORT')};
@@ -138,20 +140,20 @@ async function wsFmt(codes){if(!S.wf)try{const v=JSON.parse(localStorage.getItem
  return S.wf='each'}
 async function loadRange(){
  const fr=S.from||'2000-01-01',to=S.to||today(),M=new Map();
- lpStart(S.from?['기간 접수분','이전 미종결','연계주문 점검']:['기간 접수분','연계주문 점검']);
- let dtp=S.rdt||'receiptDate';const pd=()=>dtp==='orderDate'?14:7,qa=()=>qs()+'&from='+(S.from?addD(fr,-pd()):fr)+'&to='+addD(to,pd())+'&dateType='+dtp;
- try{await pull(qa(),'기간 접수분',M)}catch(e){if(e.message==='LOGIN'||e.message==='CENTER'||e.message==='ABORT'||e.name==='AbortError'||dtp==='orderDate')throw e;if(!/^서버 응답 4/.test(e.message))S.rdtTmp=true;dtp='orderDate';M.clear();await pull(qa(),'기간 접수분',M)}
- if(S.rdtTmp)S.rdtTmp=false;else S.rdt=dtp;
- const lkd=addD(fr,-90),leak=!!S.from&&[...M.values()].some(r=>{const d=dtp==='orderDate'?r.ord:r.dt;return d&&d<lkd});
+ const AP=S.pb==='ap',L1='기간 '+(AP?'약속':'접수')+'분';lpStart(S.from?[L1,'이전 미종결','연계주문 점검']:[L1,'연계주문 점검']);
+ let dtp=AP?'orderAppointedDate':(S.rdt||'receiptDate');const pd=()=>AP?0:dtp==='orderDate'?14:7,qa=()=>qs()+'&from='+(S.from?addD(fr,-pd()):fr)+'&to='+addD(to,pd())+'&dateType='+dtp;
+ try{await pull(qa(),L1,M)}catch(e){if(AP||e.message==='LOGIN'||e.message==='CENTER'||e.message==='ABORT'||e.name==='AbortError'||dtp==='orderDate')throw e;if(!/^서버 응답 4/.test(e.message))S.rdtTmp=true;dtp='orderDate';M.clear();await pull(qa(),L1,M)}
+ if(!AP){if(S.rdtTmp)S.rdtTmp=false;else S.rdt=dtp}
+ const lkd=addD(fr,-90),leak=!!S.from&&[...M.values()].some(r=>{const d=AP?r.ap:dtp==='orderDate'?r.ord:r.dt;return d&&d<lkd});
  let nB=0;
- if(S.from&&!leak){const codes=await openCodes(),fm=await wsFmt(codes),q0=qs()+'&from=2000-01-01&to='+addD(S.from,-pd())+'&dateType='+dtp,lb='이전 미종결';
+ if(S.from&&!leak){const codes=await openCodes(),fm=await wsFmt(codes),q0=qs()+'&from=2000-01-01&to='+addD(S.from,AP?-1:-pd())+'&dateType='+dtp,lb='이전 미종결';
   if(fm==='comma')nB=await pull(q0+'&waybillStatuses='+codes.join(','),lb,M);
   else if(fm==='rep')nB=await pull(q0+codes.map(c=>'&waybillStatuses='+c).join(''),lb,M);
   else for(const c of codes)nB+=await pull(q0+'&waybillStatuses='+c,lb,M)}
  let TD=null;S.tdLeak=leak;
  S.cache=null;S.rows=[...M.values()];S.tdRows=TD;S.lc=sc();fixA(S.rows);fixA(S.tdRows);
- const inN=S.rows.filter(r=>r.dt&&r.dt>=fr&&r.dt<=to).length,oldN=S.from?S.rows.filter(r=>r.dt&&r.dt<fr&&!r.x&&!r.e).length:0;
- S.pgInfo=leak?'서버 기간 조회가 적용되지 않아 전체를 받음':'기간 접수 '+f(inN)+'건'+(S.from?' + 이전 미종결 '+f(oldN)+'건':'')+' (받은 양 '+f(S.rows.length)+'건)'+(dtp==='orderDate'?' · 서버가 접수일 조회를 받지 않아 주문일로 넓게 받아 접수일로 거름':'')}
+ const inN=S.rows.filter(r=>pk(r)&&pk(r)>=fr&&pk(r)<=to).length,oldN=S.from?S.rows.filter(r=>pk(r)&&pk(r)<fr&&!r.x&&!r.e).length:0;
+ S.pgInfo=leak?'서버 기간 조회가 적용되지 않아 전체를 받음':'기간 '+(AP?'약속':'접수')+' '+f(inN)+'건'+(S.from?' + 이전 미종결 '+f(oldN)+'건':'')+' (받은 양 '+f(S.rows.length)+'건)'+(dtp==='orderDate'?' · 서버가 접수일 조회를 받지 않아 주문일로 넓게 받아 접수일로 거름':'')}
 async function lkLoad(){const t0=today(),a=addD(t0,-LKD[0]),b=addD(t0,LKD[1]),out=[];S.lkRows=null;
  try{let p=1,tp=1,ok=true;do{stp('연계주문 점검',p-1,tp);if(p>1)await new Promise(z=>setTimeout(z,300));chk();const d=await api('',qs()+'&from='+a+'&to='+b+'&dateType=orderAppointedDate&page='+p);if((d.totalPages||1)>30)S.capHit=true;tp=Math.min(d.totalPages||1,30);LP.n+=(d.items||[]).length;const sl=(d.items||[]).map(slim);if(sl.some(r=>!r.ap||r.ap<a||r.ap>b)){ok=false;break}out.push(...sl);p++}while(p<=tp);
   stp('연계주문 점검',1,1);if(ok)S.lkRows=[...new Map(out.map(r=>[r.id,r])).values()]}catch(e){if(e.message==='LOGIN'||e.message==='CENTER'||e.message==='ABORT'||e.name==='AbortError')throw e}}
@@ -169,7 +171,7 @@ async function loadAll(force){
  if(full){S.fullAt=Date.now();S.noRn=S.rows.some(r=>!r.rn);if(Date.now()-S.openAt>=5*3600e3)S.did5=true}
  S.pgInfo=full?'전체 '+tp+'페이지 받음':tp+'페이지 중 '+(pages.length+1)+'페이지만 받음'}
 async function load(force){
- if(S.busy||S.dead)return;if(S.fol&&S.to&&S.to!==today()){const n=S.from?spanD(S.from,S.to)-1:0;S.to=today();if(S.from)S.from=addD(S.to,-n);$('#df').value=S.from;$('#dt').value=S.to;reset()}S.busy=true;S.err='';S.capHit=false;S.ac=new AbortController();$('#re').disabled=true;lpStart([]);if(S.rows.length)$('#app').classList.add('dim');tick();
+ if(S.busy||S.dead)return;if(S.pb==='ap'&&S.apDef){const R=defR('ap');if(R[0]!==S.from||R[1]!==S.to){S.from=R[0];S.to=R[1];$('#df').value=S.from;$('#dt').value=S.to;reset()}}if(S.pb==='dt'&&S.fol&&S.to&&S.to!==today()){const n=S.from?spanD(S.from,S.to)-1:0;S.to=today();if(S.from)S.from=addD(S.to,-n);$('#df').value=S.from;$('#dt').value=S.to;reset()}S.busy=true;S.err='';S.capHit=false;S.ac=new AbortController();$('#re').disabled=true;lpStart([]);if(S.rows.length)$('#app').classList.add('dim');tick();
  try{S.part=0;const run=async()=>{await (S.from||S.to?loadRange():loadAll(force));S.part=1;await lkLoad();if((S.from||S.to)&&!S.tdLeak&&S.lkRows){const y=addD(today(),-1),t0=today();S.tdRows=S.lkRows.filter(r=>r.ap===y||r.ap===t0)}};try{await run()}catch(e){if(e.message!=='CENTER')throw e;S.cache=null;await run()}
   fixA(S.rows);fixA(S.tdRows);fixA(S.dvRows);fixA(S.lkRows);S.lc=sc();if(S.d1&&S.d2&&S.d1<=S.d2&&(S.from||S.to))setTimeout(detail,0);S.last=new Date();if(!S.seller)S.ALL=S.capHit?null:{k:allKey(S.lc),rows:S.rows,td:S.tdRows,lk:S.lkRows,last:S.last,pg:S.pgInfo,cache:S.cache,tdLeak:S.tdLeak,lc:S.lc};S.fresh=true;S.doneAt=Date.now();setTimeout(tick,2600)}
  catch(e){const ab=e.name==='AbortError'||e.message==='ABORT';if(ab){S.cache=null}S.err=ab?(S.part?'불러오기를 중단했습니다. 주문 데이터는 새 조건으로 받았지만 연계주문 점검은 받지 못해, 연계주문 누락·오늘·전일 현황은 비어 있을 수 있습니다. [새로고침]을 누르세요.':S.rows.length?'불러오기를 중단했습니다. 화면은 이전에 받은 데이터입니다. 거래처·기간·센터를 확인한 뒤 [새로고침]을 누르세요.':'불러오기를 중단했습니다. 거래처·기간·센터를 확인한 뒤 [새로고침]을 누르세요.'):e.message==='LOGIN'?'로그인이 만료되었습니다. FlowFix 관리자 화면에 다시 로그인한 뒤 [새로고침]을 눌러주세요.':'데이터를 불러오지 못했습니다 ('+e.message+'). 이전 수치를 그대로 표시합니다.'}
@@ -186,7 +188,7 @@ async function detail(){
  draw()}
 const MAXD=60,PWH='83ac251f8e7c4ec4b8ed1929ff2ecf86d6b029ad8ca5fcbe28836a7f6b555031';
 function spanD(fr,to){return fr&&to?Math.round((new Date(to)-new Date(fr))/864e5)+1:Infinity}
-function gap(){return S.dup||spanD(S.from,S.to)>MAXD?0:S.min}
+function gap(){return S.dup||spanD(S.from,S.to)>mx()?0:S.min}
 function arm(){const g=gap();S.next=g?Date.now()+g*60000:0}
 function sname(){if(!S.seller)return '전체 거래처';const x=S.sellers.find(x=>x.id===S.seller);return x?x.name:'거래처 '+S.seller}
 function fillSel(){$('#sel').innerHTML='<option value="">전체 거래처</option>'+S.sellers.map(x=>'<option value="'+esc(x.id)+'"'+(x.id===S.seller?' selected':'')+'>'+esc(x.name)+'</option>').join('');$('#sel').value=S.seller}
@@ -217,14 +219,14 @@ function rate(a,b){const p=pct(a,b);return '<span class="rate"><i><u style="widt
 function draw(){if(S.dead)return;
  for(const r of S.rows)if(r.c!=='센터 미지정')S.cens.add(r.c);if(S.center)S.cens.add(S.center);const cens=[...S.cens].sort((a,b)=>a.localeCompare(b,'ko'));if(S.op!=='tc')try{localStorage.setItem(LK('rcDashCens'),JSON.stringify(cens))}catch(e){}
  $('#cen').innerHTML='<option value="">전체</option>'+cens.map(c=>'<option'+(c===S.center?' selected':'')+'>'+esc(c)+'</option>').join('');
- const inP=r=>(!S.from||(r.dt&&r.dt>=S.from))&&(!S.to||(r.dt&&r.dt<=S.to));
+ const inP=r=>{const d=pk(r);return (!S.from||(d&&d>=S.from))&&(!S.to||(d&&d<=S.to))};
  const R0=S.rows.filter(r=>(!S.center||r.c===S.center)&&r.k===S.tk&&inP(r));
  if(S.prod&&!R0.some(r=>r.p===S.prod))S.prod='';
  const tire=x=>/타이어|TIRE/i.test(x),U=(S.prod?tire(S.prod):R0.length>0&&R0.every(r=>tire(r.p)))?'본':'건';
  const R=S.prod?R0.filter(r=>r.p===S.prod):R0,T=agg(R);
  const orders=new Set(R.map(r=>r.on)).size;
  const td=today(),flt=r=>(!S.center||r.c===S.center)&&r.k===S.tk&&(!S.prod||r.p===S.prod);
- const OLD=S.from?S.rows.filter(r=>flt(r)&&r.dt&&r.dt<S.from&&!r.x&&!r.e):[],W=R.concat(OLD);
+ const OLD=S.from?S.rows.filter(r=>flt(r)&&pk(r)&&pk(r)<S.from&&!r.x&&!r.e):[],W=R.concat(OLD);
  const stg=r=>r.g?'g':!r.a?'na':!r.s?'ns':'sc';
  const Q=issues(W,td);
  const DD={},seg=(k,on)=>'<span class="seg"><button data-seg="'+k+'" data-v="0" class="'+(on?'':'on')+'">택배 제외</button><button data-seg="'+k+'" data-v="1" class="'+(on?'on':'')+'">택배만</button></span>';
@@ -235,7 +237,7 @@ function draw(){if(S.dead)return;
  if(S.selOk===false)h+='<p class="note">판매처 목록을 불러오지 못해 지금은 레드캡과 전체 거래처만 선택할 수 있습니다.</p>';
  const pg=group(R0,'p');
  h+='<div class="fbar"><span>품목</span><button data-p="" class="'+(S.prod?'':'on')+'">전체 '+f(R0.length)+'</button>'+[...pg.entries()].sort((a,b)=>{const O=['타이어','엔진오일','배터리','기타'],x=O.indexOf(a[0]),y=O.indexOf(b[0]);return (x<0?9:x)-(y<0?9:y)||b[1].length-a[1].length}).map(([p,rows])=>'<button data-p="'+esc(p)+'" class="'+(p===S.prod?'on':'')+'">'+esc(p)+' '+f(rows.length)+'</button>').join('')+seg('tk',S.tk)+
- '<span class="per">'+esc(sname())+' · '+(S.from||S.to?'접수일 '+esc(S.from||'처음')+' ~ '+esc(S.to||'현재'):'전체 기간 · '+f(S.rows.length)+'건')+(!S.seller&&S.min&&S.min<10?' · 전체 거래처는 10분 간격 갱신':'')+(S.pgInfo?' · '+S.pgInfo+(S.lc?' · '+esc(S.lc)+'만 받음':S.center&&S.cOk===false?' · 서버가 센터 조건을 받지 않아 전체 센터를 받아 화면에서 거름':'')+(S.from||S.to?'':' <button class="lnk" data-act="full" title="오래된 종결 건까지 전부 다시 받습니다">전체 다시 받기</button>'):'')+'</span></div>';
+ '<span class="per">'+esc(sname())+' · '+(S.from||S.to?PBL()+' '+esc(S.from||'처음')+' ~ '+esc(S.to||'현재'):'전체 기간 · '+f(S.rows.length)+'건')+(!S.seller&&S.min&&S.min<10?' · 전체 거래처는 10분 간격 갱신':'')+(S.pgInfo?' · '+S.pgInfo+(S.lc?' · '+esc(S.lc)+'만 받음':S.center&&S.cOk===false?' · 서버가 센터 조건을 받지 않아 전체 센터를 받아 화면에서 거름':'')+(S.from||S.to?'':' <button class="lnk" data-act="full" title="오래된 종결 건까지 전부 다시 받습니다">전체 다시 받기</button>'):'')+'</span></div>';
  const rem=F(R,r=>!r.x&&!r.e),unasL=F(rem,r=>!r.g&&!r.a),doneL=F(R,r=>!r.x&&r.e),outL=F(R,r=>r.t!=='col'),colL=F(R,r=>r.t==='col');
  const kpi=(l,key,rows,d,big)=>'<div class="kpi'+(big?' big':'')+'"><div class="l">'+l+'</div><div class="v">'+N('kpi:'+key,l,rows,{t:1})+'<small>\u0001</small></div><div class="d">'+d+'</div></div>';
  const ag=L=>{const a=agg(L);return '종결 '+f(a.e)+' · '+pct(a.e,a.live)+'%'};
@@ -300,7 +302,7 @@ function draw(){if(S.dead)return;
  '<div class="ex" style="margin-top:8px"><span>오늘 출고 진행 <small style="display:inline;flex-basis:auto">완료 / 출고</small></span><b>출고 '+N('tp:eo','오늘 출고분 완료 (출고·설치)',te[0],t1)+' / '+N('tp:go','오늘 출고분 (출고·설치)',tg[0],t1)+' · 회수 '+N('tp:ec','오늘 출고분 완료 (회수)',te[1],t1)+' / '+N('tp:gc','오늘 출고분 (회수)',tg[1],t1)+'</b><small>오늘 출고한 건은 진행 중으로 보고 문제에 넣지 않습니다</small></div>'+
  '<div class="ex"><span>약속일 ≠ 지정일 (미출고)</span><b>'+N('ml','약속일 ≠ 지정일 (미출고)',ML,t1)+'\u0001</b><small>그중 지정일 경과 '+N('ml:p','약속일 ≠ 지정일 · 지정일 경과',F(ML,r=>r.rq<td),t1)+' · 기사 미배정 '+N('ml:u','약속일 ≠ 지정일 · 기사 미배정',F(ML,r=>!r.a),t1)+' · 종결 건 제외</small></div>'+
  '<div class="ex"><span>출고 다음날 이후 완료</span><b>'+N('late','출고 다음날 이후 완료',lateL,t1)+'\u0001</b><small>종결 건 누적</small></div>'+
- (S.from?'<div class="ex"><span>접수일 '+esc(S.from.slice(5))+' 이전 미처리</span><b>'+N('old','접수일 '+S.from+' 이전 미처리',OLD,t1)+'\u0001</b><small>미배정 '+N('old:na','이전 미처리 · 미배정',oc.na,t1)+' · 일정 미확정 '+N('old:ns','이전 미처리 · 일정 미확정',oc.ns,t1)+' · 미출고 '+N('old:sc','이전 미처리 · 미출고',oc.sc,t1)+' · 출고 후 미완료 '+N('old:g','이전 미처리 · 출고 후 미완료',oc.g,t1)+' — 계획판·문제·일자별 현황에 포함</small></div>':'')+'</div></div>';
+ (S.from?'<div class="ex"><span>'+PBL()+' '+esc(S.from.slice(5))+' 이전 미처리</span><b>'+N('old',PBL()+' '+S.from+' 이전 미처리',OLD,t1)+'\u0001</b><small>미배정 '+N('old:na','이전 미처리 · 미배정',oc.na,t1)+' · 일정 미확정 '+N('old:ns','이전 미처리 · 일정 미확정',oc.ns,t1)+' · 미출고 '+N('old:sc','이전 미처리 · 미출고',oc.sc,t1)+' · 출고 후 미완료 '+N('old:g','이전 미처리 · 출고 후 미완료',oc.g,t1)+' — 계획판·문제·일자별 현황에 포함</small></div>':'')+'</div></div>';
  const lo=addD(td,-10),hi=addD(td,10),FK=['n','as','na','ns','sc','g','e','df'],FL={n:'건수',as:'기사 배정',na:'미배정',ns:'일정 미확정',sc:'일정 확정',g:'출고',e:'종결',df:'약속일≠지정일'},mk=()=>{const o={};for(const k of FK)o[k]=[];return o};
  const put=(o,r)=>{o.n.push(r);(r.a?o.as:o.na).push(r);if(r.e)o.e.push(r);else{const k=stg(r);if(k!=='na')o[k].push(r);if(!r.g&&r.rq&&r.rq!==r.ap)o.df.push(r)}};
  const B={old:mk(),past:mk(),fut:mk(),none:mk()},days={},pd={};for(let i=1;i<=3;i++)pd[addD(td,-i)]=mk();for(let i=0;i<=10;i++)days[addD(td,i)]=mk();
@@ -311,7 +313,7 @@ function draw(){if(S.dead)return;
  drow('D-11 이전 미처리 <span class="sub">~ '+addD(lo,-1)+'</span>',B.old,B.old.n.length?'bad':'','dy:old','약속일 D-11 이전 미처리')+drow('D-10 ~ D-4 미처리 <span class="sub">'+lo+' ~ '+addD(td,-4)+'</span>',B.past,B.past.n.length?'bad':'','dy:past','약속일 D-10~D-4 미처리')+[3,2,1].map(i=>{const d=addD(td,-i);return drow(wd(d)+' <span class="pill'+(pd[d].n.length?' crit':'')+'">D-'+i+' 미처리</span>',pd[d],pd[d].n.length?'bad':'','dy:'+d,'약속일 '+d+' 미처리')}).join('')+
  Object.keys(days).map((d,i)=>drow(wd(d)+' '+(i?'<span class="pill">D+'+i+'</span>':'<span class="pill now">오늘</span>'),days[d],i?'':'now','dy:'+d,'약속일 '+d)).join('')+
  drow('D+11 이후 <span class="sub">'+addD(hi,1)+' ~</span>',B.fut,'','dy:fut','약속일 D+11 이후')+(B.none.n.length?drow('약속일 미입력 미처리',B.none,'','dy:none','약속일 미입력 미처리'):'')+'</tbody></table></div>';
- h+='<div class="dv"><b>기간별 상세보기</b><label>약속일 <input type="date" id="v1" value="'+esc(S.d1)+'"> ~ <input type="date" id="v2" value="'+esc(S.d2)+'"></label>'+(S.d1||S.d2?'<button id="vx">닫기</button>':'')+'<small>'+(S.from||S.to?'접수일 기간과 관계없이 서버에서 따로 불러옵니다(종결 건 포함)':'불러온 전체 데이터에서 찾습니다')+'</small></div>';if(S.dvMsg)h+='<p class="note">'+esc(S.dvMsg)+'</p>';
+ h+='<div class="dv"><b>기간별 상세보기</b><label>약속일 <input type="date" id="v1" value="'+esc(S.d1)+'"> ~ <input type="date" id="v2" value="'+esc(S.d2)+'"></label>'+(S.d1||S.d2?'<button id="vx">닫기</button>':'')+'<small>'+(S.from||S.to?'조회 기간과 관계없이 서버에서 따로 불러옵니다(종결 건 포함)':'불러온 전체 데이터에서 찾습니다')+'</small></div>';if(S.dvMsg)h+='<p class="note">'+esc(S.dvMsg)+'</p>';
  if(S.d1&&S.d2&&S.d1<=S.d2){const dd={};for(const r of (S.dvRows||S.rows)){if(r.x||!flt(r)||!r.ap||r.ap<S.d1||r.ap>S.d2)continue;put(dd[r.ap]=dd[r.ap]||mk(),r)}const ks=Object.keys(dd).sort(),tt=mk();for(const k of ks)for(const q of FK)for(const r of dd[k][q])tt[q].push(r);
   h+=ks.length?'<div class="tw" style="margin-top:8px"><table>'+DH+'<tbody>'+ks.map(d=>drow(esc(d)+' ('+(WK[new Date(d+'T00:00:00').getDay()]||'?')+')',dd[d],d===td?'now':'','dv:'+d,'상세 · 약속일 '+d)).join('')+drow('합계',tt,'tot','dv:tot','상세 · 약속일 '+S.d1+'~'+S.d2)+'</tbody></table></div>':'<p class="note">선택한 기간에 약속일이 있는 물량이 없습니다.</p>'}
  h+='</section>';
@@ -412,7 +414,7 @@ async function xl(btn){const L=S.ddL||[],LK=S.ddLK,lab=(S.dd?S.dd.l:'목록')+(S
      cell(j+1,i).s=o}});
    ws['!rows']=[{hpt:20}]}
   ws['!autofilter']={ref:X.utils.encode_range({s:{r:0,c:0},e:{r:R.length,c:H.length-1}})};
-  const info=X.utils.aoa_to_sheet([['목록',lab],['건수(운송장)',R.length],['기준 시각',t.toLocaleString('ko-KR',{hour12:false})],['거래처',sname()],['접수일 기간',S.from||S.to?(S.from||'')+' ~ '+(S.to||''):'전체'],['센터',S.center||'전체'],['품목',S.prod||'전체'],['대시보드',(($('#ver')||{}).textContent||'')]].concat(LK?[['연계주문 기준','판매처·수취인(차량번호)·약속일이 같은 교체출고·교체회수 중 한쪽만 기사배정(배정 누락) 또는 출고(출고 누락)된 건, 약속일 오늘−'+LKD[0]+'일 ~ +'+LKD[1]+'일']]:[]));info['!cols']=[{wch:16},{wch:60}];
+  const info=X.utils.aoa_to_sheet([['목록',lab],['건수(운송장)',R.length],['기준 시각',t.toLocaleString('ko-KR',{hour12:false})],['거래처',sname()],['조회 기간('+PBL()+')',S.from||S.to?(S.from||'')+' ~ '+(S.to||''):'전체'],['센터',S.center||'전체'],['품목',S.prod||'전체'],['대시보드',(($('#ver')||{}).textContent||'')]].concat(LK?[['연계주문 기준','판매처·수취인(차량번호)·약속일이 같은 교체출고·교체회수 중 한쪽만 기사배정(배정 누락) 또는 출고(출고 누락)된 건, 약속일 오늘−'+LKD[0]+'일 ~ +'+LKD[1]+'일']]:[]));info['!cols']=[{wch:16},{wch:60}];
   const wb=X.utils.book_new();X.utils.book_append_sheet(wb,ws,'목록');X.utils.book_append_sheet(wb,info,'조건');
   save(new Blob([X.write(wb,{bookType:'xlsx',type:'array'})],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'}),base+'.xlsx');btn.textContent='받음 ✓'}
  catch(e){const q=v=>{v=v==null?'':String(v);if(typeof v==='string'&&/^[=+@]/.test(v))v="'"+v;return /[",\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v};
@@ -434,11 +436,11 @@ function tick(){if(S.dead)return;const el=$('#stamp'),pb=$('#pb');if(!el)return;
   el.className='busy';el.innerHTML='<button class="stopx" data-stop="1" title="불러오기 중단">중단</button><span class="ldsp"></span>불러오는 중'+(cur?'<span class="ldx"> · '+esc(cur)+(x.t>1?' '+Math.min(x.d+1,x.t)+'/'+x.t:'')+'</span>':'')+' · '+pc+'%';el.title=cur;
   if(pb){pb.hidden=false;pb.firstChild.style.width=Math.max(pc,3)+'%'}
   if(!S.rows.length){const sec=Math.round((Date.now()-LP.t0)/1000);
-   $('#app').innerHTML='<div class="ldf"><div class="ldbig"></div><h3>데이터를 불러오는 중입니다</h3><p>'+esc(sname())+(S.center?' · '+esc(S.center):'')+' · '+(S.from||S.to?'접수일 '+esc(S.from||'처음')+' ~ '+esc(S.to||'현재'):'전체 기간')+'</p><div class="ldbar"><i style="width:'+Math.max(pc,3)+'%"></i></div><div class="ldst">'+LP.plan.map((k,i)=>{const y=LP.st[k];return '<div class="'+(y.s==='now'?'ldcur':'')+'"><span class="ldck '+y.s+'">'+(y.s==='ok'?'✓':i+1)+'</span>'+esc(k)+'<span class="ldr">'+(y.s==='wt'?'대기':y.t?Math.min(y.d+(y.s==='ok'?0:1),y.t)+' / '+y.t:'')+'</span></div>'}).join('')+'</div><p class="ldft">받은 건수 '+f(LP.n)+'건 · 경과 '+sec+'초</p><button class="stopb" data-stop="1">불러오기 중단</button><p class="ldft">거래처·기간·센터를 잘못 골랐다면 중단한 뒤 바꾸거나, 위에서 바로 바꾸면 지금 불러오기를 멈추고 새로 받습니다.</p></div>'}
+   $('#app').innerHTML='<div class="ldf"><div class="ldbig"></div><h3>데이터를 불러오는 중입니다</h3><p>'+esc(sname())+(S.center?' · '+esc(S.center):'')+' · '+(S.from||S.to?PBL()+' '+esc(S.from||'처음')+' ~ '+esc(S.to||'현재'):'전체 기간')+'</p><div class="ldbar"><i style="width:'+Math.max(pc,3)+'%"></i></div><div class="ldst">'+LP.plan.map((k,i)=>{const y=LP.st[k];return '<div class="'+(y.s==='now'?'ldcur':'')+'"><span class="ldck '+y.s+'">'+(y.s==='ok'?'✓':i+1)+'</span>'+esc(k)+'<span class="ldr">'+(y.s==='wt'?'대기':y.t?Math.min(y.d+(y.s==='ok'?0:1),y.t)+' / '+y.t:'')+'</span></div>'}).join('')+'</div><p class="ldft">받은 건수 '+f(LP.n)+'건 · 경과 '+sec+'초</p><button class="stopb" data-stop="1">불러오기 중단</button><p class="ldft">거래처·기간·센터를 잘못 골랐다면 중단한 뒤 바꾸거나, 위에서 바로 바꾸면 지금 불러오기를 멈추고 새로 받습니다.</p></div>'}
   return}
  el.className=S.err?'err':'';el.title='';if(pb)pb.hidden=true;
  const p2=n=>String(n).padStart(2,'0'),L=S.last,sameDay=L&&L.toDateString()===new Date().toDateString(),t=L?(sameDay?'':p2(L.getMonth()+1)+'-'+p2(L.getDate())+' ')+p2(L.getHours())+':'+p2(L.getMinutes())+':'+p2(L.getSeconds()):'-',am=L?Math.floor((Date.now()-L.getTime())/60000):0,ago=!L?'':am<1?'방금':am<60?am+'분 전':Math.floor(am/60)+'시간 '+(am%60)+'분 전';if(!S.err&&L&&am>=30)el.className='old';
- let n=S.dup?'중복 탭 · 자동 꺼짐':spanD(S.from,S.to)>MAXD&&S.min?'60일 초과 · 자동 꺼짐':'자동 꺼짐';if(S.next&&document.hidden)n='탭 복귀 시 갱신';else if(S.next){const s=Math.max(0,Math.round((S.next-Date.now())/1000));n='다음 '+Math.floor(s/60)+':'+String(s%60).padStart(2,'0')}
+ let n=S.dup?'중복 탭 · 자동 꺼짐':spanD(S.from,S.to)>mx()&&S.min?mx()+'일 초과 · 자동 꺼짐':'자동 꺼짐';if(S.next&&document.hidden)n='탭 복귀 시 갱신';else if(S.next){const s=Math.max(0,Math.round((S.next-Date.now())/1000));n='다음 '+Math.floor(s/60)+':'+String(s%60).padStart(2,'0')}
  const rc=S.doneAt&&Date.now()-S.doneAt<2500&&!S.err;el.innerHTML='<i></i>'+(rc?'<b class="okb">갱신됨</b> ':'')+'최종 갱신 <b class="lut">'+t+'</b>'+(ago&&!rc?'<span class="ago">'+ago+'</span>':'')+(n==='자동 꺼짐'?'':'<span class="nx">'+n+'</span>')}
 const reset=()=>{S.pq=S.cq=null};
 document.addEventListener('click',e=>{if(e.target.closest&&e.target.closest('[data-stop]'))stopLoad()});
@@ -465,10 +467,10 @@ $('#sel').onchange=async e=>{const v=e.target.value;if(S.busy){await stopLoad();
    S.pgInfo=v?'전체 거래처로 받은 데이터('+[A.last.getHours(),A.last.getMinutes()].map(x=>String(x).padStart(2,'0')).join(':')+')에서 걸러 표시 — 다시 받지 않음':A.pg;$('#cen').value='';arm();draw();if(S.d1&&S.d2&&S.d1<=S.d2&&(S.from||S.to))setTimeout(detail,0);return}}}
  S.seller=v;S.center='';try{localStorage.setItem(LK('rcDashCenter'),'')}catch(x){}reset();try{localStorage.setItem(LK('rcDashSeller'),JSON.stringify({id:S.seller,name:sname()}))}catch(x){}S.rows=[];S.cache=null;S.tdRows=S.lkRows=S.dvRows=null;S.dvMsg='';S.dvSeq=(S.dvSeq||0)+1;S.lc=null;S.pgInfo='';$('#app').innerHTML='';load()};
 async function sha(t){const b=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(t));return [...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,'0')).join('')}
-function askPw(){return new Promise(res=>{const m=document.createElement('div');m.id='pwm';m.innerHTML='<form><h3>마스터 관리자 확인</h3><p>'+MAXD+'일을 넘는 기간(전체 기간 포함)은 서버 부담이 커서 마스터 관리자만 조회할 수 있습니다. 비밀번호를 입력해 주세요.</p><input type="password" autocomplete="off" placeholder="비밀번호"><p class="er"></p><div><button type="button">취소</button><button type="submit" class="pri">확인</button></div></form>';document.body.appendChild(m);const i=m.querySelector('input'),done=v=>{m.remove();res(v)};i.focus();m.querySelector('button[type=button]').onclick=()=>done(false);m.querySelector('form').onsubmit=async e=>{e.preventDefault();let ok=false;try{ok=await sha('rc|'+i.value)===PWH}catch(x){}if(ok)done(true);else{m.querySelector('.er').textContent='비밀번호가 맞지 않습니다.';i.value='';i.focus()}}})}
+function askPw(){return new Promise(res=>{const m=document.createElement('div');m.id='pwm';m.innerHTML='<form><h3>마스터 관리자 확인</h3><p>'+mx()+'일을 넘는 기간(전체 기간 포함)은 서버 부담이 커서 마스터 관리자만 조회할 수 있습니다. 비밀번호를 입력해 주세요.</p><input type="password" autocomplete="off" placeholder="비밀번호"><p class="er"></p><div><button type="button">취소</button><button type="submit" class="pri">확인</button></div></form>';document.body.appendChild(m);const i=m.querySelector('input'),done=v=>{m.remove();res(v)};i.focus();m.querySelector('button[type=button]').onclick=()=>done(false);m.querySelector('form').onsubmit=async e=>{e.preventDefault();let ok=false;try{ok=await sha('rc|'+i.value)===PWH}catch(x){}if(ok)done(true);else{m.querySelector('.er').textContent='비밀번호가 맞지 않습니다.';i.value='';i.focus()}}})}
 async function setRange(fr,to){if(S.busy)await stopLoad();
- if(spanD(fr,to)>MAXD&&!S.master){if(!await askPw()){$('#df').value=S.from;$('#dt').value=S.to;return}S.master=true}
- S.from=fr;S.to=to;S.fol=!!to&&to===today();$('#df').value=fr;$('#dt').value=to;reset();S.cache=null;load()}
+ if(spanD(fr,to)>mx()&&!S.master){if(!await askPw()){$('#df').value=S.from;$('#dt').value=S.to;return}S.master=true}
+ S.from=fr;S.to=to;S.fol=S.pb==='dt'&&!!to&&to===today();{const R=defR('ap');S.apDef=S.pb==='ap'&&fr===R[0]&&to===R[1]}$('#df').value=fr;$('#dt').value=to;reset();S.cache=null;load()}
 let rT=0;const rDeb=()=>{clearTimeout(rT);rT=setTimeout(()=>{const a=$('#df').value,b=$('#dt').value;if((a&&a<'2020-01-01')||(b&&b<'2020-01-01')||(a&&b&&a>b)){$('#df').value=S.from;$('#dt').value=S.to;return}if(a!==S.from||b!==S.to)setRange(a,b)},800)};$('#df').onchange=rDeb;$('#dt').onchange=rDeb;
 $('#dx').onclick=()=>setRange('','');
 $('#cen').onchange=async e=>{const v=e.target.value;if(S.busy){await stopLoad();S.err=''}S.center=v;try{localStorage.setItem(LK('rcDashCenter'),S.center)}catch(x){}reset();S.dd=null;if(sc()!==S.lc)S.cache=null;
