@@ -1,16 +1,17 @@
-/* 루티 재고 공급 현황 대시보드 v2.4 · 2026-11-27 — 루티 관리자 화면에서 로더 북마크로 불러 씀 */
-/* 루티 재고 공급 현황 대시보드 v2.4 (2026-11-27)
+/* 루티 재고 공급 현황 대시보드 v2.5 · 2026-11-27 — 루티 관리자 화면에서 로더 북마크로 불러 씀 */
+/* 루티 재고 공급 현황 대시보드 v2.5 (2026-11-27)
    admin.flowfix.co.kr 에 로그인한 탭에서 로더 북마크를 누르면 새 탭에 열린다(루티 화면은 그대로 둔다). 조회(GET)만 하며 데이터를 바꾸지 않는다.
    주문 조회 + 직송입고 + 발주입고 + 간선입고 + 반납/회수 메뉴를 각각 조회해 운송장 단위로 묶는다.
    서버 배포: build.js가 zonescan 저장소 rt/supply.js(최신)와 rt/supply-버전.js(고정)를 쓴다. 로더가 누를 때마다 rt/supply.js를 받아 실행한다.
    v2.4: 서버 부하 기준(자동 갱신 기본 끄기 · 30/60분, 탭 복귀 갱신 없음), [새로고침]은 바뀐 것만, 입고 상세 · 마지막 화면을 이 PC에 저장해 다시 열 때 바로 표시,
-         요청 동시 6건 · 30초 제한 · 1회 재시도 · 중단, 조회 실패 때 수치가 틀어지지 않게 보류 처리, 하단 고정 목록 패널, 재배차 대기 · 운송장 없는 주문 판정 수정 */
+         요청 동시 4건 · 30초 제한 · 1회 재시도 · 중단, 조회 실패 때 수치가 틀어지지 않게 보류 처리, 하단 고정 목록 패널, 재배차 대기 · 운송장 없는 주문 판정 수정
+   v2.5: 별도 확인 대상 — ① 이중 공급 ② 도착 센터 불일치 ③ 취소 주문인데 입고 진행 중(사용자 결정 2026-11-27) */
 (function () {
 /* 대시보드 본체. 아래 런처가 새 탭(about:blank, 루티와 같은 출처)에 이 함수의 소스를 심어 그 탭 안에서 실행한다.
    그래서 루티 탭을 닫거나 다른 화면으로 옮겨도 대시보드 탭은 계속 동작한다. */
 function supDash() {
   'use strict';
-  var VER = 'v2.4 (2026-11-27)';
+  var VER = 'v2.5 (2026-11-27)';
   /* 화면 안 보라색 버튼에 담기는 로더 북마크. build.js가 loader.js 내용으로 바꿔 넣는다 */
   var BOOKMARK = "javascript:(async%20function()%7Bif(!%2F(%5E%7C%5C.)flowfix%5C.co%5C.kr%24%2F.test(location.hostname))%7Balert('%EB%A3%A8%ED%8B%B0%20%EA%B4%80%EB%A6%AC%EC%9E%90%20%ED%99%94%EB%A9%B4(admin.flowfix.co.kr)%EC%97%90%20%EB%A1%9C%EA%B7%B8%EC%9D%B8%ED%95%9C%20%ED%83%AD%EC%97%90%EC%84%9C%20%EB%88%8C%EB%9F%AC%20%EC%A3%BC%EC%84%B8%EC%9A%94.')%3Breturn%7D%0Avar%20w%3Dwindow.open(''%2C'supDash')%3Bif(!w)%7Balert('%ED%8C%9D%EC%97%85%EC%9D%B4%20%EC%B0%A8%EB%8B%A8%EB%90%98%EC%97%88%EC%8A%B5%EB%8B%88%EB%8B%A4.%20%EC%A3%BC%EC%86%8C%EC%B0%BD%20%EC%98%A4%EB%A5%B8%EC%AA%BD%EC%9D%98%20%ED%8C%9D%EC%97%85%20%EC%B0%A8%EB%8B%A8%20%EC%95%84%EC%9D%B4%EC%BD%98%EC%97%90%EC%84%9C%20%EC%9D%B4%20%EC%82%AC%EC%9D%B4%ED%8A%B8%EB%A5%BC%20%ED%97%88%EC%9A%A9%ED%95%9C%20%EB%92%A4%20%EB%8B%A4%EC%8B%9C%20%EB%88%8C%EB%9F%AC%20%EC%A3%BC%EC%84%B8%EC%9A%94.')%3Breturn%7D%0Atry%7Bw.document.open()%3Bw.document.write('%3C!doctype%20html%3E%3Cmeta%20charset%3D%22utf-8%22%3E%3Ctitle%3E%EC%9E%85%EA%B3%A0%ED%98%84%ED%99%A9%20%EB%8C%80%EC%8B%9C%EB%B3%B4%EB%93%9C%3C%2Ftitle%3E%3Cp%20style%3D%22font%3A15px%20-apple-system%2Csans-serif%3Bpadding%3A60px%3Btext-align%3Acenter%3Bcolor%3A%2355526b%22%3E%EC%B5%9C%EC%8B%A0%20%EC%9E%AC%EA%B3%A0%20%EA%B3%B5%EA%B8%89%20%ED%98%84%ED%99%A9%20%EB%8C%80%EC%8B%9C%EB%B3%B4%EB%93%9C%EB%A5%BC%20%EB%B0%9B%EB%8A%94%20%EC%A4%91%EC%9E%85%EB%8B%88%EB%8B%A4%E2%80%A6%3C%2Fp%3E')%3Bw.document.close()%7Dcatch(e)%7B%7D%0Avar%20c%3Dnull%2Ck%3D'supDashLauncher'%3Btry%7Bvar%20r%3Dawait%20fetch('https%3A%2F%2Fhanunpark.github.io%2Fzonescan%2Frt%2Fsupply.js%3Ft%3D'%2BDate.now()%2C%7Bcache%3A'no-store'%7D)%3Bif(r.ok)%7Bc%3Dawait%20r.text()%3Bif(c.indexOf('%EB%A3%A8%ED%8B%B0%20%EC%9E%AC%EA%B3%A0%20%EA%B3%B5%EA%B8%89%20%ED%98%84%ED%99%A9%20%EB%8C%80%EC%8B%9C%EB%B3%B4%EB%93%9C')%3C0)c%3Dnull%3Belse%20try%7BlocalStorage.setItem(k%2Cc)%7Dcatch(e)%7B%7D%7D%7Dcatch(e)%7B%7D%0Awindow.__SDC%3D0%3Bif(!c)%7Btry%7Bc%3DlocalStorage.getItem(k)%7Dcatch(e)%7B%7Dwindow.__SDC%3D1%7D%0Aif(!c)%7Bw.close()%3Balert('%EB%8C%80%EC%8B%9C%EB%B3%B4%EB%93%9C%EB%A5%BC%20%EB%B0%9B%EC%A7%80%20%EB%AA%BB%ED%96%88%EC%8A%B5%EB%8B%88%EB%8B%A4.%20%EC%9D%B8%ED%84%B0%EB%84%B7%20%EC%97%B0%EA%B2%B0%EC%9D%84%20%ED%99%95%EC%9D%B8%ED%95%98%EA%B3%A0%20%EC%9E%A0%EC%8B%9C%20%EB%92%A4%20%EB%8B%A4%EC%8B%9C%20%EB%88%8C%EB%9F%AC%20%EC%A3%BC%EC%84%B8%EC%9A%94.')%3Breturn%7D%0Awindow.__SD_W%3Dw%3B(new%20Function(c))()%7D)()";
   var ID = 'supDash';
@@ -49,7 +50,10 @@ function supDash() {
     ret_ret: '센터에 실물이 도착하면 입고 > 반납/회수 처리에서 스캔해 입고확정. 입고확정이 반납의 최종 종결',
     mis: '주문상태와 입고 메뉴가 어긋난 건입니다. 주문 접수 승인 관리와 해당 입고 메뉴에서 실제 상태를 확인',
     unk: '입고 메뉴 조회가 일부 실패해 판정을 미뤘습니다. [새로고침]으로 다시 받으면 제자리로 분류됩니다',
-    orphan: '연결된 주문이 취소 · 종결됐는지 확인 후 입고취소 또는 입고마감'
+    orphan: '연결된 주문이 취소 · 종결됐는지 확인 후 입고취소 또는 입고마감',
+    dup: '같은 운송장에 걸린 입고 건 중 하나를 입고취소하거나 수량을 맞춤. 두 곳에서 실물이 오면 한쪽은 남는 재고가 됨',
+    cen: '입고 건의 도착 센터 또는 주문의 센터를 바로잡음. 그대로 두면 주문 센터에는 재고가 없음',
+    cx: '입고취소 여부를 정하거나, 도착 후 반품 · 다른 주문 배정 등 재고 처리를 정함'
   };
   var MENUS = ['주문', '직송입고', '발주입고', '간선입고', '반납/회수'];
 
@@ -115,11 +119,11 @@ function supDash() {
     });
   }
   function prog(step, d, t) { S.prog[step] = [d, t]; tickSoon(); }
-  function pages(path, step) {
-    var sep = path.indexOf('?') < 0 ? '?' : '&';
+  function pages(path, step, cap) {
+    var sep = path.indexOf('?') < 0 ? '?' : '&', mx = cap || 30;
     return get(path + sep + 'page=1').then(function (d) {
-      var items = (d && d.items) || [], tp = (d && d.totalPages) || 1, n = Math.min(tp, 30), rest = [];
-      if (tp > 30) S.warns.push(step + ' 목록이 ' + tp + '쪽이라 앞 30쪽만 받았습니다.');
+      var items = (d && d.items) || [], tp = (d && d.totalPages) || 1, n = Math.min(tp, mx), rest = [];
+      if (tp > mx && !cap) S.warns.push(step + ' 목록이 ' + tp + '쪽이라 앞 ' + mx + '쪽만 받았습니다.');
       for (var p = 2; p <= n; p++) rest.push(get(path + sep + 'page=' + p));
       return Promise.all(rest).then(function (ds) { ds.forEach(function (x) { items = items.concat((x && x.items) || []); }); return items; });
     });
@@ -206,11 +210,20 @@ function supDash() {
       return Promise.all(heads.map(function (h) { return pages('/admin/trunk-inbounds/' + h.id + '/waybills?', '간선입고').then(function (ws) { return { h: h, lines: ws }; }); }));
     }));
     var rets = menu('반납/회수', pages('/collectionReturns?inboundStatus=PENDING', '반납/회수'));
+    /* 최근 60일 취소 운송장(주문일 기준, 최대 3쪽). '주문 없는 입고 대기 행' 중 취소 주문을 가려내는 데만 쓴다. 30분 재사용, 실패해도 화면에는 영향 없음 */
+    var cxP = (function () {
+      var c = C.cx; if (!full && c && Date.now() - c.at < 30 * 60000) return Promise.resolve(c.v);
+      return pages('/admin/orders?waybillStatuses=CANCELLED&dateType=orderDate&from=' + ymd(dayAdd(-60)) + '&to=' + ymd(dayAdd(0)), '취소', 3).then(function (rows) {
+        var v = rows.map(function (o) { return { waybillId: o.waybillId, waybillNumber: o.waybillNumber, orderNumber: o.orderNumber, orderStatus: o.orderStatus, supplierName: o.supplierName, centerName: o.centerName, serviceMethod: o.serviceMethod, productName: o.productName, orderSpecificationType: o.orderSpecificationType, orderAppointedDate: o.orderAppointedDate, receiptDate: o.receiptDate }; });
+        C.cx = { v: v, at: Date.now() }; return v;
+      }, function (e) { if (e.code === 'abort' || e.code === 'auth') throw e; S.cxFail = e.message || '실패'; return c ? c.v : null; });
+    })();
     MENUS.forEach(function (m, i) { [orders, direct, po, trunk, rets][i].then(function () { if (!S.prog[m] || m === '간선입고' || m === '반납/회수') prog(m, 1, 1); }, function () {}); });
-    return Promise.all([orders, direct, po, trunk, rets]).then(function (r) {
+    S.cxFail = '';
+    return Promise.all([orders, direct, po, trunk, rets, cxP]).then(function (r) {
       if (!r[0]) throw new Error('주문 조회 실패 (' + S.srcN['주문'] + ')');
       S.src = S.srcN; /* 메뉴별 조회 표시는 다 받은 뒤에 바꾼다(받는 동안은 직전 상태 유지) */
-      S.data = build(r[0], r[1], r[2], r[3], r[4]); S.at = new Date(); S.snap = false; S.autoHold = false;
+      S.data = build(r[0], r[1], r[2], r[3], r[4], r[5]); S.at = new Date(); S.snap = false; S.autoHold = false;
       if (S.stat.stale) S.warns.push('입고 상세 ' + S.stat.stale + '건을 이번에 받지 못해 이전에 받은 상세로 대신했습니다. 잠시 뒤 [새로고침]을 눌러 주세요.');
       var sec = ((Date.now() - S.t0) / 1000).toFixed(1);
       S.info = '요청 ' + S.stat.req + '회 · ' + sec + '초 · 입고 상세 ' + S.stat.miss + '건 새로 받음' + (S.stat.hit ? ' · ' + S.stat.hit + '건 변동 없어 재사용' : '') + (S.stat.stale ? ' · ' + S.stat.stale + '건 실패해 이전 상세 사용' : '') + (S.stat.fail ? ' · ' + S.stat.fail + '건 실패' : '') + (S.stat.dupRows ? ' · 겹친 주문 행 ' + S.stat.dupRows + '건 제외' : '');
@@ -233,37 +246,72 @@ function supDash() {
     return s.slice(0, 10);
   }
   function wid(x) { return x && x.waybillId > 0 ? x.waybillId : null; } /* 운송장 발번 전 주문은 waybillId가 0으로 온다 */
-  function build(orders, direct, po, trunk, rets) {
+  /* 입고 건 표시용: 유형 + 번호 */
+  function vDesc(v) { return v.k === 'direct' ? '직송 ' + (v.h.transportNumber || '') : v.k === 'po' ? '발주 ' + (v.h.purchaseOrderNumber || '') : '간선 ' + (v.h.shipmentId || ''); }
+  function vLabel(v) { return v.k === 'direct' ? (D_LABEL[v.h.inboundStatus] || v.h.inboundStatus) : v.k === 'po' ? '발주 입고대기' : (v.h.trunkStatusDescription || v.h.trunkStatus || '간선'); }
+  function vEta(v) { return d10(v.k === 'direct' ? v.h.expectedDate : v.k === 'po' ? v.h.desiredInboundDate : v.h.expectedArrivalDate); }
+  function vRef(v) { return v.k === 'direct' ? v.h.transportNumber : v.k === 'po' ? v.h.purchaseOrderNumber : v.h.shipmentId; }
+  /* 입고 건의 도착 센터. 픽업지로 가는 발주는 센터가 아니므로 비교하지 않는다 */
+  function vCenter(v) { if (v.k === 'direct') return v.h.arrivalCenter || ''; if (v.k === 'trunk') return v.h.destinationCenterName || ''; if (v.h.inboundLocationType === 'PICKUP' || /픽업/.test(v.h.inboundLocationTypeName || '')) return ''; return v.l.centerName || v.h.representCenterName || ''; }
+  var D_RANK = { PENDING: 1, PENDING_CONFIRMED: 2, ASSIGNMENT_CONFIRMED: 3, IN_TRANSIT: 4, PARTIALLY_CONFIRMED: 5 };
+  function cname(x) { return String(x || '').replace(/\s+/g, ''); }
+  function build(orders, direct, po, trunk, rets, cx) {
     var src = S.srcN || S.src, isOk = function (m) { return src[m] === true || src[m] === 'stale'; };
     var ok = { direct: isOk('직송입고'), po: isOk('발주입고'), trunk: isOk('간선입고') };
     direct = direct || { rows: [], bulk: 0 }; po = po || []; trunk = trunk || [];
     var rMap = new Map(), usedR = new Set();
     (rets || []).forEach(function (r) { if (r.waybillNumber) rMap.set(r.waybillNumber, r); });
     var WORD = { ret: '반납', col: '회수' };
-    var dI = new Map(), dN = new Map(), pMap = new Map(), tI = new Map(), tN = new Map();
-    direct.rows.forEach(function (x) { x.lines.forEach(function (l) { if (l.status === 'CONFIRMED' || l.status === 'CANCELLED') return; var v = { h: x.h, l: l }; if (wid(l)) dI.set(l.waybillId, v); else if (l.waybillNumber) dN.set(l.waybillNumber, v); }); });
-    po.forEach(function (x) { x.lines.forEach(function (l) { var rem = l.remainingQuantity; if ((rem == null ? l.inboundStatus !== 'CONFIRMED' : rem > 0) && l.waybillNumber) pMap.set(l.waybillNumber, { h: x.h, l: l }); }); });
-    trunk.forEach(function (x) { x.lines.forEach(function (l) { var v = { h: x.h, l: l }; if (wid(l)) tI.set(l.waybillId, v); else if (l.waybillNumber) tN.set(l.waybillNumber, v); }); });
+    /* 진행 중인 입고 행을 운송장 ID와 운송장번호 양쪽으로 찾게 모은다. 한 운송장에 여러 건이 걸리면 모두 남긴다(이중 공급 확인용) */
+    var dByI = new Map(), dByN = new Map(), pByN = new Map(), tByI = new Map(), tByN = new Map(), allV = [];
+    function put(m, k, v) { if (!k) return; var a = m.get(k); if (a) a.push(v); else m.set(k, [v]); }
+    direct.rows.forEach(function (x) { x.lines.forEach(function (l) { if (l.status === 'CONFIRMED' || l.status === 'CANCELLED') return; var v = { k: 'direct', h: x.h, l: l }; allV.push(v); if (wid(l)) put(dByI, l.waybillId, v); if (l.waybillNumber) put(dByN, l.waybillNumber, v); }); });
+    po.forEach(function (x) { x.lines.forEach(function (l) { var rem = l.remainingQuantity; if ((rem == null ? l.inboundStatus !== 'CONFIRMED' : rem > 0) && l.waybillNumber) { var v = { k: 'po', h: x.h, l: l }; allV.push(v); put(pByN, l.waybillNumber, v); } }); });
+    trunk.forEach(function (x) { x.lines.forEach(function (l) { var v = { k: 'trunk', h: x.h, l: l }; allV.push(v); if (wid(l)) put(tByI, l.waybillId, v); if (l.waybillNumber) put(tByN, l.waybillNumber, v); }); });
+    function matches(o) {
+      var set = new Set(), num = o.waybillNumber, id = wid(o);
+      [id && dByI.get(id), num && dByN.get(num), num && pByN.get(num), id && tByI.get(id), num && tByN.get(num)].forEach(function (a) { if (a) a.forEach(function (v) { set.add(v); }); });
+      return Array.from(set);
+    }
+    /* 한 운송장에 직송이 둘 이상이면 가장 도착에 가까운 건(이동중 · 잔량 > 배차확정 > 직송확정 > 직송대기, 같으면 입고예정일 빠른 것)으로 분류한다 */
+    function pickD(list) { return list.slice().sort(function (a, b) { return (D_RANK[b.h.inboundStatus] || 0) - (D_RANK[a.h.inboundStatus] || 0) || String(a.h.expectedDate || '9').localeCompare(String(b.h.expectedDate || '9')); })[0] || null; }
+    function pickP(list) { return list.slice().sort(function (a, b) { return String(a.h.desiredInboundDate || '9').localeCompare(String(b.h.desiredInboundDate || '9')); })[0] || null; }
 
     /* 같은 운송장이 두 번 오면(조회 중 목록이 밀린 경우 등) 한 번만 센다. 운송장 발번 전 행은 주문 안의 수량 단위라 그대로 둔다 */
     var seen = new Set();
     orders = orders.filter(function (o) { var k = wid(o) ? 'i' + o.waybillId : o.waybillNumber ? 'n' + o.waybillNumber : null; if (!k) return true; if (seen.has(k)) { S.stat.dupRows++; return false; } seen.add(k); return true; });
 
-    var items = [], usedLines = new Set(), exLines = new Map();
-    function findD(o) { return (wid(o) && dI.get(o.waybillId)) || (o.waybillNumber && dN.get(o.waybillNumber)) || null; }
-    function findT(o) { return (wid(o) && tI.get(o.waybillId)) || (o.waybillNumber && tN.get(o.waybillNumber)) || null; }
+    var items = [], cancels = [], usedLines = new Set(), exLines = new Map();
+    function cancelItem(o, ms, why) {
+      var v = ms[0];
+      return { g: 'cx', type: v.k, stage: '', cx: why, label: why + ' · ' + ms.map(function (m) { return vDesc(m) + ' ' + vLabel(m); }).join(' + ') + ' 진행 중', ref: ms.map(vRef).filter(Boolean).join(', '), eta: vEta(v),
+        center: o.centerName || vCenter(v) || '(센터 미지정)', due: d10(o.orderAppointedDate), wb: o.waybillNumber || (v.l && v.l.waybillNumber) || '', od: d10(o.receiptDate) || d10(o.orderDate), o: slim(o) };
+    }
     orders.forEach(function (o) {
-      var d = findD(o), p = o.waybillNumber ? pMap.get(o.waybillNumber) : null, t = findT(o);
+      var ms = matches(o);
+      var d = pickD(ms.filter(function (v) { return v.k === 'direct'; })), p = pickP(ms.filter(function (v) { return v.k === 'po'; })), t = ms.filter(function (v) { return v.k === 'trunk'; })[0] || null;
       var returning = o.waybillStatus === 'RETURNING', collecting = o.waybillStatus === 'COLLECTING';
       var why = /컴퓨존/.test(o.supplierName || '') ? 'cz' : (/^CANCELLED/.test(o.orderStatus || '') && !returning && !collecting) ? '주문 취소됨' : (o.serviceCategory === '회수' && !collecting) ? '회수 주문' : '';
-      /* 집계에서 빼는 주문도 연결된 입고 행은 '사용됨'으로 표시해 '주문 없는 입고 대기 행'으로 잘못 잡히지 않게 한다(취소 주문은 사유를 달아 남긴다) */
-      [d, p, t].forEach(function (m) { if (!m) return; if (!why) usedLines.add(m.l); else exLines.set(m.l, why); });
+      /* 집계에서 빼는 주문도 연결된 입고 행은 '사용됨'으로 표시해 '주문 없는 입고 대기 행'으로 잘못 잡히지 않게 한다 */
+      ms.forEach(function (m) { if (!why) usedLines.add(m.l); else exLines.set(m.l, why); });
+      /* 별도 확인 ③: 취소된 주문인데 입고가 진행 중(도착 예정) — 집계에는 넣지 않고 따로 보여 준다 */
+      if (why === '주문 취소됨' && ms.length) { cancels.push(cancelItem(o, ms, '주문 취소됨')); return; }
       if (why) return;
       var c = classify(o, d, p, t);
       if (c.g === 'mis' && !(ok.direct && ok.po && ok.trunk)) { c.g = 'unk'; c.label += ' · 입고 메뉴 조회 일부 실패로 판정 보류'; }
       c.o = slim(o); c.wb = o.waybillNumber || ''; c.od = d10(o.receiptDate) || d10(o.orderDate); /* 조회 기간 기준 = 접수일(주문 목록의 접수일 열). 비어 있으면 주문일 */
-      if (c.center && o.centerName && c.center !== o.centerName) c.label += ' · 주문 센터 ' + o.centerName;
       c.center = c.center || o.centerName || '(센터 미지정)'; c.due = d10(o.orderAppointedDate); c.eta = d10(c.eta);
+      if (c.g !== 'ret' && c.g !== 'col') {
+        /* 별도 확인 ①: 이중 공급 — 한 운송장에 진행 중인 입고 건이 둘 이상(직송 · 발주 · 간선, 같은 유형 두 건 포함) */
+        if (ms.length >= 2) { c.dupSup = ms.map(vDesc).join(' + '); c.label += ' · 이중 공급: ' + c.dupSup; }
+        /* 별도 확인 ②: 도착 센터 불일치 — 입고 건의 도착 센터가 주문의 센터와 다름(픽업설치 · 픽업지 발주는 제외) */
+        if (!/픽업/.test(o.serviceMethod || '') && o.centerName) {
+          var bad = uniq(ms.map(vCenter).filter(function (cn) { return cn && cname(cn) !== cname(o.centerName); }));
+          if (bad.length) { c.cenMis = bad.join(', '); c.label += ' · 도착 센터 ' + c.cenMis + ' ≠ 주문 센터 ' + o.centerName; }
+        }
+        /* 별도 확인 ③: 취소요청 등 취소 진행 중인 주문인데 입고가 진행 중 — 집계에는 그대로 두고 따로도 보여 준다 */
+        if (/^CANCEL/.test(o.orderStatus || '') && ms.length) { c.cx = '취소요청'; c.label += ' · 취소요청 주문'; cancels.push(c); }
+      }
       items.push(c);
     });
     /* 반납 · 회수: 주문의 반납중 · 회수중과 반납/회수 처리의 입고예정을 운송장번호로 맞춘다 */
@@ -281,17 +329,23 @@ function supDash() {
       items.push({ g: g, type: g, stage: g, isPick: false, rdate: d10(r.createdAt), label: w + ' 입고예정 · ' + w + ' 처리 ' + d10(r.createdAt) + ' (주문 목록에 없음)', center: r.centerName || '(센터 미지정)', due: d10(r.appointedDate), eta: '', od: '', wb: wb,
         o: { orderNumber: r.orderNumber, supplierName: r.supplierName, serviceMethod: '', productName: '', orderSpecificationType: '', assignedToDriver: '' } });
     });
-    var orphans = [];
-    function orphan(type, v, label, ref, eta, center, sup) {
-      if (usedLines.has(v.l)) return; var why = exLines.get(v.l); if (why === 'cz' || /컴퓨존/.test(sup || '')) return;
-      orphans.push({ g: 'orphan', type: type, label: label + (why ? ' · ' + why : ''), ref: ref, eta: eta, due: '', center: center, wb: v.l.waybillNumber || '', od: '', o: { orderNumber: v.l.orderNumber, supplierName: sup || '', productName: v.l.productName, serviceMethod: '', orderSpecificationType: '' } });
-    }
-    dI.forEach(function (v) { orphan('direct', v, D_LABEL[v.h.inboundStatus] || v.h.inboundStatus, v.h.transportNumber, d10(v.h.expectedDate), v.h.arrivalCenter || '', v.h.supplierName); });
-    dN.forEach(function (v) { orphan('direct', v, D_LABEL[v.h.inboundStatus] || v.h.inboundStatus, v.h.transportNumber, d10(v.h.expectedDate), v.h.arrivalCenter || '', v.h.supplierName); });
-    pMap.forEach(function (v) { orphan('po', v, '발주 입고대기', v.h.purchaseOrderNumber, d10(v.h.desiredInboundDate), v.l.centerName || v.h.representCenterName || '', v.l.orderSupplierName); });
+    /* 주문 목록에 없는 입고 대기 행: 운송장이 취소된 주문(최근 60일 취소 운송장 조회)이면 별도 확인 ③으로 옮긴다 */
+    var cxI = new Map(), cxN = new Map();
+    (cx || []).forEach(function (o) { if (wid(o)) cxI.set(o.waybillId, o); if (o.waybillNumber) cxN.set(o.waybillNumber, o); });
+    var orphans = [], seenV = new Set();
+    allV.forEach(function (v) {
+      if (seenV.has(v)) return; seenV.add(v);
+      if (usedLines.has(v.l)) return;
+      var why = exLines.get(v.l), sup = v.k === 'po' ? v.l.orderSupplierName : v.h.supplierName;
+      if (why === 'cz' || why === '주문 취소됨' || /컴퓨존/.test(sup || '')) return;
+      var co = (wid(v.l) && cxI.get(v.l.waybillId)) || (v.l.waybillNumber && cxN.get(v.l.waybillNumber));
+      if (co && !/컴퓨존/.test(co.supplierName || '')) { cancels.push(cancelItem(co, [v], '주문 취소됨(운송장 취소)')); return; }
+      orphans.push({ g: 'orphan', type: v.k, label: vLabel(v) + (why ? ' · ' + why : ''), ref: vRef(v), eta: vEta(v), due: '', center: vCenter(v) || (v.k === 'po' ? v.l.centerName || '' : ''), wb: v.l.waybillNumber || '', od: '',
+        o: { orderNumber: v.l.orderNumber, supplierName: sup || '', productName: v.l.productName, serviceMethod: '', orderSpecificationType: '' } });
+    });
     /* 화면을 그릴 때마다 다시 계산하지 않게 구분 · 품목을 미리 붙여 둔다 */
-    items.concat(orphans).forEach(function (x) { x.tk = /^택배/.test(x.o.serviceMethod || ''); x.pt = ptype(x); });
-    return { items: items, orphans: orphans, bulk: direct.bulk || 0 };
+    items.concat(orphans, cancels).forEach(function (x) { x.tk = /^택배/.test(x.o.serviceMethod || ''); x.pt = ptype(x); });
+    return { items: items, orphans: orphans, cancels: cancels, bulk: direct.bulk || 0 };
   }
   function classify(o, d, p, t) {
     var os = o.orderStatus || '', loc = o.inventoryLocation || '', ws = o.waybillStatus || '';
@@ -379,7 +433,9 @@ function supDash() {
     '.pane{position:fixed;left:0;right:0;bottom:0;height:46vh;z-index:2147483001;background:#fff;border-top:2px solid #6a4df0;box-shadow:0 -10px 30px rgba(20,24,50,.16);display:flex;flex-direction:column;font:14px/1.5 -apple-system,"Apple SD Gothic Neo",Pretendard,"Noto Sans KR","Segoe UI",sans-serif;color:#17152b}.pane.big{height:86vh}' +
     '.pane .ph{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;padding:9px 20px;border-bottom:1px solid #e3e1ee}.pane .ph b{font-size:15px}.pane .act{margin:8px 20px 0;background:#ece8ff;border-radius:8px;padding:7px 12px;font-size:13px}.pane .pb{flex:1;overflow:auto;padding:0 20px 14px}' +
     '.pane table{border-spacing:0}.pane th{position:sticky;top:0;background:#fff;z-index:1;text-align:left;padding:8px 8px 6px;border-bottom:1px solid #e3e1ee;cursor:pointer;user-select:none}.pane th:hover{color:#4a31c4}.pane td{padding:5px 8px;text-align:left;border-bottom:1px solid #efedf6;font-weight:400}.pane td.late{color:#9b1c1c;font-weight:700}.pane .note{margin:8px 0 0}' +
-    '.r.pon main{padding-bottom:calc(46vh + 24px)}.r.pbig main{padding-bottom:calc(86vh + 24px)}';
+    '.r.pon main{padding-bottom:calc(46vh + 24px)}.r.pbig main{padding-bottom:calc(86vh + 24px)}' +
+    /* v2.5 별도 확인 대상 */
+    '.tag.x{background:#dfe9ff;color:#1b4fb8}.card h3.chk{margin:14px 0 6px;font-size:13px;color:#1b4fb8}.is.zz{opacity:.55;cursor:default}.is.zz:hover{border-color:transparent}';
 
   var host = document.createElement('div'); host.id = ID;
   var root = host.attachShadow({ mode: 'open' });
@@ -580,7 +636,7 @@ function supDash() {
       ['u', '약속일이 지났는데 FDC 미입고', '약속일 < 오늘', open.filter(function (x) { return x.due && x.due < today; }), ''],
       ['u', '입고예정일이 지났는데 미입고', '입고예정일 < 오늘 (직송 · 발주 · 간선)', late, ''],
       ['u', '약속일 임박인데 경로 미정 · 미확정', '약속일 ≤ ' + dlabel(S.near) + ', 접수대기 또는 계획 단계', open.filter(function (x) { return x.due && x.due >= today && x.due <= nearDay && (x.g === 'none' || x.stage === 'plan'); }), ''],
-      ['u', '입고예정일이 약속일보다 늦음', '입고예정일 > 약속일', need.filter(function (x) { return x.eta && x.due && x.eta > x.due; }), '입고예정일을 당기거나 고객과 약속일을 다시 잡아야 하는 건'],
+      ['u', '입고예정일이 약속일보다 늦음', '입고예정일 > 약속일 (같은 날 도착은 제외)', need.filter(function (x) { return x.eta && x.due && x.eta > x.due; }), '입고예정일을 당기거나 고객과 약속일을 다시 잡아야 하는 건'],
       ['u', '픽업지 입고예정일이 지났는데 미입고', '픽업설치, 입고희망일 < 오늘', pkOf('plan').filter(isLate), ACT.pick_plan, true],
       ['u', '픽업 약속일이 임박 · 경과했는데 픽업지 입고 전', '픽업설치, 약속일 ≤ ' + dlabel(S.near) + ', 픽업지 입고 대기', pkOf('plan').filter(function (x) { return x.due && x.due <= nearDay; }), ACT.pick_plan, true],
       ['a', '기사배정됐는데 FDC에 재고 없음', '기사배정 = 배정, 미입고', open.filter(function (x) { return x.o.assignedToDriver === 'ASSIGNED'; }), ''],
@@ -593,7 +649,7 @@ function supDash() {
       ['a', '회수 후 센터 입고가 안 잡힘', '회수 처리일 < 오늘, 아직 입고예정 (입고확정 전)', col.filter(function (x) { return x.rdate && x.rdate < today; }), ACT.col_col, true],
       ['a', '주문상태와 입고 메뉴 불일치', '주문은 진행 중인데 연결된 입고 건을 찾지 못함', mis, ACT.mis],
       ['a', '조회 실패로 판정 보류', '입고 메뉴 일부를 받지 못해 불일치인지 확인할 수 없는 건', unk, ACT.unk],
-      ['a', '주문 없는 입고 대기 행', '입고 메뉴에는 대기 중인데 미종결 주문에 없음(취소 주문 포함)', orph, ACT.orphan]
+      ['a', '주문 없는 입고 대기 행', '입고 메뉴에는 대기 중인데 미종결 주문에 없음(취소 주문은 아래 별도 확인)', orph, ACT.orphan]
     ];
     var isBox = h('div', { class: 'iss' });
     issues.forEach(function (it, idx) {
@@ -601,9 +657,21 @@ function supDash() {
       var key = 'i_' + idx; REG[key] = { title: it[1], items: it[3], act: it[4] };
       isBox.appendChild(h('button', { class: 'is' + (S.sel === key ? ' on' : ''), onclick: function () { pick(key); } }, h('span', { class: 'tag ' + it[0] }, it[0] === 'u' ? '긴급' : '주의'), h('span', { class: 'tx' }, h('b', null, it[1]), h('span', null, it[2])), h('span', { class: 'n' }, f(it[3].length))));
     });
+    /* 별도 확인 대상(사용자 결정 2026-11-27): 이중 공급 · 도착 센터 불일치 · 취소 주문 입고 진행 */
+    var cxl = (D.cancels || []).filter(function (x) { return flt(x, true) && (!S.center || x.center === S.center); });
+    var CHK = [
+      ['이중 공급', '한 운송장에 진행 중인 입고 건이 둘 이상 (직송 · 발주 · 간선)', items.filter(function (x) { return x.dupSup; }), ACT.dup],
+      ['도착 센터 불일치', '입고 건의 도착 센터가 주문 센터와 다름', items.filter(function (x) { return x.cenMis; }), ACT.cen],
+      ['취소 주문인데 입고 진행 중', '취소 · 취소요청 주문에 도착 예정인 입고 건이 있음', cxl, ACT.cx]
+    ];
+    var chkBox = h('div', { class: 'iss' });
+    CHK.forEach(function (it, idx) {
+      var key = 'x_' + idx, n = it[2].length; REG[key] = { title: it[0], items: it[2], act: it[3] };
+      chkBox.appendChild(h('button', { class: 'is' + (n ? '' : ' zz') + (S.sel === key ? ' on' : ''), disabled: !n, onclick: function () { pick(key); } }, h('span', { class: 'tag x' }, '확인'), h('span', { class: 'tx' }, h('b', null, it[0]), h('span', null, it[1])), h('span', { class: 'n' }, f(n))));
+    });
     main.appendChild(h('div', { class: 'g2' },
       h('div', { class: 'card' }, h('h2', null, '약속일 기준 재고 확보'), h('div', { class: 'tw' }, pt), h('p', { class: 'note' }, '그 날 약속된 물량 중 아직 FDC에 들어오지 않은 수량입니다. 빨강은 약속일이 지났거나 임박했는데 계획이 없는 칸, 노랑은 임박했지만 공급이 진행 중인 칸입니다.')),
-      h('div', { class: 'card' }, h('h2', null, '지금 손봐야 할 것'), isBox, h('p', { class: 'note' }, '한 건이 여러 줄에 동시에 잡힐 수 있습니다. 주의 항목은 0건이면 숨깁니다.'))));
+      h('div', { class: 'card' }, h('h2', null, '지금 손봐야 할 것'), isBox, h('h3', { class: 'chk' }, '별도 확인 대상'), chkBox, h('p', { class: 'note' }, '한 건이 여러 줄에 동시에 잡힐 수 있습니다. 주의 항목은 0건이면 숨깁니다. 별도 확인 대상은 늘 보이며, 이중 공급 · 도착 센터 불일치 건은 위 집계에도 그대로 들어 있고 취소된 주문은 집계에 넣지 않습니다.'))));
 
     /* 구분 · 품목별 개요: 위 여섯 칸을 배송설치 / 택배, 그 안에서 품목별로 나눠 보여 준다 */
     var bt = h('table', null, h('thead', null, h('tr', null, h('th', { style: 'text-align:left' }, '구분'), h('th', { style: 'text-align:left' }, '품목'), MCOL.map(function (c) { return h('th', null, c); }))));
@@ -710,7 +778,7 @@ function supDash() {
     ['다음 조치', function (x) { return rowAct(x); }]
   ];
   var DCOL = 14, ACOL = 15;
-  function rowAct(x) { if (x.g === 'none') return ACT.none; if (x.g === 'need') return x.stage === 'part' ? ACT.part : ACT[x.type + '_' + x.stage] || ''; if (x.g === 'pick') return ACT['pick_' + x.stage] || ''; if (x.g === 'ret') return ACT.ret_ret; if (x.g === 'col') return ACT.col_col; return ACT[x.g] || ''; }
+  function rowAct(x) { if (x.g === 'none') return ACT.none; if (x.g === 'need') return x.stage === 'part' ? ACT.part : ACT[x.type + '_' + x.stage] || ''; if (x.g === 'pick') return ACT['pick_' + x.stage] || ''; if (x.g === 'ret') return ACT.ret_ret; if (x.g === 'col') return ACT.col_col; if (x.g === 'cx') return ACT.cx; return ACT[x.g] || ''; }
   function pane(cur, today, U) {
     var list = cur.items.slice();
     if (S.sort) { var gi = S.sort.i === DCOL ? function (x) { return x.due || ''; } : LCOLS[S.sort.i][1], dir = S.sort.d; list.sort(function (a, b) { var va = gi(a), vb = gi(b); if (!va && vb) return 1; if (va && !vb) return -1; return dir * String(va).localeCompare(String(vb), 'ko'); }); }
