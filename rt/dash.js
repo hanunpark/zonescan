@@ -1,4 +1,4 @@
-/* 루티 주문현황 대시보드 v50 · 2026-11-27 — 루티 관리자 화면에서 로더 북마크로 불러 씀 */
+/* 루티 주문현황 대시보드 v51 · 2026-11-27 — 루티 관리자 화면에서 로더 북마크로 불러 씀 */
 (function(){function dash(){
 try{if(window.__rcKill)window.__rcKill()}catch(e){}
 const API='https://api-prod.flowfix.co.kr/api/v1/admin/orders',SELLER=62,SUP='https://api-prod.flowfix.co.kr/api/v1/suppliers',CK='flowfix-admin-access-token';
@@ -96,10 +96,10 @@ th.lkc,td.lkc{background:var(--critbg)}
 .chk{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px}.chk b{display:block;font-size:18px}.chk small{color:var(--mute);font-size:11.5px}
 @media print{header .ctl,.tabs{display:none}.tp[hidden]{display:block!important}.tp h3{display:block}}`;
 document.head.insertAdjacentHTML('beforeend','<meta name="viewport" content="width=device-width,initial-scale=1"><style>'+CSS+'</style>');
-document.body.innerHTML='<header><b>루티 현황</b><span id="ver" title="대시보드 버전">v50 · 2026-11-27</span><div class="ctl"><label>거래처 <select id="sel"></select></label><label title="기간 기준 — 약속일 또는 접수일"><select id="pbs"><option value="ap">약속일</option><option value="dt">접수일</option></select> <input type="date" id="df"> ~ <input type="date" id="dt"></label><button id="dx" title="전체 기간 조회 — 서버 부담이 커서 마스터 관리자 비밀번호가 필요합니다">전체 🔒</button><label title="센터를 고르면 그 센터만 서버에서 받아옵니다">센터 <select id="cen"></select></label></div><span id="pb" hidden><i></i></span><span id="stamp"><i></i>불러오는 중…</span><div class="ctl"><label>자동 <select id="iv"><option value="0">끄기</option><option value="30">30분</option><option value="60">60분</option></select></label><button id="snap">스냅샷 저장</button><button class="pri" id="re">새로고침</button></div></header><main id="app"></main>';
+document.body.innerHTML='<header><b>루티 현황</b><span id="ver" title="대시보드 버전">v51 · 2026-11-27</span><div class="ctl"><label>거래처 <select id="sel"></select></label><label title="기간 기준 — 약속일 또는 접수일"><select id="pbs"><option value="ap">약속일</option><option value="dt">접수일</option></select> <input type="date" id="df"> ~ <input type="date" id="dt"></label><button id="dx" title="전체 기간 조회 — 서버 부담이 커서 마스터 관리자 비밀번호가 필요합니다">전체 🔒</button><label title="센터를 고르면 그 센터만 서버에서 받아옵니다">센터 <select id="cen"></select></label></div><span id="pb" hidden><i></i></span><span id="stamp"><i></i>불러오는 중…</span><div class="ctl"><label>자동 <select id="iv"><option value="0">끄기</option><option value="30">30분</option><option value="60">60분</option></select></label><button id="snap">스냅샷 저장</button><button class="pri" id="re">새로고침</button></div></header><main id="app"></main>';
 const $=s=>document.querySelector(s);
 $('#iv').value=String(S.min);
-const mx=()=>S.pb==='ap'?63:60,PBL=()=>S.pb==='ap'?'약속일':'접수일',pk=r=>S.pb==='ap'?r.ap:r.dt,addM=(d,n)=>{const [y,m,dd]=d.split('-').map(Number),t=new Date(y,m-1+n,1),last=new Date(t.getFullYear(),t.getMonth()+1,0).getDate(),x=new Date(t.getFullYear(),t.getMonth(),Math.min(dd,last));return x.getFullYear()+'-'+String(x.getMonth()+1).padStart(2,'0')+'-'+String(x.getDate()).padStart(2,'0')},defR=pb=>{const t=today();return pb==='ap'?[addM(t,-1),addM(t,1)]:[addD(t,-10),t]};
+const mx=()=>70,PBL=()=>S.pb==='ap'?'약속일':'접수일',pk=r=>S.pb==='ap'?r.ap:r.dt,addM=(d,n)=>{const [y,m,dd]=d.split('-').map(Number),t=new Date(y,m-1+n,1),last=new Date(t.getFullYear(),t.getMonth()+1,0).getDate(),x=new Date(t.getFullYear(),t.getMonth(),Math.min(dd,last));return x.getFullYear()+'-'+String(x.getMonth()+1).padStart(2,'0')+'-'+String(x.getDate()).padStart(2,'0')},defR=pb=>{const t=today();return pb==='ap'?[addM(t,-1),addM(t,1)]:[addD(t,-10),t]};
 try{S.pb=localStorage.getItem(LK('rcDashPb'))||'ap'}catch(e){S.pb='ap'}if(S.pb!=='dt')S.pb='ap';$('#pbs').value=S.pb;{const R=defR(S.pb);S.from=R[0];S.to=R[1]}$('#df').value=S.from;$('#dt').value=S.to;S.fol=S.pb==='dt';S.apDef=S.pb==='ap';
 $('#pbs').onchange=async e=>{S.pb=e.target.value==='dt'?'dt':'ap';try{localStorage.setItem(LK('rcDashPb'),S.pb)}catch(x){}S.ALL=null;const R=defR(S.pb);await setRange(R[0],R[1])};
 function token(){const c=document.cookie.split(';').map(x=>x.trim()).find(x=>x.indexOf(CK+'=')===0);return c?decodeURIComponent(c.slice(CK.length+1)):''}
@@ -186,7 +186,7 @@ async function detail(){
   if(ok){const U=[...new Map(out.map(r=>[r.id,r])).values()];fixA(U);S.dvRows=U;S.dvMsg='';S.dvC=sc()}else{S.dvRows=null;S.dvMsg='서버에서 약속일 기간 조회가 확인되지 않아, 지금 불러온 데이터 안에서만 찾았습니다.'}}
  catch(e){if(my!==S.dvSeq)return;if(e.message==='CENTER')return detail();S.dvRows=null;S.dvMsg='상세 조회에 실패해 지금 불러온 데이터 안에서만 찾았습니다.'}
  draw()}
-const MAXD=60,PWH='83ac251f8e7c4ec4b8ed1929ff2ecf86d6b029ad8ca5fcbe28836a7f6b555031';
+const MAXD=70,PWH='83ac251f8e7c4ec4b8ed1929ff2ecf86d6b029ad8ca5fcbe28836a7f6b555031';
 function spanD(fr,to){return fr&&to?Math.round((new Date(to)-new Date(fr))/864e5)+1:Infinity}
 function gap(){return S.dup||spanD(S.from,S.to)>mx()?0:S.min}
 function arm(){const g=gap();S.next=g?Date.now()+g*60000:0}
