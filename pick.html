@@ -64,6 +64,7 @@ nav{background:#f2f4f6;border-radius:12px;padding:3px;gap:0;margin-top:12px}nav 
 .ex{color:#9a6200}.ft{color:#8b95a1;font-size:12.5px;line-height:1.6}
 .ship{background:#fff}.ship .ln{border-top:1px solid #f2f4f6;margin-top:12px;padding-top:12px;font-size:14.5px;line-height:1.65}
 main>div:not(.card)>button.l,.ft button.l{background:#fff}
+.wb .wt{display:block;font-size:10.5px;font-weight:700;line-height:1.2;margin-top:2px}.wb .wt.pre{color:#1e7a3c}.wb .wt.mv{color:#b05a00}.wb.d .wt{color:#fff;opacity:.92}
 </style>
 </head>
 <body>
@@ -73,7 +74,7 @@ main>div:not(.card)>button.l,.ft button.l{background:#fff}
 <main id="m"><div class="err">지시서를 여는 중…</div></main>
 <script>
 {
-const GAS='https://script.google.com/macros/s/AKfycby33E3x2WOVkZd_Kh4LSumPMT-KKbNa292E9WNKKTdx40WjCxsVgpSTq2R7oJby6XDF/exec';
+const GAS='https://script.google.com/macros/s/AKfycby33E3x2WOVkZd_Kh4LSumPMTKKdNa292EWNKKTdx40WjCxsVgpSTq2R7oJby6XDF/exec';
 const PAL=['#e4572e','#4b5fe0','#0a7d3c','#8e44ad','#d4a017','#0f8b8d','#c2185b','#5d4037','#455a64','#ef6c00'];
 const $=s=>document.querySelector(s),esc=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const zc=(a,b)=>(a||'￿').localeCompare(b||'￿','ko',{numeric:true}),kc=(a,b)=>String(a).localeCompare(String(b),'ko');
@@ -83,6 +84,12 @@ let O,K,done={},view='z',LK='',KEY='',TK=null,TITLE='',NT=[],MM=[];
 const ME=()=>{try{return localStorage.getItem('pk_who')||''}catch(e){return ''}};
 function topHtml(){const me=ME();let h='';NT.forEach(n=>{const ok=me&&n.acks.some(a=>a.r==='wk'&&a.n===me),c=n.lvl==='긴급'?' r':n.lvl==='중요'?' o':'';h+=`<div class="card nt${c}"><span class="lv">${esc(n.lvl)} 공지</span><h4>${esc(n.title)}</h4>${n.body?`<div class="bdy">${esc(n.body)}</div>`:''}<div class="mu">${esc(n.by)} · ${esc(String(n.at).slice(5,16))}</div>${ok?'<div class="ok">✓ 확인함 ('+esc(me)+')</div>':`<button class="l" data-nk="${esc(n.no)}">확인했습니다</button>`}</div>`});
  if(MM.length)h+=`<div class="card mmc"><h3>작업 메모</h3>${MM.map(m=>`<div class="mm"><span class="tag">${m.r==='pc'?'지시자':'창고'}</span> ${esc(m.text)}<div class="mu">${esc(m.by)} · ${esc(String(m.upd||m.at).slice(5,16))}</div></div>`).join('')}</div>`;return h}
+/* v2.23 지시 연결 (서버 v2.13): 뺀 차량은 목록에서 빼고, 임시에서 이어받아 이미 꺼낸 운송장·재피킹으로 넘어간 운송장은 표시 */
+let DROP={},PRE={},MV={};
+function applyRel(j){DROP={};(j.drop||[]).forEach(w=>{DROP[w]=1});PRE=j.pre||{};MV=j.mv||{};let b=document.getElementById('rlb');const mv=Object.keys(MV),dn=(j.drop||[]).length,to=[...new Set(mv.map(w=>MV[w]))];
+ if(!mv.length&&!dn){if(b)b.remove();return}if(!b){b=document.createElement('div');b.id='rlb';b.style.cssText='background:#fff4e0;color:#8a4b00;font-weight:700;padding:9px 12px;font-size:14px;border-bottom:1px solid #f0d9b0';document.body.insertBefore(b,document.body.firstChild.nextSibling)}
+ b.innerHTML=(mv.length?'↪ '+mv.length+'본은 다른 지시로 넘어갔습니다 ('+esc(to.join(', '))+') — 이 지시서로는 출고하지 않습니다':'')+(mv.length&&dn?'<br>':'')+(dn?'차량 빼기 '+dn+'본이 반영되어 목록에서 뺐습니다':'')}
+const wtag=w=>(PRE[w]?'<small class="wt pre">임시 피킹 완료</small>':'')+(MV[w]?'<small class="wt mv">넘어감</small>':'');
 function cxBanner(c){let b=document.getElementById('cxb');if(!c){if(b)b.remove();return}if(!b){b=document.createElement('div');b.id='cxb';b.style.cssText='position:sticky;top:0;z-index:20;background:#c0302f;color:#fff;font-weight:800;padding:10px 12px;font-size:15px';document.body.insertBefore(b,document.body.firstChild)}b.textContent='⛔ 취소된 지시서입니다 — 피킹하지 마세요 ('+(c.why||'사유 없음')+' · '+(c.by||'')+' '+String(c.at||'').slice(5)+')'}
 const dtS=v=>v?String(v).replace('T',' ').slice(5,16).replace('-','/'):'-';
 function tkTag(on){if(!TK||!TK.m[on])return '';const i=TK.L.findIndex(t=>t.id===TK.m[on]);return `<span class="tag" style="background:#1b1d33;color:#fff;border-color:#1b1d33">용차${TK.L.length>1?i+1:''}</span>`}
@@ -93,7 +100,7 @@ async function dec(h){const z=h[0],b=atob(h.slice(1).replace(/-/g,'+').replace(/
  let out=u;if(z==='1'){if(!window.DecompressionStream)throw new Error('이 브라우저는 지원하지 않습니다. 크롬으로 열어 주세요.');out=new Uint8Array(await new Response(new Blob([u]).stream().pipeThrough(new DecompressionStream('deflate-raw'))).arrayBuffer())}
  return JSON.parse(new TextDecoder().decode(out))}
 const col=i=>PAL[i%PAL.length],chip=i=>`<span class="chip" style="background:${col(i)}">${esc(O.D[i]||'미배정')}</span>`;
-function lines(){return O.L.map(a=>({zone:a[0],sup:O.P[a[1]],veh:a[2],model:a[3],pn:a[4],di:a[5],w:a[6],on:a[7],ri:a[8],sub:a[9],ot:a[10],kp:a[11]||0,xw:a[12]||{}}))}
+function lines(){return O.L.map(a=>({zone:a[0],sup:O.P[a[1]],veh:a[2],model:a[3],pn:a[4],di:a[5],w:(a[6]||[]).filter(w=>!DROP[w]),on:a[7],ri:a[8],sub:a[9],ot:a[10],kp:a[11]||0,xw:a[12]||{}})).filter(g=>g.w.length)}
 /* 보관품 재출고: 운송장번호(외부)로 표기, 검은 바탕 흰 글자 */
 const kpp=(g,w)=>{const x=String((g.xw&&g.xw[w])||w),d=x.replace(/\D/g,''),h=x.indexOf('-')>0?x.slice(0,x.indexOf('-')):d.slice(0,4);return{h:'*'+h+'~',t:d.slice(-4)}};
 const wtx=(g,w)=>{if(!g.kp)return esc(w);const p=kpp(g,w);return `<span class="kv"><i>${esc(p.h)}</i><b>${esc(p.t)}</b></span>`};
@@ -101,7 +108,7 @@ function prog(){const L=lines(),t=L.reduce((s,g)=>s+g.w.length,0),d=L.reduce((s,
 function render(){const L=lines();let h='';const SH=shipHtml(L);
  if(view==='z'){const Z=new Map();L.forEach(g=>{const z=g.zone||'';if(!Z.has(z))Z.set(z,[]);Z.get(z).push(g)});
   h=[...Z.keys()].sort(zc).map(z=>{const a=Z.get(z),t=a.reduce((s,g)=>s+g.w.length,0),d=a.reduce((s,g)=>s+g.w.filter(w=>done[w]).length,0);
-   return `<div class="card${d===t?' done':''}"><div class="zh"><span class="zc">${esc(z||'(존 미지정)')}</span><span class="cnt">${d}/${t}${d===t?' ✓':''}</span></div>${a.map(g=>`<div class="it"><div><span class="v">${esc(g.veh)}</span> ${tkTag(g.on)}${chip(g.di)}${g.sub?'<span class="tag">서브 Y</span>':''}</div><div class="p">${esc(g.pn)} · <b>${g.w.length}본</b>${g.ri?'<span class="tag">접수확정</span>':''}${g.ot?'<span class="tag" style="background:#c0302f;color:#fff;border-color:#c0302f">'+esc(/^(출고건|미입고|취소요청|재피킹)/.test(g.ot)?g.ot:'출고건·'+g.ot)+'</span>':''}${g.kp?' <span class="kpt">보관품 재출고</span>':''}</div><div class="mu">${esc(g.sup)}${g.model?' · '+esc(g.model):''}</div><div class="wbs">${g.w.map(w=>`<button class="wb${g.kp?' kp':''}${done[w]?' d':''}" data-w="${esc(w)}">${wtx(g,w)}</button>`).join('')}</div></div>`).join('')}</div>`}).join('')}
+   return `<div class="card${d===t?' done':''}"><div class="zh"><span class="zc">${esc(z||'(존 미지정)')}</span><span class="cnt">${d}/${t}${d===t?' ✓':''}</span></div>${a.map(g=>`<div class="it"><div><span class="v">${esc(g.veh)}</span> ${tkTag(g.on)}${chip(g.di)}${g.sub?'<span class="tag">서브 Y</span>':''}</div><div class="p">${esc(g.pn)} · <b>${g.w.length}본</b>${g.ri?'<span class="tag">접수확정</span>':''}${g.ot?'<span class="tag" style="background:#c0302f;color:#fff;border-color:#c0302f">'+esc(/^(출고건|미입고|취소요청|재피킹)/.test(g.ot)?g.ot:'출고건·'+g.ot)+'</span>':''}${g.kp?' <span class="kpt">보관품 재출고</span>':''}</div><div class="mu">${esc(g.sup)}${g.model?' · '+esc(g.model):''}</div><div class="wbs">${g.w.map(w=>`<button class="wb${g.kp?' kp':''}${done[w]?' d':''}" data-w="${esc(w)}">${wtx(g,w)}${wtag(w)}</button>`).join('')}</div></div>`).join('')}</div>`}).join('')}
  else{h=O.D.map((n,i)=>{const a=L.filter(g=>g.di===i).sort((x,y)=>kc(x.veh,y.veh)||zc(x.zone,y.zone)),t=a.reduce((s,g)=>s+g.w.length,0),d=a.reduce((s,g)=>s+g.w.filter(w=>done[w]).length,0),cars=new Set(a.map(VK)).size;
    return `<div class="card"><div class="zh"><span>${chip(i)} <b>${cars}대 · ${t}본</b></span><span class="cnt">${d}/${t}${d===t&&t?' ✓':''}</span></div>${a.map(g=>{const k=g.w.filter(w=>done[w]).length;return `<div class="row"><div><span class="v" style="font-size:16px">${esc(g.veh)}</span>${tkTag(g.on)}${g.sub?'<span class="tag">서브 Y</span>':''} <span class="mu">${esc(g.sup)}</span><div class="p">${esc(g.pn)}</div><div class="mu">존 ${esc(g.zone||'-')}</div></div><b style="white-space:nowrap;color:${k===g.w.length?'#0a7d3c':'#1b1d33'}">${k}/${g.w.length}</b></div>`}).join('')}</div>`}).join('')}
  if(O.X&&O.X.length)h+=`<div class="card ex"><b>꺼낼 수 없는 건 (참고)</b>${O.X.map(x=>`<div class="row"><span>${esc(x[0])} · ${esc(x[2])} · ${esc(x[1])}</span><b>${x[4]}본</b></div>`).join('')}</div>`;
@@ -127,20 +134,20 @@ async function flush(){if(busy||!Q.length)return;busy=true;const part=BATCH?Q.sl
  try{const r=await fetch(GAS,{method:'POST',body:JSON.stringify(body)});const j=await r.json();if(!j.ok)throw 0;const t=Date.now();part.forEach(q=>{ACK[q.wb]=t});Q=Q.filter(q=>part.indexOf(q)<0);saveQ();WAIT=4000}
  catch(e){busy=false;setTimeout(flush,WAIT);WAIT=Math.min(WAIT*2,60000);return}busy=false;flush()}
 const jfetch=async(u,o,tries)=>{tries=tries||3;for(let n=0;;n++){let t='',net=false;const ac=window.AbortController?new AbortController():null,tm=ac?setTimeout(()=>ac.abort(),25000):0;try{const r=await fetch(u,ac?Object.assign({},o,{signal:ac.signal}):o);t=await r.text();clearTimeout(tm);return JSON.parse(t)}catch(e){clearTimeout(tm);net=!t}if(n<tries-1){await new Promise(r=>setTimeout(r,[1200,2500,4000][n]||4000));continue}const er=new Error(net?'통신 상태를 확인해 주세요.':'구글 서버가 잠시 응답하지 않습니다 (서버 오류). 잠시 뒤 다시 시도해 주세요.');er.srv=!net;throw er}};
-async function pull(){if(!LK)return;const t0=Date.now();try{const j=await jfetch(GAS+'?a=get&k='+encodeURIComponent(LK)+(REVG?'&r='+encodeURIComponent(REVG):''));if(j.ok&&!j.same){REVG=j.rev||'';if(j.cap&&j.cap.batch)BATCH=true;if(j.tk!==undefined)TK=j.tk;NT=j.ntc||[];MM=j.mm||[];cxBanner(j.cancel);done=merge(j.checked,t0);LS(K,done)}}catch(e){}}
+async function pull(){if(!LK)return;const t0=Date.now();try{const j=await jfetch(GAS+'?a=get&k='+encodeURIComponent(LK)+(REVG?'&r='+encodeURIComponent(REVG):''));if(j.ok&&!j.same){REVG=j.rev||'';if(j.cap&&j.cap.batch)BATCH=true;if(j.tk!==undefined)TK=j.tk;NT=j.ntc||[];MM=j.mm||[];cxBanner(j.cancel);applyRel(j);done=merge(j.checked,t0);LS(K,done)}}catch(e){}}
 (async()=>{try{const k=new URLSearchParams(location.search).get('k'),h=location.hash.slice(1);
  let late=null;
  if(k&&h){try{O=await dec(h)}catch(_){O=null}}
  const t0=Date.now();
  if(k&&O){LK=k;KEY=O.no;K='pk_'+O.no+'_'+O.n+'_'+O.f;done=LS(K)||{};initQ();if(GAS.indexOf('%%')!==0)late=jfetch(GAS+'?a=get&k='+encodeURIComponent(k))}
  else if(k){if(GAS.indexOf('%%')===0)throw new Error('공유 저장소 주소가 설정되지 않은 페이지입니다.');const j=await jfetch(GAS+'?a=get&k='+encodeURIComponent(k));if(!j.ok)throw new Error(j.err||'지시서를 찾지 못했습니다');
-  O=j.o;LK=k;KEY=j.key;TK=j.tk||null;TITLE=j.title||'';NT=j.ntc||[];MM=j.mm||[];REVG=j.rev||'';if(j.cap&&j.cap.batch)BATCH=true;setTimeout(()=>cxBanner(j.cancel),0);K='pk_'+O.no+'_'+O.n+'_'+O.f;done={};initQ();done=merge(j.checked,t0);LS(K,done)}
+  O=j.o;LK=k;KEY=j.key;TK=j.tk||null;TITLE=j.title||'';NT=j.ntc||[];MM=j.mm||[];REVG=j.rev||'';if(j.cap&&j.cap.batch)BATCH=true;setTimeout(()=>{cxBanner(j.cancel);applyRel(j);try{render();prog()}catch(e){}},0);K='pk_'+O.no+'_'+O.n+'_'+O.f;done={};initQ();done=merge(j.checked,t0);LS(K,done)}
  else if(h){O=await dec(h);K='pk_'+O.no+'_'+O.n+'_'+O.f;done=LS(K)||{}}
  else throw new Error('지시서 링크가 아닙니다. PC의 [전달하기]로 받은 링크를 열어 주세요.');document.title=TITLE||(O.d.slice(5)+' 피킹 · '+O.f);
  $('#no').textContent=(TITLE?TITLE+' · ':'')+(O.t?'[임시] ':'')+O.no+(O.t?'':' · '+O.n+'차')+' · 출고예정일';$('#dt').textContent=O.d+' ('+dow(O.d)+')';
  try{if(localStorage.getItem('wh_key')){$('#nav').hidden=false;$('#n1').href='wh.html?tab=list&no='+encodeURIComponent(O.no);$('#n2').href='wh.html?tab=out&no='+encodeURIComponent(O.no)}}catch(_){}
  const L=lines();$('#sb').textContent=O.c+' · '+O.f+' · 차량 '+new Set(L.map(VK)).size+'대'+(O.u?' · 마감 '+O.u:'');$('#hd').hidden=false;render();
- if(late)late.then(j=>{if(!j.ok)return;KEY=j.key||KEY;REVG=j.rev||'';if(j.cap&&j.cap.batch)BATCH=true;TK=j.tk||null;TITLE=j.title||'';NT=j.ntc||[];MM=j.mm||[];cxBanner(j.cancel);done=merge(j.checked,t0);LS(K,done);
+ if(late)late.then(j=>{if(!j.ok)return;KEY=j.key||KEY;REVG=j.rev||'';if(j.cap&&j.cap.batch)BATCH=true;TK=j.tk||null;TITLE=j.title||'';NT=j.ntc||[];MM=j.mm||[];cxBanner(j.cancel);applyRel(j);done=merge(j.checked,t0);LS(K,done);
   $('#no').textContent=(TITLE?TITLE+' · ':'')+(O.t?'[임시] ':'')+O.no+(O.t?'':' · '+O.n+'차')+' · 출고예정일';if(TITLE)document.title=TITLE;render()}).catch(()=>{})}
  catch(e){$('#m').innerHTML='<div class="err">지시서를 열 수 없습니다.<br><small>'+esc(e.message)+'</small></div>'}})();
 }
