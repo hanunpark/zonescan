@@ -1,6 +1,6 @@
-/* 피킹 지시서 v62 · 2026-11-28 — 루티 관리자 화면에서 북마크로 불러 씀 */
+/* 피킹 지시서 v63 · 2026-11-28 — 루티 관리자 화면에서 북마크로 불러 씀 */
 (function(){function pick(){
-const API='https://api-prod.flowfix.co.kr/api/v1/admin/orders',CK='flowfix-admin-access-token',VER='v62 · 2026-11-28',MOB='https://hanunpark.github.io/zonescan/pick.html',GAS0='https://script.google.com/macros/s/AKfycby33E3x2WOVkZd_Kh4LSumPMT-KKbNa292E9WNKKTdx40WjCxsVgpSTq2R7oJby6XDF/exec';
+const API='https://api-prod.flowfix.co.kr/api/v1/admin/orders',CK='flowfix-admin-access-token',VER='v63 · 2026-11-28',MOB='https://hanunpark.github.io/zonescan/pick.html',GAS0='https://script.google.com/macros/s/AKfycby33E3x2WOVkZd_Kh4LSumPMTKKdNa292EWNKKTdx40WjCxsVgpSTq2R7oJby6XDF/exec';
 const $=s=>document.querySelector(s),esc=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const LS=(k,v)=>{try{if(v===undefined)return JSON.parse(localStorage.getItem('tcpk_'+k)||'null');if(v===null)localStorage.removeItem('tcpk_'+k);else localStorage.setItem('tcpk_'+k,JSON.stringify(v))}catch(e){return null}};
 const pad=n=>String(n).padStart(2,'0'),ymd=d=>d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());
@@ -247,7 +247,7 @@ async function fetchShared(){if(!S.gas){S.shErr='';return true}let q;if(S.src===
 /* 기사 선택 상태: 0 해제 · 1 일부(차량 일부만) · 2 전체 — 왼쪽 목록과 표의 기사 줄이 같은 상태를 씀 */
 function pickOns(d,P){const sk=(P||S.P||{}).skip||(()=>false);return [...new Set(S.rows.filter(r=>r.drv===d&&S.sup.has(r.sup)&&r.k==='ok'&&!sk(r)).map(r=>r.on))]}
 function dState(d,P){if(!S.drv.has(d))return 0;const ons=pickOns(d,P);if(!ons.length)return 2;const off=ons.filter(o=>S.off.has(o)).length;return off===0?2:off===ons.length?0:1}
-function setDrv(d,on){if(on&&d===''&&!S.drv.has('')){const n=S.rows.filter(r=>!r.drv&&S.sup.has(r.sup));if(!confirm('기사가 미배정된 건이 포함됩니다.\n\n미배정 '+new Set(n.map(vkey)).size+'대 '+n.length+'본은 정식 지시와 따로 임시 지시(TMP)로 등록됩니다. 포함할까요?'))return false}
+function setDrv(d,on){if(on&&d===''&&!S.drv.has('')){const sk=(S.P||{}).skip||(()=>false),a=S.rows.filter(r=>!r.drv&&S.sup.has(r.sup)&&r.k==='ok'),n=a.filter(r=>!sk(r)),g=a.length-n.length;if(!confirm('기사가 미배정된 건이 포함됩니다.\n\n'+(n.length?'미배정 '+new Set(n.map(vkey)).size+'대 '+n.length+'본은 정식 지시와 따로 임시 지시(TMP)로 등록됩니다.'+(g?' (이미 임시 지시에 있는 '+g+'본은 빠집니다)':''):'미배정 '+g+'본은 모두 임시 지시에 이미 등록되어 있습니다. 새로 등록되는 건은 없습니다.')+' 포함할까요?'))return false}
  S.rows.forEach(r=>{if(r.drv===d)S.off.delete(r.on)});on?S.drv.add(d):S.drv.delete(d);return true}
 function snap(){S.stTxt=$('#st').textContent;const o={};SNK.forEach(k=>o[k]=S[k]);(S.snaps=S.snaps||{})[S.src]=o}
 function srcUI(){document.querySelectorAll('[data-src]').forEach(b=>b.classList.toggle('on',b.dataset.src===S.src));$('#mk').style.display=S.src==='date'?'contents':'none';$('#mkr').style.display=S.src==='rooty'?'contents':'none';
@@ -277,6 +277,7 @@ function plan(){const R=regMap(),dOf=r=>S.src==='date'?S.date:(r.ad||S.date),ent
   const same=m=>m&&m.date===g.date&&m.center===g.center&&!!m.tmp===g.tmp,sh=(S.shared||[]).filter(x=>same(x.M)),loc=allIssued().filter(x=>same(x.h.M));
   g.next=Math.max(0,...sh.map(x=>+x.n||0),...loc.map(x=>+x.h.n||0))+1;
   const H=g.tmp?[]:sh.filter(x=>!(x.fl||{}).cancel).map(x=>({n:x.n,at:String(x.M.issued||x.at||'')}));
+  {const RL=new Map();g.ok.forEach(r=>ents(r).forEach(e=>{const l=lblOf(e,r,dOf,g.tmp),k=/^재피킹/.test(l)?'re':(/^임시/.test(l)&&!g.tmp?'tmp':'');if(!k)return;const key=k+'|'+e.no;let x=RL.get(key);if(!x)RL.set(key,x={kind:k,from:e.no,wbs:[]});if(x.wbs.indexOf(r.wb)<0)x.wbs.push(r.wb)}));g.rel=[...RL.values()]}
   const has=(r,f)=>(D.get(r.wb)||[]).some(f);g.V={H,D,no:g.next,vis:g.rows,ok:g.ok,ex:g.ex,dupN:g.ok.filter(r=>has(r,x=>/^\d+$/.test(x))).length,fromT:g.tmp?0:g.ok.filter(r=>has(r,x=>/^임시/.test(x))).length,reN:g.ok.filter(r=>has(r,x=>/^재피킹/.test(x))).length,reFrom:[...RE.values()].map(regLab).join(', ')};
   g.M=model(g.V,{tmp:g.tmp,date:g.date,center:g.center,info:S.info,all:S.rows});g.cars=new Set(g.ok.map(vkey)).size});
  const reg=gs.filter(g=>g.ok.length);return{R,dOf,ents,cur,prev,inF,inT,skip,vis,sel,gone,gs,reg,exA:[].concat(...reg.map(g=>g.ex)),reN:reg.reduce((a,g)=>a+g.V.reN,0)}}
@@ -300,7 +301,7 @@ function leftHtml(P){const cS=new Map(),cD=new Map(),acc=(m,k,r)=>{let a=m.get(k
 function midHtml(P){const R=P.R,sk=P.skip,by=new Map(),U=S.rows.filter(r=>S.sup.has(r.sup)),off0=new Map();U.forEach(r=>{if(!S.drv.has(r.drv)){const a=off0.get(r.drv)||[];a.push(r);off0.set(r.drv,a)}});P.vis.forEach(r=>{if(!by.has(r.drv))by.set(r.drv,new Map());const m=by.get(r.drv);if(!m.has(r.on))m.set(r.on,[]);m.get(r.on).push(r)});
  const ds=[...new Set([...by.keys(),...off0.keys()])].sort((a,b)=>a?(b?kc(a,b):-1):1),multi=new Set(P.vis.map(r=>r.ad)).size>1,multiC=new Set(P.vis.map(r=>r.cen)).size>1,live=r=>r.k==='ok'&&!sk(r)&&!S.off.has(r.on),selCars=new Set(P.vis.filter(live).map(vkey)).size;
  let h='';
- ds.forEach(d=>{if(!S.drv.has(d)){const a=off0.get(d)||[],ok=a.filter(r=>r.k==='ok');h+=`<tr class="grp off${d?'':' t'}"><td><input type="checkbox" data-d="${esc(d)}" aria-label="${esc(d||'미배정')} 선택"></td><td colspan="6">${d?esc(d):'<b style="color:var(--crit)">기사 미배정</b> <span class="tg2 t">임시</span>'}<span class="sbt">선택 안 함 · ${new Set(ok.map(vkey)).size}대 ${ok.length}본${a.length>ok.length?' · 예외 '+(a.length-ok.length)+'본':''}${d?'':' — 고르면 임시 지시로 따로 등록'}</span></td></tr>`;return}
+ ds.forEach(d=>{if(!S.drv.has(d)){const a=off0.get(d)||[],ok=a.filter(r=>r.k==='ok'),gN=ok.filter(sk).length,allG=ok.length&&gN===ok.length;h+=`<tr class="grp off${d?'':' t'}"><td><input type="checkbox" data-d="${esc(d)}" aria-label="${esc(d||'미배정')} 선택"></td><td colspan="6">${d?esc(d):'<b style="color:var(--crit)">기사 미배정</b> <span class="tg2 t">임시</span>'}<span class="sbt">선택 안 함 · ${new Set(ok.map(vkey)).size}대 ${ok.length}본${a.length>ok.length?' · 예외 '+(a.length-ok.length)+'본':''}${gN?' · 등록됨 '+gN+'본':''}${d?'':(allG?' — 모두 등록됨 (고르면 이름·등록일 확인)':' — 고르면 임시 지시로 따로 등록')}</span></td></tr>`;return}
   const m=by.get(d),ons=[...m.keys()],all=[].concat(...m.values()),pick=ons.filter(o=>m.get(o).some(r=>r.k==='ok'&&!sk(r))),on=pick.filter(o=>!S.off.has(o)),L=all.filter(live),exN=all.filter(r=>r.k!=='ok').length,gN=all.filter(r=>r.k==='ok'&&sk(r)).length;
   h+=`<tr class="grp${d?'':' t'}"><td>${pick.length?`<input type="checkbox" data-d="${esc(d)}"${on.length===pick.length?' checked':on.length?' data-ind="1"':''} aria-label="${esc(d||'미배정')} 전체">`:''}</td><td colspan="6">${d?esc(d):'<b style="color:var(--crit)">기사 미배정</b> <span class="tg2 t">임시</span>'}<span class="sbt">${new Set(L.map(vkey)).size}대 ${L.length}본${exN?' · 예외 '+exN+'본':''}${gN?' · 등록됨 '+gN+'본':''}${d?'':' — 임시 지시로 따로 등록'}</span></td></tr>`;
   ons.sort((a,b)=>zc(m.get(a)[0].zone,m.get(b)[0].zone)||kc(m.get(a)[0].veh,m.get(b)[0].veh)).forEach(o=>{const a=m.get(o),ok=a.filter(r=>r.k==='ok'),pk=ok.filter(r=>!sk(r)),ex=a.filter(r=>r.k!=='ok'),r0=a[0],off=S.off.has(o);
@@ -338,7 +339,7 @@ function rightHtml(P){const gs=P.reg,F=gs.filter(g=>!g.tmp),exA=P.exA,noZ=P.sel.
  <button class="pri big" id="reg"${gs.length?'':' disabled'}>${gs.length?gs.length+'건 등록':'등록할 대상 없음'}</button><p>등록하면 창고의 지시서 목록에 바로 올라갑니다. 인쇄·운송장·피킹은 목록에서 합니다.</p>`;
  return h}
 function doneHtml(){const L=S.done;return `<div class="dn"><div class="dnc" role="status"><div class="dnh"><span class="ok">✓</span><div><b>${L.length}건을 등록했습니다</b><div class="mu" style="font-size:13px">${esc(String(S.doneAt||'').slice(11,16))} · ${esc(S.who||'')} · ${S.gas?'창고 지시서 목록에 올라감':'이 PC에만 기록 (공유 설정 없음)'}</div></div></div>
- ${L.map((M,i)=>{const n=M.lines.reduce((s,g)=>s+g.w.length,0),c=new Set(M.lines.map(VK)).size,ship=M._trk?'용차출고 '+M._trk:M._terr?'용차 등록 실패':'기사출고';return `<div class="dni${M.tmp?' t':''}"><span><b>${esc(M.title?M.title+' · ':'')}${esc(M.no)}</b><small>${M.tmp?'임시 · 기사 미정':'정식 · '+esc(M.n)+'차 · '+esc(M.drvLabel)} · ${c}대 ${n}본${M.tmp?'':' · '+esc(ship)}${M.tmp&&M.dates&&M.dates.length>1?' · 약속일 '+M.dates.map(md5).join(', '):''}</small>${M._terr?`<small class="er2">용차 정보를 저장하지 못했습니다 (${esc(M._terr)}) — 지시서 목록에서 [용차로 바꾸기]로 다시 등록하세요.</small>`:''}</span><button data-dprint="${i}">${M._pr?'✓ 다시 인쇄':'지시서 인쇄'}</button></div>`}).join('')}
+ ${L.map((M,i)=>{const n=M.lines.reduce((s,g)=>s+g.w.length,0),c=new Set(M.lines.map(VK)).size,ship=M._trk?'용차출고 '+M._trk:M._terr?'용차 등록 실패':'기사출고';return `<div class="dni${M.tmp?' t':''}"><span><b>${esc(M.title?M.title+' · ':'')}${esc(M.no)}</b><small>${M.tmp?'임시 · 기사 미정':'정식 · '+esc(M.n)+'차 · '+esc(M.drvLabel)} · ${c}대 ${n}본${M.tmp?'':' · '+esc(ship)}${M._succ?' · 임시 피킹 완료 '+M._succ+'본 이어받음':''}${M.tmp&&M.dates&&M.dates.length>1?' · 약속일 '+M.dates.map(md5).join(', '):''}</small>${M._terr?`<small class="er2">용차 정보를 저장하지 못했습니다 (${esc(M._terr)}) — 지시서 목록에서 [용차로 바꾸기]로 다시 등록하세요.</small>`:''}</span><button data-dprint="${i}">${M._pr?'✓ 다시 인쇄':'지시서 인쇄'}</button></div>`}).join('')}
  <p>인쇄·운송장·피킹은 창고에서 지시서 목록으로 합니다. 이 PC에서 바로 인쇄해도 되고, 인쇄하면 목록에 '인쇄됨'으로 남습니다.</p>
  <div class="dnb"><button class="pri big" data-again>이어서 등록</button><button class="big" data-golist>지시서 목록 보기</button></div></div></div>`}
 function render(){if(S.tab==='list'&&!(S.gas&&S.gk))return renderList();if(S.tab!=='make')return;srcUI();const fl=$('#flow');
@@ -355,9 +356,9 @@ function needWho(){const w=$('#who');if(w){S.who=w.value.trim();LS('who',S.who);
  const v=(prompt('이름을 넣어 주세요 (체크·수정한 사람으로 기록됩니다)','')||'').trim();if(!v)return false;S.who=v;LS('who',v);return true}
 /* 지시 한 건 등록: 번호는 서버가 매김(같은 약속일·거점·정식/임시 안에서 차수) */
 async function issueOne(g,ttl){const M=JSON.parse(JSON.stringify(g.M)),items=g.ok.map(r=>r.wb);M.issued=nowS();M.who=S.who;M.due=S.due;if(ttl)M.title=ttl;let sh=0;
- if(S.gas){const known=(S.shared||[]).map(x=>x.no||(x.M&&x.M.no)).filter(Boolean);let r=await gpost({a:'issue',M,items,known});
-  if(r.conflict){const tx=r.conflict.map(c=>c.no+' ('+(c.who||'이름 없음')+') — '+c.n+'본 겹침').join('\n');if(!confirm('조회한 뒤에 다른 사람이 같은 운송장을 먼저 등록했습니다.\n\n'+tx+'\n\n[확인] 그래도 '+M.no.replace(/-\d+$/,'')+' 등록 (중복 표기 없이 나갑니다)\n[취소] 등록하지 않음 — 다시 조회하면 등록된 운송장이 빠집니다'))return null;r=await gpost({a:'issue',M,items,known,force:1})}
-  M.no=r.no;M.n=r.n;M.issued=r.issued||M.issued;sh=1;(S.shared=S.shared||[]).push({no:M.no,n:M.n,at:M.issued,who:S.who,items,cnt:items.length,M,fl:ttl?{title:{text:ttl,at:M.issued,by:S.who}}:{}})}
+ if(S.gas){const known=(S.shared||[]).map(x=>x.no||(x.M&&x.M.no)).filter(Boolean);let r=await gpost({a:'issue',M,items,known,rel:g.rel||[]});
+  if(r.conflict){const tx=r.conflict.map(c=>c.no+' ('+(c.who||'이름 없음')+') — '+c.n+'본 겹침').join('\n');if(!confirm('조회한 뒤에 다른 사람이 같은 운송장을 먼저 등록했습니다.\n\n'+tx+'\n\n[확인] 그래도 '+M.no.replace(/-\d+$/,'')+' 등록 (중복 표기 없이 나갑니다)\n[취소] 등록하지 않음 — 다시 조회하면 등록된 운송장이 빠집니다'))return null;r=await gpost({a:'issue',M,items,known,force:1,rel:g.rel||[]})}
+  M.no=r.no;M.n=r.n;M.issued=r.issued||M.issued;M._succ=r.succ||0;sh=1;(S.shared=S.shared||[]).push({no:M.no,n:M.n,at:M.issued,who:S.who,items,cnt:items.length,M,fl:ttl?{title:{text:ttl,at:M.issued,by:S.who}}:{}})}
  else{M.n=g.next;M.no=M.no.replace(/-\d+$/,'-'+pad(M.n))}
  const k='h_'+M.center+'_'+M.date,H=LS(k)||[];H.push({n:M.n,at:M.issued,who:S.who,drv:[...new Set(g.ok.map(r=>r.drv))],items,M,shared:sh});LS(k,H);M._sh=sh;return M}
 /* [N건 등록]: 용차출고로 고른 정식 지시는 용차 정보를 먼저 받고 → 정식부터 차례로 등록 → 용차 저장 → 이름 저장 → 완료 화면 */
