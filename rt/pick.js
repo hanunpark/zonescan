@@ -1,6 +1,6 @@
-/* 피킹 지시서 v63 · 2026-11-28 — 루티 관리자 화면에서 북마크로 불러 씀 */
+/* 피킹 지시서 v64 · 2026-11-28 — 루티 관리자 화면에서 북마크로 불러 씀 */
 (function(){function pick(){
-const API='https://api-prod.flowfix.co.kr/api/v1/admin/orders',CK='flowfix-admin-access-token',VER='v63 · 2026-11-28',MOB='https://hanunpark.github.io/zonescan/pick.html',GAS0='https://script.google.com/macros/s/AKfycby33E3x2WOVkZd_Kh4LSumPMT-KKbNa292E9WNKKTdx40WjCxsVgpSTq2R7oJby6XDF/exec';
+const API='https://api-prod.flowfix.co.kr/api/v1/admin/orders',CK='flowfix-admin-access-token',VER='v64 · 2026-11-28',MOB='https://hanunpark.github.io/zonescan/pick.html',GAS0='https://script.google.com/macros/s/AKfycby33E3x2WOVkZd_Kh4LSumPMT-KKbNa292E9WNKKTdx40WjCxsVgpSTq2R7oJby6XDF/exec';
 const $=s=>document.querySelector(s),esc=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const LS=(k,v)=>{try{if(v===undefined)return JSON.parse(localStorage.getItem('tcpk_'+k)||'null');if(v===null)localStorage.removeItem('tcpk_'+k);else localStorage.setItem('tcpk_'+k,JSON.stringify(v))}catch(e){return null}};
 const pad=n=>String(n).padStart(2,'0'),ymd=d=>d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());
@@ -199,7 +199,7 @@ const ALLC='전체',DIRECT=['일산FDC','청주FDC(B2B)','전주FDC','경산FDC'
 const fillCen=L=>{const o=v=>`<option value="${esc(v)}"${v===S.center?' selected':''}>${esc(v===ALLC?'전체 거점':v)}</option>`,rest=[...new Set(L)].filter(c=>c&&DIRECT.indexOf(c)<0).sort(kc);
  $('#cen').innerHTML=o(ALLC)+`<optgroup label="직영 창고">${DIRECT.map(o).join('')}</optgroup><optgroup label="그 외 거점">${rest.map(o).join('')}</optgroup>`};
 fillCen(CEN0);
-api('/filter-options','?driverUnassignedOnly=false').then(d=>{const L=(d.centerName||[]).map(x=>typeof x==='string'?x:String(x&&(x.name||x.value)||'')).filter(Boolean);if(L.length)fillCen(L)}).catch(()=>{});
+api('/filter-options','?driverUnassignedOnly=false').then(d=>{const L=(d.centerName||[]).map(x=>typeof x==='string'?x:String(x&&(x.name||x.value)||'')).filter(Boolean);if(L.length){fillCen(L);S.rcens=L;mgPost({t:'tc-cens',cens:L})}}).catch(()=>{});
 
 function cls(r){const w=r.waybillStatus,o=r.orderStatus;
  if(w==='CANCELLED'||o==='CANCELLED')return 'cx';
@@ -776,7 +776,7 @@ async function loadRooty(){const W=window.opener,m=t=>{$('#flow').hidden=true;$(
 let MG=null;
 function mgPost(m){try{if(MG&&MG.contentWindow)MG.contentWindow.postMessage(m,'*')}catch(e){}}
 function mgShow(t){let box=$('#mgw');if(!box){box=document.createElement('div');box.id='mgw';box.innerHTML='<iframe id="mgf" title="관리 페이지" allow="clipboard-write" src="'+WH+'?tab='+(t==='trk'?'out':t==='ntc'||t==='ib'?t:'list')+'&_='+Date.now()+'"></iframe>';document.body.appendChild(box);MG=box.querySelector('iframe');
-  MG.onload=()=>{mgPost({t:'tc-hello',key:S.gk,who:S.who});mgPost({t:'tc-vis',on:box.hidden?0:1})}}
+  MG.onload=()=>{mgPost({t:'tc-hello',key:S.gk,who:S.who,cens:S.rcens||[]});mgPost({t:'tc-vis',on:box.hidden?0:1})}}
  else mgPost({t:'tc-tab',tab:t==='trk'?'out':t==='ntc'||t==='ib'?t:'list'});box.hidden=false;const bar=$('.bar');if(bar)box.style.top=bar.getBoundingClientRect().bottom+'px';$('#main').hidden=true;$('#opt').hidden=true;$('#sum').innerHTML='';$('#dup').hidden=true}
 function mgHide(){const b=$('#mgw');if(b){b.hidden=true;mgPost({t:'tc-vis',on:0})}$('#main').hidden=false}
 window.addEventListener('message',async e=>{if(!MG||e.source!==MG.contentWindow)return;const d=e.data||{};

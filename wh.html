@@ -200,7 +200,7 @@ table.gt .n{text-align:right;white-space:nowrap}table.gt .nm{font-weight:600}tab
 </style>
 </head>
 <body>
-<header><div class="h1"><div class="tt"><b>타이어케어 출고 관리</b><small>v2.26 · 2026-11-28</small></div><button id="ctr" title="거점 바꾸기"></button><button id="whoB"></button></div>
+<header><div class="h1"><div class="tt"><b>타이어케어 출고 관리</b><small>v2.27 · 2026-11-28</small></div><button id="ctr" title="거점 바꾸기"></button><button id="whoB"></button></div>
 <div class="tabs"><button data-tab="list">지시서 목록</button><button data-tab="out">출고 관리</button><button data-tab="ib">입고예정</button><button data-tab="ntc" class="tr">공지</button></div></header>
 <div id="flt" hidden><div class="f1"><label>거점</label><select id="fc"></select></div><div class="fb"><label>기준</label><div class="seg"><button data-by="iss">등록일</button><button data-by="due">약속일</button></div></div><div class="f2"><label>날짜</label><button class="b nv" data-dd="-1" title="하루 앞">‹</button><input type="date" id="ff"><span id="fsep">~</span><input type="date" id="ft"><button class="b nv" data-dd="1" title="하루 뒤">›</button><button class="b rg" id="frg" title="여러 날을 한꺼번에 보기">기간</button></div><div class="f3"><button class="b p" id="fg">조회</button><button class="b" data-q="0">오늘</button><button class="b" data-q="1">내일</button><button class="b" id="f7">최근 7일</button><button class="b" id="fr">새로고침</button></div><div id="fst"></div></div>
 <main id="m"><div class="msg">여는 중…</div></main><div id="busy" hidden>최신 내용 확인 중…</div>
@@ -223,10 +223,10 @@ const T0=ymd(new Date()),F={from:T0,to:T0,center:ls('center')||'',by:ls('by')||'
 /* 고른 기간은 같은 날 같은 탭 안에서만 유지 (지시서를 열었다 돌아와도 그대로) */
 try{const r=JSON.parse(sessionStorage.getItem('wh_range')||'null');if(r&&r.day===T0){F.from=r.from;F.to=r.to;F.rng=r.from!==r.to}}catch(e){}
 function keepRange(){try{sessionStorage.setItem('wh_range',JSON.stringify({day:T0,from:F.from,to:F.to}))}catch(e){}}
-const PV='v2.26';
+const PV='v2.27';
 /* 새 판이 올라왔는데 브라우저가 예전 판을 보여 주면 자동으로 새로 읽는다 (GitHub Pages 캐시 대비) */
 let VC=0;function verCheck(){if(Date.now()-VC<600000)return;VC=Date.now();fetch(location.pathname+'?_='+Date.now(),{cache:'no-store'}).then(r=>r.text()).then(t=>{const m=t.match(/const PV='([^']+)'/);if(m&&m[1]!==PV&&!sessionStorage.getItem('wh_upd_'+m[1])){sessionStorage.setItem('wh_upd_'+m[1],'1');const u=new URL(location.href);u.searchParams.set('v',m[1]);location.replace(u.toString())}}).catch(()=>{})}
-let ST='',SHOWCX=false,SHOWCXS=false,D={srv:[],trk:[],ntc:[],role:'',ib:[]},LOADED=false,PEND=0,SEQ=0,FOCUS='',WIDE=false;
+let FADJ=false,ST='',SHOWCX=false,SHOWCXS=false,D={srv:[],trk:[],ntc:[],role:'',ib:[]},LOADED=false,PEND=0,SEQ=0,FOCUS='',WIDE=false;
 {const q=new URLSearchParams(location.search),t=q.get('tab');if(t==='list'||t==='out'||t==='ntc'||t==='ib'){TAB=t;if(q.get('trk')){KIND='trk';FOCUS=q.get('trk')}else if(q.get('no')){FOCUS=q.get('no');if(t==='out')KIND='drv'}}else if(q.get('no')){TAB='list';FOCUS=q.get('no')}if(location.search)history.replaceState(null,'',location.pathname+location.hash)}
 {const h=location.hash.slice(1);if(h){KEY=decodeURIComponent(h);ls('key',KEY);history.replaceState(null,'',location.pathname+location.search)}}
 const jfetch=async(u,o,tries)=>{tries=tries||3;for(let n=0;;n++){let t='',net=false;const ac=window.AbortController?new AbortController():null,tm=ac?setTimeout(()=>ac.abort(),25000):0;try{const r=await fetch(u,ac?Object.assign({},o,{signal:ac.signal}):o);t=await r.text();clearTimeout(tm);return JSON.parse(t)}catch(e){clearTimeout(tm);net=!t}if(n<tries-1){await new Promise(r=>setTimeout(r,[1200,2500,4000][n]||4000));continue}const er=new Error(net?'통신 상태를 확인해 주세요.':'구글 서버가 잠시 응답하지 않습니다 (서버 오류). 잠시 뒤 다시 시도해 주세요.');er.srv=!net;throw er}};
@@ -267,7 +267,7 @@ function dlg(h){close();const d=document.createElement('div');d.id='dlg';d.inner
 function close(){const d=$('#dlg');if(d)d.remove()}
 function head(){$('#ctr').innerHTML='<small>작업 거점</small>'+esc(F.center||'전체 거점')+'<span class="pv">'+PV+'</span>';$('#ctr').classList.toggle('all',!F.center);$('#whoB').textContent=WHO?WHO:'이름 입력';$('#whoB').classList.toggle('need',!WHO);{const u=unread().length,b=document.querySelector('[data-tab=ntc]');if(b)b.innerHTML='공지'+(u?'<i class="nbg">'+u+'</i>':'')}{const b=document.querySelector('[data-tab=ib]'),n=D.ibUnsup?0:(D.ib||[]).filter(x=>x.st==='plan'&&inC(x.center)&&inR(x.date)).length;if(b)b.innerHTML='입고예정'+(n?'<i class="ibg">'+n+'</i>':'')}document.querySelectorAll('[data-tab]').forEach(b=>b.classList.toggle('on',b.dataset.tab===TAB))}
 const isd=r=>{const s=String(r.M.issued||r.at||'');if(/^\d{4}-\d\d-\d\d/.test(s))return s.slice(0,10);const d=new Date(s);return isNaN(d)?'':ymd(d)},inR=d=>!!d&&d>=F.from&&d<=F.to,inRng=r=>F.by==='due'?(r.M.dates&&r.M.dates.length?r.M.dates:[r.M.date]).some(inR):inR(isd(r)),trkIn=x=>{if(F.by==='due')return inR(String(x.loadAt).slice(0,10));const s=D.srv.find(r=>r.M.no===x.src);return inR(s?isd(s):String(x.at||'').slice(0,10))};
-const inC=c=>!F.center||c===F.center,tot=M=>M.lines.reduce((s,g)=>s+g.w.length,0);
+const inC=c=>!F.center||c===F.center||cSplit(c).indexOf(F.center)>=0,tot=M=>M.lines.reduce((s,g)=>s+g.w.length,0);
 function trkOf(M){const w=new Set(M.lines.flatMap(g=>g.w));return D.trk.filter(t=>!t.st.cancel&&t.lines.some(g=>g.w.some(x=>w.has(x)))).map(t=>({t,n:t.lines.reduce((s,g)=>s+g.w.filter(x=>w.has(x)).length,0)}))}
 function tstatus(x){const st=x.st||{},p=st.steps||{};if(st.cancel)return '취소';if(p.depart||p.unload||p.hand)return '출고 완료';if(p.load)return '상차 완료';if(p.load)return '상차완료';if(p.arrive)return '용차 도착';return x.plate?'배정':'용차 미배정'}
 /* v2.21 상태: 인쇄 전(지시서 인쇄 안 함) · 피킹 중(폰 체크 시작, 끝나기 전) · 출고 전(용차 출발 전 / 기사출고는 피킹 완료 전) */
@@ -538,7 +538,9 @@ function fltSync(){const t=ymd(new Date());$('#fc').classList.toggle('all',!F.ce
 function stamp(st,txt){const e=$('#fst');if(!e)return;e.className=st;e.textContent=txt;if(st==='ok'){void e.offsetWidth}}
 function kick(b){if(!b)return;b.classList.remove('kk');void b.offsetWidth;b.classList.add('kk')}
 function setDay(a,b,btn){F.from=a;F.to=b||a;keepRange();LOADED=false;kick(btn);if(!MC[fkey()])busyBtn(btn);$('#busy').hidden=false;stamp('ld','불러오는 중…');draw();load()}
-function draw(){head();$('#flt').hidden=false;const cs=[...new Set(D.srv.map(r=>r.M.center).concat(D.trk.map(x=>x.center),ls('centers')||[],F.center?[F.center]:[]).filter(Boolean))].sort(kc);ls('centers',cs);
+/* v2.27: 거점 이름 나누기 — v61 전의 임시 지시는 거점이 '경산FDC, 원주FDC(B2B)'처럼 합쳐져 있다 */
+const cSplit=c=>String(c||'').split(/\s*,\s*/).filter(Boolean);
+function draw(){head();$('#flt').hidden=false;const cs=[...new Set([].concat(...D.srv.map(r=>cSplit(r.M.center)),...D.trk.map(x=>cSplit(x.center)),...(ls('centers')||[]).map(cSplit),ls('rcens')||[],F.center?[F.center]:[]))].sort(kc);ls('centers',cs);
  {/* v2.22 직영 창고(운영 중인 센터)를 위에 묶어 보여 줌 */const DIR=['일산FDC','청주FDC(B2B)','전주FDC','경산FDC','원주FDC(B2B)'],o=c=>`<option${c===F.center?' selected':''}>${esc(c)}</option>`,rest=cs.filter(c=>DIR.indexOf(c)<0);$('#fc').innerHTML='<option value="">전체 거점</option><optgroup label="직영 창고">'+DIR.map(o).join('')+'</optgroup>'+(rest.length?'<optgroup label="그 외 거점">'+rest.map(o).join('')+'</optgroup>':'')}$('#ff').value=F.from;$('#ft').value=F.to;fltSync();
  const sc=window.scrollY;let h='',pd='';if(TAB==='ntc'){$('#flt').hidden=true;$('#m').innerHTML=ntcView();window.scrollTo(0,sc);return}h+=ctxBar()+banner();
  if(TAB==='ib'){h+=ibView();$('#m').innerHTML=h;window.scrollTo(0,sc);return}
@@ -556,7 +558,10 @@ function draw(){head();$('#flt').hidden=false;const cs=[...new Set(D.srv.map(r=>
   else{const n=k=>DV.filter(d=>d.st===k).length;h+=`<div class="chips"><span>피킹 전 <b>${n(0)}</b></span><span>피킹 중 <b>${n(1)}</b></span><span class="mu">종결 ${n(2)}</span><button data-a="tgla">모두 펼치기·접기</button></div>`;
    const DS=DV.slice().sort((a,b)=>(a.st===2?1:0)-(b.st===2?1:0)||kc(a.M.date,b.M.date)||kc(a.M.no,b.M.no));if(WD()&&DS.length)h+=wideDrv(DS);else DS.forEach(d=>{const g=d.st===2?'피킹 완료 (종결)':'출고예정일 '+d.M.date+' ('+dow(d.M.date)+')';if(g!==pd){h+=`<div class="dh">${g}</div>`;pd=g}h+=drvCard(d)});
    if(!DV.length)h+='<div class="msg">이 조건에 기사출고 대상 지시서가 없습니다.</div>'}}
- {const pn=document.querySelector('.pane'),ps=pn?pn.scrollTop:0,pk=pn?pn.dataset.s:'';$('#m').innerHTML=h;window.scrollTo(0,sc);const p2=document.querySelector('.pane');if(p2){p2.dataset.s=TAB+'|'+KIND+'|'+SEL.list+'|'+SEL.trk+'|'+SEL.drv;if(ps&&pk===p2.dataset.s)p2.scrollTop=ps}}if(FOCUS){const el=[...document.querySelectorAll('[data-f]')].find(e=>e.dataset.f===FOCUS);if(!el&&LOADED&&!WIDE&&$('#busy').hidden){WIDE=true;const t=ymd(new Date());F.from=addD(t,-14);F.to=addD(t,14);keepRange();LOADED=false;load();return}if(el&&el.dataset.tk&&!OPEN.has(el.dataset.tk)){OPEN.add(el.dataset.tk);keepOpen();draw();return}if(el){FOCUS='';el.style.outline='2px solid var(--acc)';el.scrollIntoView({block:'center'});setTimeout(()=>{el.style.outline=''},4000)}}}
+ {const pn=document.querySelector('.pane'),ps=pn?pn.scrollTop:0,pk=pn?pn.dataset.s:'';$('#m').innerHTML=h;window.scrollTo(0,sc);const p2=document.querySelector('.pane');if(p2){p2.dataset.s=TAB+'|'+KIND+'|'+SEL.list+'|'+SEL.trk+'|'+SEL.drv;if(ps&&pk===p2.dataset.s)p2.scrollTop=ps}}if(FOCUS){const el=[...document.querySelectorAll('[data-f]')].find(e=>e.dataset.f===FOCUS);if(!el&&LOADED&&$('#busy').hidden){const r=D.srv.find(x=>x.M.no===FOCUS);
+  if(r&&!FADJ){FADJ=true;if(!inC(r.M.center))F.center='';/* 저장된 거점은 바꾸지 않음 — 이번 화면만 */const d=F.by==='due'?r.M.date:isd(r);if(d&&(d<F.from||d>F.to)){F.rng=false;setDay(d,d);return}draw();return}
+  if(!r&&!WIDE){WIDE=true;const t=ymd(new Date());F.from=addD(t,-14);F.to=addD(t,14);F.rng=true;keepRange();LOADED=false;load();return}
+  if(WIDE||FADJ){toast('지시서 '+FOCUS+'을(를) 이 조건에서 찾지 못했습니다');FOCUS=''}}if(el&&el.dataset.tk&&!OPEN.has(el.dataset.tk)){OPEN.add(el.dataset.tk);keepOpen();draw();return}if(el){FOCUS='';el.style.outline='2px solid var(--acc)';el.scrollIntoView({block:'center'});setTimeout(()=>{el.style.outline=''},4000)}}}
 function toObj(M){const L=M.lines,Dr=[...new Set(L.map(g=>g.drv))].sort(kc),P=[...new Set(L.map(g=>g.sup))];
  return{v:1,no:M.no,n:M.n,d:M.date,c:M.center,i:M.issued,w:M.who,u:M.due,t:M.tmp?1:0,f:M.drvLabel,D:Dr,P,L:L.map(g=>[g.zone,P.indexOf(g.sup),g.veh,g.model,g.pn,Dr.indexOf(g.drv),g.w,g.on,g.ri||0,g.sub?1:0,g.ot||'',g.kp?1:0,g.kp?g.xw:0]),X:(M.ex||[]).map(x=>[x[0],x[1],x[3],x[4],x[6]])}}
 /* 지시서 링크: 한 번 받은 번호는 이 기기에 기억, 지시서를 고르거나 펼치면 미리 받아 둔다 */
@@ -634,11 +639,12 @@ async function printDoc(r,k){if(!needWho())return;
   try{await loadSheet();const M=Object.assign({},r.M);M.tk=TCSheet.tkInfo(M,D.trk);M.mm=(r.mm||[]).filter(m=>m.r==='pc');M.title=((r.fl||{}).title||{}).text||'';pw.document.open();pw.document.write('<!DOCTYPE html><html lang="ko"><head><meta charset="utf-8"><title>'+esc(M.no)+'</title><style>'+TCSheet.css+'@media screen{body{background:#eef1f5}}</style></head><body>'+TCSheet.sheet(M)+'<script>setTimeout(function(){print()},300)<\/script></body></html>');pw.document.close();markPrinted(r,'print')}
   catch(e){pw.close();alert(e.message)}return}
  const kind=k==='wo'?'출고':'회수';
- if(!BR){dlg(`<h3>${kind} 운송장 인쇄</h3><div class="mu" style="margin-top:6px">운송장은 루티에서 출력합니다. <b>루티에 로그인된 PC</b>에서 루티 화면의 <b>피킹지시서 도구 → [관리 페이지]</b>로 이 화면을 열면 [${kind} 운송장] 버튼으로 바로 출력됩니다.</div><div class="act" style="justify-content:flex-end"><button class="b p" data-x>확인</button></div>`);return}
+ if(!BR){dlg(`<h3>${kind} 운송장 인쇄</h3><div class="mu" style="margin-top:6px;line-height:1.65">이 창은 루티와 연결되어 있지 않아 운송장을 바로 출력할 수 없습니다.<br>운송장은 <b>루티 화면에서 피킹지시서 북마크를 눌러 연 창</b>의 [지시서 목록]에서 [${kind} 운송장 인쇄]를 누르면 루티 자료로 바로 출력됩니다.<br><span style="color:var(--mute)">지시서 인쇄·피킹 확인은 이 창에서도 됩니다.</span></div><div class="act" style="justify-content:flex-end"><button class="b p" data-x>확인</button></div>`);return}
  const id='w'+Date.now();BR.pend[id]={r,k};$('#busy').hidden=false;$('#busy').textContent=kind+' 운송장을 루티에서 불러오는 중…';
  BR.win.postMessage({t:'tc-wb',id,kind:k,no:r.M.no,date:r.M.date,center:r.M.center,w:r.M.lines.flatMap(g=>g.w),cars:[...new Set(r.M.lines.map(g=>g.on))],veh:[...new Set(r.M.lines.map(g=>g.veh))]},'*')}
 window.addEventListener('message',e=>{const d=e.data||{};
- if(d.t==='tc-hello'&&e.source===window.parent&&window.parent!==window){BR={win:e.source,pend:{}};if(d.key){KEY=d.key}if(d.who&&!WHO){WHO=d.who;ls('who',WHO);head()}document.documentElement.classList.add('br');setMode();if(!LOADED){LOADED=false;load()}return}
+ if(d.t==='tc-cens'&&e.source===window.parent&&Array.isArray(d.cens)&&d.cens.length){ls('rcens',d.cens.map(String));if(LOADED)draw();return}
+ if(d.t==='tc-hello'&&e.source===window.parent&&window.parent!==window){if(Array.isArray(d.cens)&&d.cens.length)ls('rcens',d.cens.map(String));BR={win:e.source,pend:{}};if(d.key){KEY=d.key}if(d.who&&!WHO){WHO=d.who;ls('who',WHO);head()}document.documentElement.classList.add('br');setMode();if(!LOADED){LOADED=false;load()}return}
  if(d.t==='tc-tab'&&BR){TAB=d.tab;const was=HID;HID=false;draw();if(was)poll();return}if(d.t==='tc-vis'&&e.source===window.parent&&window.parent!==window){HID=!d.on;return}
  if(d.t==='tc-reload'&&BR){load(true);return}
  if(d.t==='tc-wb-done'&&BR&&BR.pend[d.id]){const p=BR.pend[d.id];delete BR.pend[d.id];$('#busy').hidden=true;$('#busy').textContent='최신 내용 확인 중…';if(d.ok)markPrinted(p.r,p.k);else alert('운송장을 출력하지 못했습니다.\n'+(d.err||''))}});
