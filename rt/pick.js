@@ -1,6 +1,6 @@
-/* 피킹 지시서 v61 · 2026-11-28 — 루티 관리자 화면에서 북마크로 불러 씀 */
+/* 피킹 지시서 v62 · 2026-11-28 — 루티 관리자 화면에서 북마크로 불러 씀 */
 (function(){function pick(){
-const API='https://api-prod.flowfix.co.kr/api/v1/admin/orders',CK='flowfix-admin-access-token',VER='v61 · 2026-11-28',MOB='https://hanunpark.github.io/zonescan/pick.html',GAS0='https://script.google.com/macros/s/AKfycby33E3x2WOVkZd_Kh4LSumPMT-KKbNa292E9WNKKTdx40WjCxsVgpSTq2R7oJby6XDF/exec';
+const API='https://api-prod.flowfix.co.kr/api/v1/admin/orders',CK='flowfix-admin-access-token',VER='v62 · 2026-11-28',MOB='https://hanunpark.github.io/zonescan/pick.html',GAS0='https://script.google.com/macros/s/AKfycby33E3x2WOVkZd_Kh4LSumPMT-KKbNa292E9WNKKTdx40WjCxsVgpSTq2R7oJby6XDF/exec';
 const $=s=>document.querySelector(s),esc=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const LS=(k,v)=>{try{if(v===undefined)return JSON.parse(localStorage.getItem('tcpk_'+k)||'null');if(v===null)localStorage.removeItem('tcpk_'+k);else localStorage.setItem('tcpk_'+k,JSON.stringify(v))}catch(e){return null}};
 const pad=n=>String(n).padStart(2,'0'),ymd=d=>d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());
@@ -169,7 +169,8 @@ table.rt td{padding:7px 8px;border-bottom:1px solid var(--line);vertical-align:t
 table.rt tr.grp td{background:var(--sub);font-weight:700;padding-top:9px}table.rt tr.grp.t td{background:var(--warnbg);color:var(--warn)}table.rt tr.grp .sbt{font-weight:500;margin-left:6px}
 table.rt tr.dim td{color:var(--mute)}table.rt tr.dim .n{font-weight:400}table.rt tr.off td{color:var(--mute)}table.rt tr.off .vh{text-decoration:line-through}
 table.rt .vh{font-weight:700;white-space:nowrap}table.rt .sbt{font-size:11.5px;color:var(--mute)}table.rt .zn{font-weight:600;white-space:nowrap}
-.tg2{display:inline-block;font-size:11px;font-weight:600;border-radius:5px;padding:0 6px;margin:1px 3px 1px 0;background:var(--sub);color:var(--ink2);white-space:nowrap;line-height:18px}.tg2.w,.tg2.t{background:var(--warnbg);color:var(--warn)}.tg2.c{background:var(--critbg);color:var(--crit)}.tg2.g{background:var(--goodbg);color:var(--good)}.tg2.a{background:var(--soft);color:var(--acc)}
+.tg2{display:inline-block;font-size:11px;font-weight:600;border-radius:5px;padding:0 6px;margin:1px 3px 1px 0;background:var(--sub);color:var(--ink2);white-space:nowrap;line-height:18px}.tg2.w,.tg2.t{background:var(--warnbg);color:var(--warn)}.tg2.c{background:var(--critbg);color:var(--crit)}.tg2.g{background:var(--goodbg);color:var(--good)}table.rt .tg2.g{white-space:normal}.tg2.a{background:var(--soft);color:var(--acc)}
+.rt .lk.rp{height:auto;font-size:12px;font-weight:600;color:var(--warn);text-decoration:underline;padding:0;white-space:nowrap}
 .rgm .ft2{padding:10px 14px;font-size:12.5px;color:var(--ink2)}
 .rgr{padding:16px;position:sticky;top:10px;display:flex;flex-direction:column;gap:12px}.rgr .ttl2{font-size:16px;font-weight:700}
 .ic{border:1px solid var(--line);border-radius:12px;padding:12px}.ic.t{background:var(--warnbg);border-color:transparent}
@@ -231,17 +232,17 @@ async function load(){if(S.busy)return;S.busy=true;S.date=$('#dt').value;S.cente
   do{if(p>1)await new Promise(z=>setTimeout(z,300));const d=await api('',q+'&page='+p);tp=Math.min(d.totalPages||1,40);
    for(const it of d.items||[]){if(!PICK_TYPES.has(it.serviceMethod)||(S.center!==ALLC&&it.centerName&&it.centerName!==S.center))continue;const x=slim(it);
     if(x.k==='cx')continue;if(x.k==='out'){out++;continue}if(!x.drv)un++;R.push(x)}p++}while(p<=tp);
-  S.rows=R;S.un=un;S.out=out;S.at=nowS();S.off=new Set();S.drv=new Set(R.map(r=>r.drv).filter(Boolean));S.sup=new Set(R.map(r=>r.sup));S.shared=null;S.info=null;S.ship={};
+  S.rows=R;S.un=un;S.out=out;S.at=nowS();S.off=new Set();S.force=new Set();S.drv=new Set(R.map(r=>r.drv).filter(Boolean));S.sup=new Set(R.map(r=>r.sup));S.shared=null;S.info=null;S.ship={};
   await fetchShared();
   $('#st').textContent=(S.shErr?'⚠ 창고 목록 못 불러옴 · ':'')+'루티 주문 '+S.at.slice(5);snap();render()}
  catch(e){$('#st').textContent='';$('#flow').hidden=true;$('#main').innerHTML='<div id="msg">'+(e.message==='LOGIN'?'루티 로그인이 만료되었습니다. 루티 화면에서 다시 로그인한 뒤 북마크를 다시 눌러주세요.':'불러오지 못했습니다: '+esc(e.message))+'</div>'}
  S.busy=false}
 /* ───── v58 지시 등록: 기사 배정분은 정식(PK), 미배정분은 임시(TMP) — 한 화면·한 흐름으로 등록. 인쇄·운송장·피킹은 지시서 목록에서 ───── */
-S.src='date';S.noDup=true;S.ship={};S.due=LS('due')||'08:00';S.title='';S.done=null;S.rows=S.rows||[];
+S.src='date';S.noDup=true;S.force=new Set();S.ship={};S.due=LS('due')||'08:00';S.title='';S.done=null;S.rows=S.rows||[];
 const vkey=r=>String(r.veh||'').replace(/\s/g,'')||r.on;
-const SNK=['rows','un','out','at','drv','sup','off','center','date','shared','shErr','info','ship','done','stTxt'];
+const SNK=['rows','un','out','at','drv','sup','off','force','center','date','shared','shErr','info','ship','done','stTxt'];
 /* 창고 지시서 목록(공유) 받기 — 이미 등록된 운송장을 빼는 데 씀. 실패하면 이유를 남기고 [다시 불러오기] */
-async function fetchShared(){if(!S.gas){S.shErr='';return true}let q;if(S.src==='date')q='a=list'+(S.center===ALLC?'':'&c='+encodeURIComponent(S.center))+'&from='+addD(S.date,-3)+'&to='+S.date;else{const ds=[...new Set(S.rows.map(r=>r.ad).filter(Boolean))].sort();q='a=list&from='+addD(ds[0]||S.date,-3)+'&to='+(ds[ds.length-1]||S.date)}
+async function fetchShared(){if(!S.gas){S.shErr='';return true}let q;if(S.src==='date')q='a=list'+(S.center===ALLC?'':'&c='+encodeURIComponent(S.center))+'&from='+addD(S.date,-7)+'&to='+S.date;else{const ds=[...new Set(S.rows.map(r=>r.ad).filter(Boolean))].sort();q='a=list&from='+addD(ds[0]||S.date,-7)+'&to='+(ds[ds.length-1]||S.date)}
  try{S.shared=(await gget(q)).items;S.shErr='';return true}catch(e){S.shared=null;S.shErr=e.message||'알 수 없는 오류';return false}}
 /* 기사 선택 상태: 0 해제 · 1 일부(차량 일부만) · 2 전체 — 왼쪽 목록과 표의 기사 줄이 같은 상태를 씀 */
 function pickOns(d,P){const sk=(P||S.P||{}).skip||(()=>false);return [...new Set(S.rows.filter(r=>r.drv===d&&S.sup.has(r.sup)&&r.k==='ok'&&!sk(r)).map(r=>r.on))]}
@@ -254,28 +255,36 @@ function srcUI(){document.querySelectorAll('[data-src]').forEach(b=>b.classList.
 function setSrc(src){if(src===S.src)return;if(S.at||S.done)snap();S.src=src;const o=(S.snaps||{})[src];if(o)Object.assign(S,o);else{S.at='';S.rows=[];S.done=null;S.stTxt=''}$('#st').textContent=S.stTxt||'';srcUI();render();if(src==='rooty'&&!o)loadRooty()}
 /* 이미 등록된 운송장: 공유 목록(취소 제외) + 이 PC 기록 → 운송장별 [{no,tmp,n}] */
 function regMap(){const M=new Map(),add=(w,e)=>{let a=M.get(w);if(!a)M.set(w,a=[]);a.push(e)};
- (S.shared||[]).forEach(x=>{if(!x.M)return;if((x.fl||{}).cancel){CX.add(x.M.no);return}const e={no:x.M.no,tmp:!!x.M.tmp,n:x.n};(x.items||[]).forEach(w=>add(w,e))});
+ (S.shared||[]).forEach(x=>{if(!x.M)return;if((x.fl||{}).cancel){CX.add(x.M.no);return}const e={no:x.M.no,tmp:!!x.M.tmp,n:x.n,date:x.M.date,dates:x.M.tmp&&x.M.dates&&x.M.dates.length?x.M.dates:[x.M.date],title:((x.fl||{}).title||{}).text||x.M.title||'',at:String(x.M.issued||x.at||''),who:x.who||x.M.who||''};(x.items||[]).forEach(w=>add(w,e))});
  const ns=new Set((S.shared||[]).map(x=>x.M&&x.M.no));
- allIssued().forEach(({h})=>{if(!h.M||!cxOk(h)||ns.has(h.M.no)||(S.shared&&h.shared))return;const e={no:h.M.no,tmp:!!h.M.tmp,n:h.n};(h.items||[]).forEach(w=>add(w,e))});
+ allIssued().forEach(({h})=>{if(!h.M||!cxOk(h)||ns.has(h.M.no)||(S.shared&&h.shared))return;const e={no:h.M.no,tmp:!!h.M.tmp,n:h.n,date:h.M.date,dates:h.M.tmp&&h.M.dates&&h.M.dates.length?h.M.dates:[h.M.date],title:h.M.title||'',at:String(h.at||h.M.issued||''),who:h.who||''};(h.items||[]).forEach(w=>add(w,e))});
  return M}
 /* 등록 계획: 고른 거래처·기사·차량 → 정식(약속일·거점별) + 임시(한 건). 이미 정식 지시에 있는 운송장과, 이미 임시 지시에 있는 미배정 운송장은 기본으로 뺀다.
    임시 지시에 있던 운송장이라도 기사가 정해졌으면 정식으로 다시 등록한다 (결정 4: 새로 등록 + '임시' 표기) */
-function plan(){const R=regMap(),inF=w=>(R.get(w)||[]).some(e=>!e.tmp),inT=w=>(R.get(w)||[]).some(e=>e.tmp),skip=r=>S.noDup&&(inF(r.wb)||(!r.drv&&inT(r.wb)));
+/* v62 다시 피킹: 지시에 넣었지만 실물이 출고되지 않아 다시 꺼내야 하는 경우.
+   · 같은 약속일 지시에 이미 있으면 → 기본으로 뺀다(등록됨). 같은 날 다시 꺼내야 하면 그 차량의 [다시 피킹]으로 넣는다.
+   · 다른(지난) 약속일 지시에 있었는데 루티에서 아직 출고 전이면 → 약속일이 바뀐 미출고 건으로 보고 자동으로 넣는다.
+   두 경우 모두 지시서에 '재피킹 + 이전 지시'를 찍어 이전 지시와 구분한다. 이미 기사출고된 건은 조회 때 빠진다. */
+const lblOf=(e,r,dOf,grpTmp)=>{const same=e.dates.indexOf(dOf(r))>=0,nm=e.tmp?'임시'+e.n:e.n+'차';if(e.tmp&&!grpTmp&&same)return '임시'+e.n;if(!same)return '재피킹 '+md5(e.date)+' '+nm;if(S.force.has(r.on))return '재피킹 '+nm;return e.tmp?'임시'+e.n:String(e.n)};
+function plan(){const R=regMap(),dOf=r=>S.src==='date'?S.date:(r.ad||S.date),ents=r=>R.get(r.wb)||[],cur=r=>ents(r).filter(e=>e.dates.indexOf(dOf(r))>=0),prev=r=>ents(r).filter(e=>e.dates.indexOf(dOf(r))<0),
+ inF=r=>cur(r).some(e=>!e.tmp),inT=r=>cur(r).some(e=>e.tmp),skip=r=>S.noDup&&!S.force.has(r.on)&&(inF(r)||(!r.drv&&inT(r)));
  const vis=S.rows.filter(r=>S.sup.has(r.sup)&&S.drv.has(r.drv)),sel=vis.filter(r=>!S.off.has(r.on)&&!skip(r)),gone=vis.filter(r=>r.k==='ok'&&skip(r));
  const G=new Map();sel.forEach(r=>{const t=!r.drv,d=S.src==='date'?S.date:(r.ad||S.date),c=S.src==='date'&&S.center!==ALLC?S.center:(r.cen||S.center),k=t?'T|'+c:'F|'+d+'|'+c;let g=G.get(k);if(!g)G.set(k,g={k,tmp:t,date:d,center:c,rows:[]});g.rows.push(r)});
  const gs=[...G.values()].sort((a,b)=>cenC(a.center,b.center)||(a.tmp?1:0)-(b.tmp?1:0)||kc(a.date,b.date));
  gs.forEach(g=>{if(g.tmp&&S.src!=='date'){const ds=[...new Set(g.rows.map(r=>r.ad).filter(Boolean))].sort();g.date=ds[0]||S.date}
-  const D=new Map();g.rows.forEach(r=>{const a=R.get(r.wb);if(a)D.set(r.wb,a.map(e=>e.tmp?'임시'+e.n:String(e.n)))});
+  const D=new Map(),RE=new Map();g.rows.forEach(r=>{const a=ents(r);if(a.length){const L=[...new Set(a.map(e=>lblOf(e,r,dOf,g.tmp)))];D.set(r.wb,L);a.forEach(e=>{if(lblOf(e,r,dOf,g.tmp).indexOf('재피킹')===0&&r.k==='ok')RE.set(e.no,e)})}});
   g.ok=g.rows.filter(r=>r.k==='ok');{const dk=new Set(g.ok.map(r=>r.drv)),hasOk=new Set(S.rows.filter(r=>r.k==='ok').map(r=>r.drv));g.ex=g.rows.filter(r=>r.k!=='ok'&&(dk.has(r.drv)||!hasOk.has(r.drv)))}
   const same=m=>m&&m.date===g.date&&m.center===g.center&&!!m.tmp===g.tmp,sh=(S.shared||[]).filter(x=>same(x.M)),loc=allIssued().filter(x=>same(x.h.M));
   g.next=Math.max(0,...sh.map(x=>+x.n||0),...loc.map(x=>+x.h.n||0))+1;
   const H=g.tmp?[]:sh.filter(x=>!(x.fl||{}).cancel).map(x=>({n:x.n,at:String(x.M.issued||x.at||'')}));
-  g.V={H,D,no:g.next,vis:g.rows,ok:g.ok,ex:g.ex,dupN:g.ok.filter(r=>inF(r.wb)).length,fromT:g.tmp?0:g.ok.filter(r=>inT(r.wb)).length};
+  const has=(r,f)=>(D.get(r.wb)||[]).some(f);g.V={H,D,no:g.next,vis:g.rows,ok:g.ok,ex:g.ex,dupN:g.ok.filter(r=>has(r,x=>/^\d+$/.test(x))).length,fromT:g.tmp?0:g.ok.filter(r=>has(r,x=>/^임시/.test(x))).length,reN:g.ok.filter(r=>has(r,x=>/^재피킹/.test(x))).length,reFrom:[...RE.values()].map(regLab).join(', ')};
   g.M=model(g.V,{tmp:g.tmp,date:g.date,center:g.center,info:S.info,all:S.rows});g.cars=new Set(g.ok.map(vkey)).size});
- const reg=gs.filter(g=>g.ok.length);return{R,inF,inT,skip,vis,sel,gone,gs,reg,exA:[].concat(...reg.map(g=>g.ex))}}
+ const reg=gs.filter(g=>g.ok.length);return{R,dOf,ents,cur,prev,inF,inT,skip,vis,sel,gone,gs,reg,exA:[].concat(...reg.map(g=>g.ex)),reN:reg.reduce((a,g)=>a+g.V.reN,0)}}
 const md5=d=>d.slice(5).replace('-','/');
+/* 이미 등록된 지시 표시: 지시서 목록에 보이는 이름(없으면 지시번호) · 등록 시각 */
+const regLab=e=>(e.tmp?'임시 ':'')+(e.title||e.no)+' · '+String(e.at).slice(5,16).replace('-','/'),regTip=e=>e.no+' · '+(e.tmp?'임시 '+e.n:e.n+'차')+' · 등록 '+String(e.at).slice(0,16)+(e.who?' '+e.who:'');
 function emptyMsg(){return S.src==='rooty'?'<div id="msg">루티 [주문 조회 및 관리]에서 피킹할 건을 체크한 뒤 위의 [체크한 주문 읽기]를 누르세요.<br><small class="mu">기사가 있는 건은 정식 지시, 기사가 없는 건은 임시 지시로 나뉘어 한 번에 등록됩니다.</small></div>':'<div id="msg">약속일과 거점을 고르고 [조회]를 누르세요.<br><small class="mu">기사가 배정된 건을 정식 지시로 등록합니다. 기사 미배정 건은 왼쪽에서 따로 고르면 임시 지시로 함께 등록됩니다. 등록한 지시서는 창고의 [지시서 목록]에 바로 올라갑니다.</small></div>'}
-function flowHtml(P){const ok=S.rows.filter(r=>r.k==='ok'),exN=S.rows.length-ok.length,reg=ok.filter(r=>P.R.has(r.wb)).length,asg=S.rows.filter(r=>r.drv).length,W=new Set(S.rows.map(r=>r.wb));
+function flowHtml(P){const ok=S.rows.filter(r=>r.k==='ok'),exN=S.rows.length-ok.length,reg=ok.filter(r=>P.cur(r).length).length,asg=S.rows.filter(r=>r.drv).length,W=new Set(S.rows.map(r=>r.wb));
  const mine=(S.shared||[]).filter(x=>x.M&&!(x.fl||{}).cancel&&(S.src==='date'?(S.center===ALLC||x.M.center===S.center)&&(x.M.date===S.date||(x.M.dates||[]).indexOf(S.date)>=0):(x.items||[]).some(w=>W.has(w))));
  const pr=mine.filter(x=>(x.fl||{}).print).length,pk=mine.filter(x=>(x.checked||0)>0&&!((x.fl||{}).pick)&&(x.checked||0)<(x.cnt||(x.items||[]).length)).length;
  const s1=S.src==='date'?`<div class="stg"><span class="k">${esc(md5(S.date))} ${esc(S.center===ALLC?'전체 거점':S.center)} 주문</span><span class="v">${S.rows.length}<small>본 · 배정 ${asg} · 미배정 ${S.rows.length-asg}${S.out?' · 기사출고 '+S.out+' 제외':''}</small></span></div>`
@@ -295,17 +304,19 @@ function midHtml(P){const R=P.R,sk=P.skip,by=new Map(),U=S.rows.filter(r=>S.sup.
   const m=by.get(d),ons=[...m.keys()],all=[].concat(...m.values()),pick=ons.filter(o=>m.get(o).some(r=>r.k==='ok'&&!sk(r))),on=pick.filter(o=>!S.off.has(o)),L=all.filter(live),exN=all.filter(r=>r.k!=='ok').length,gN=all.filter(r=>r.k==='ok'&&sk(r)).length;
   h+=`<tr class="grp${d?'':' t'}"><td>${pick.length?`<input type="checkbox" data-d="${esc(d)}"${on.length===pick.length?' checked':on.length?' data-ind="1"':''} aria-label="${esc(d||'미배정')} 전체">`:''}</td><td colspan="6">${d?esc(d):'<b style="color:var(--crit)">기사 미배정</b> <span class="tg2 t">임시</span>'}<span class="sbt">${new Set(L.map(vkey)).size}대 ${L.length}본${exN?' · 예외 '+exN+'본':''}${gN?' · 등록됨 '+gN+'본':''}${d?'':' — 임시 지시로 따로 등록'}</span></td></tr>`;
   ons.sort((a,b)=>zc(m.get(a)[0].zone,m.get(b)[0].zone)||kc(m.get(a)[0].veh,m.get(b)[0].veh)).forEach(o=>{const a=m.get(o),ok=a.filter(r=>r.k==='ok'),pk=ok.filter(r=>!sk(r)),ex=a.filter(r=>r.k!=='ok'),r0=a[0],off=S.off.has(o);
-   const zs=[...new Set(a.map(r=>r.zone).filter(Boolean))],sz=[...new Set(a.map(r=>sizeOf(r.pn)))],tg=[],lab=w=>(R.get(w)||[]);
-   if(ok.length&&!pk.length){const L=[...new Set([].concat(...ok.map(r=>lab(r.wb).map(e=>e.tmp?'임시'+e.n:e.n+'차'))))];tg.push(`<span class="tg2 g">등록됨 ${esc(L.join(', '))}</span>`)}
+   const zs=[...new Set(a.map(r=>r.zone).filter(Boolean))],sz=[...new Set(a.map(r=>sizeOf(r.pn)))],tg=[],uniq=(L,f)=>{const E=new Map();L.forEach(r=>f(r).forEach(e=>E.set(e.no,e)));return [...E.values()].sort((x,y)=>kc(x.at,y.at))},forced=S.force.has(o);
+   if(ok.length&&!pk.length){const L=uniq(ok,P.cur);tg.push(`<span class="tg2 g" title="${esc(L.map(regTip).join('\n'))}">등록됨 · ${esc(L.map(regLab).join(', '))}</span>`)}
    if(ex.length)tg.push(`<span class="tg2 c">${[...new Set(ex.map(r=>r.k==='noinv'?'미입고':r.k==='creq'?'취소요청':(WS[r.ws]||r.ws)))].join('·')} ${ex.length}본${ok.length?'':' · 지시서 예외란'}</span>`);
-   const fd=pk.filter(r=>lab(r.wb).some(e=>!e.tmp)),ft=pk.filter(r=>lab(r.wb).some(e=>e.tmp));
-   if(fd.length)tg.push(`<span class="tg2 c">중복 ${fd.length}본</span>`);if(d&&ft.length)tg.push(`<span class="tg2 t">임시에 있던 ${ft.length}본</span>`);
+   const rp=pk.filter(r=>P.prev(r).length),fs=forced?pk.filter(r=>P.cur(r).length):[],fd=forced?[]:pk.filter(r=>P.cur(r).some(e=>!e.tmp)),ft=d?pk.filter(r=>P.cur(r).some(e=>e.tmp)):[];
+   if(rp.length){const L=uniq(rp,P.prev);tg.push(`<span class="tg2 w" title="${esc(L.map(regTip).join('\n'))}">다시 피킹 · 이전 ${esc(L.map(regLab).join(', '))} 미출고</span>`)}
+   if(fs.length){const L=uniq(fs,P.cur);tg.push(`<span class="tg2 w" title="${esc(L.map(regTip).join('\n'))}">다시 피킹 · ${esc(L.map(regLab).join(', '))}</span>`)}
+   if(fd.length)tg.push(`<span class="tg2 c">중복 ${fd.length}본</span>`);if(ft.length)tg.push(`<span class="tg2 t">임시에 있던 ${ft.length}본</span>`);
    if(!d)tg.push('<span class="tg2 t">기사 미정</span>');if(!zs.length&&pk.length)tg.push('<span class="tg2 w">존 미지정</span>');
    if(r0.sub)tg.push('<span class="tg2">서브 Y</span>');if(ok.some(r=>r.ri))tg.push('<span class="tg2">접수확정 · 재고위치</span>');if(a.some(r=>r.kp))tg.push('<span class="tg2">보관품</span>');
    [...new Set(a.map(r=>r.ot).filter(Boolean))].forEach(t=>tg.push(`<span class="tg2 w">${esc(t)}</span>`));if(multiC&&r0.cen)tg.push(`<span class="tg2${DIRECT.indexOf(r0.cen)>=0?' a':''}">${esc(r0.cen)}</span>`);if(multi)tg.push(`<span class="tg2 a">${esc([...new Set(a.map(r=>r.ad))].map(md5).join(', '))}</span>`);
-   const box=pk.length?`<input type="checkbox" data-o="${esc(o)}"${off?'':' checked'} aria-label="${esc(r0.veh)}">`:ex.length&&!ok.length?'<span class="tg2 c">예외</span>':'<span class="tg2 g">완료</span>';
+   const box=pk.length?`<input type="checkbox" data-o="${esc(o)}"${off?'':' checked'} aria-label="${esc(r0.veh)}">`:ex.length&&!ok.length?'<span class="tg2 c">예외</span>':`<button class="lk rp" data-force="${esc(o)}" title="이미 등록된 지시에서 실물이 나가지 않아 다시 꺼내야 할 때">다시 피킹</button>`;
    h+=`<tr class="${pk.length?(off?'off':''):'dim'}"><td>${box}</td><td><div class="vh">${esc(r0.veh)}</div><div class="sbt">${esc(r0.model||'')}</div></td><td>${esc(supS(r0.sup))}</td><td class="zn">${zs.length?esc(zs.join(', ')):'<span class="mu">–</span>'}</td><td>${esc(sz.join(' · '))}</td><td class="n">${pk.length||ok.length||ex.length}</td><td>${tg.join('')}</td></tr>`})});
- const nd=P.vis.filter(r=>r.k==='ok'&&(P.inF(r.wb)||(!r.drv&&P.inT(r.wb)))).length;
+ const nd=P.vis.filter(r=>r.k==='ok'&&!S.force.has(r.on)&&(P.inF(r)||(!r.drv&&P.inT(r)))).length;
  return `<div class="mh"><b>차량 ${selCars}대 선택</b><span class="mu">기사별 · 존코드 순</span><span class="sp"></span>${nd?`<label style="display:flex;gap:6px;align-items:center;font-size:12.5px"><input type="checkbox" id="nd"${S.noDup?' checked':''}> 이미 등록한 운송장 빼기 (${nd}본)</label>`:''}<button class="lk" data-prev>A4 미리보기</button><button class="lk" data-xl>엑셀로 저장</button></div>
  <div class="tw"><table class="rt"><thead><tr><th><span class="mu">선택</span></th><th>차량</th><th>거래처</th><th>존</th><th>제품</th><th class="n">본</th><th>확인</th></tr></thead><tbody>${h||'<tr><td colspan="7" class="mu" style="padding:24px;text-align:center">고른 거래처·기사에 해당하는 주문이 없습니다.</td></tr>'}</tbody></table></div>
  ${S.out||(S.info&&S.info.other)?`<div class="ft2">${S.out?'이미 기사출고한 '+S.out+'본은 목록에서 뺐습니다.':''}${S.info&&S.info.other?` 피킹 대상(교체출고·단순배송·방문설치)이 아닌 ${S.info.other}건${S.info.rec?' (교체회수 '+S.info.rec+'건 포함)':''}은 뺐습니다.`:''}${S.info&&S.info.noWb?` 운송장 없는 접수대기 ${S.info.noWb}건 제외.`:''}</div>`:''}`}
@@ -319,7 +330,8 @@ function rightHtml(P){const gs=P.reg,F=gs.filter(g=>!g.tmp),exA=P.exA,noZ=P.sel.
  const w=[];if(exA.length){const v=cars(exA);w.push(`<div><span class="tg2 c">예외 ${exA.length}본</span>${esc(v.slice(0,3).join(', '))}${v.length>3?' 외 '+(v.length-3)+'대':''} — 꺼낼 수 없음 (지시서 예외란)</div>`)}
  if(noZ.length){const v=cars(noZ);w.push(`<div><span class="tg2 w">존 ${noZ.length}본</span>${esc(v.slice(0,3).join(', '))}${v.length>3?' 외 '+(v.length-3)+'대':''} 존 미지정</div>`)}
  if(S.gas&&!S.shared)w.push(`<div><span class="tg2 c">확인 필요</span>창고 지시서 목록을 못 불러와 이미 등록된 운송장을 빼지 못했습니다${S.shErr?' ('+esc(S.shErr)+')':''} <button class="lk" data-reshare>다시 불러오기</button></div>`);
- if(P.gone.length)w.push(`<div><span class="tg2 g">등록됨 ${P.gone.length}본</span>이미 등록된 지시에 있어 뺐습니다 <button class="lk" data-nd="0">포함하기</button></div>`);
+ if(P.reN)w.push(`<div><span class="tg2 w">다시 피킹 ${P.reN}본</span>이전 지시에 있었지만 아직 출고 전이라 다시 넣었습니다. 지시서에 '재피킹 + 이전 지시'로 찍힙니다.</div>`);
+ if(P.gone.length){const E=new Map();P.gone.forEach(r=>P.cur(r).forEach(e=>E.set(e.no,e)));const L=[...E.values()].sort((a,b)=>kc(a.at,b.at));w.push(`<div><span class="tg2 g">등록됨 ${P.gone.length}본</span>이미 등록된 지시 ${L.length}건(${esc(L.slice(0,2).map(regLab).join(', '))}${L.length>2?' 외 '+(L.length-2)+'건':''})에 있어 뺐습니다. 실물이 나가지 않아 다시 꺼낼 차량은 표에서 [다시 피킹]을 누르세요.</div>`)}
  if(!S.noDup)w.push('<div><span class="tg2 c">중복 포함</span>이미 등록한 운송장도 넣습니다 <button class="lk" data-nd="1">다시 빼기</button></div>');
  if(w.length)h+=`<div class="wl">${w.join('')}</div>`;
  h+=`<div class="fx"><span class="lb">피킹 마감</span><select id="due">${Array.from({length:48},(_,i)=>pad(i>>1)+':'+(i%2?'30':'00')).map(x=>`<option${x===S.due?' selected':''}>${x}</option>`).join('')}</select><span class="lb">지시서 이름</span><input id="ttl" maxlength="40" placeholder="선택 · 예: 토요일 오전분" value="${esc(S.title||'')}"><span class="lb">등록자</span><input id="who" maxlength="20" placeholder="필수" value="${esc(S.who||'')}" class="${S.who?'':'req'}"></div>
@@ -371,7 +383,7 @@ function donePrint(i){const M=S.done&&S.done[i];if(!M)return;printM(M);M._pr=1;
 $('#main').addEventListener('change',e=>{if(S.tab!=='make')return;const t=e.target,d=t.dataset;
  if(d.fs!==undefined){t.checked?S.sup.add(d.fs):S.sup.delete(d.fs);render();return}
  if(d.fd!==undefined||d.d!==undefined){const v=d.fd!==undefined?d.fd:d.d;if(!setDrv(v,t.checked))t.checked=false;render();return}
- if(d.o!==undefined){t.checked?S.off.delete(d.o):S.off.add(d.o);const r0=S.rows.find(r=>r.on===d.o);if(r0&&!t.checked&&dState(r0.drv,plan())===0)setDrv(r0.drv,false);render();return}
+ if(d.o!==undefined){if(!t.checked&&S.force.has(d.o)){S.force.delete(d.o);render();return}t.checked?S.off.delete(d.o):S.off.add(d.o);const r0=S.rows.find(r=>r.on===d.o);if(r0&&!t.checked&&dState(r0.drv,plan())===0)setDrv(r0.drv,false);render();return}
  if(d.ship!==undefined){S.ship[d.ship]=t.value;render();return}
  if(t.id==='nd'){S.noDup=t.checked;render();return}
  if(t.id==='due'){S.due=t.value;LS('due',S.due);return}
@@ -381,6 +393,7 @@ $('#main').addEventListener('click',e=>{if(S.tab!=='make')return;const t=e.targe
  if(d.all==='drv'){const U=[...new Set(S.rows.filter(r=>S.sup.has(r.sup)).map(r=>r.drv))],A=U.filter(Boolean),on=A.length&&A.every(v=>dState(v,S.P)===2);if(on)U.forEach(v=>setDrv(v,false));else A.forEach(v=>setDrv(v,true));render();return}
  if(d.all){const k=d.all,U=k==='sup'?[...new Set(S.rows.map(r=>r.sup))]:[...new Set(S.rows.filter(r=>S.sup.has(r.sup)).map(r=>r.drv))],on=U.length&&U.every(v=>S[k].has(v));U.forEach(v=>on?S[k].delete(v):S[k].add(v));render();return}
  if(d.nd!==undefined){S.noDup=d.nd==='1';render();return}
+ if(d.force!==undefined){S.force.add(d.force);S.off.delete(d.force);render();return}
  if(d.reshare!==undefined){t.disabled=true;t.textContent='불러오는 중…';fetchShared().then(ok=>{$('#st').textContent=(S.shErr?'⚠ 창고 목록 못 불러옴 · ':'')+$('#st').textContent.replace(/^⚠ [^·]*· /,'');snap();render();if(!ok)alert('창고 지시서 목록을 다시 불러오지 못했습니다: '+S.shErr)});return}
  if(t.id==='reg'){doRegister(t);return}
  if(d.prev!==undefined){preview();return}
@@ -399,16 +412,16 @@ function rootyBadge(){let n=0;try{const W=window.opener;if(W&&!W.closed&&W.locat
 const NO=(c,d,no)=>'PK-'+d.replace(/-/g,'')+'-'+c.replace(/FDC.*/,'')+'-'+pad(no);
 /* v58: 지시 한 건의 내용 — C = {tmp, date, center, info(루티 체크 건수), all(전체 행)} */
 function model(V,C){C=C||{tmp:false,date:S.date,center:S.center,info:null,all:S.rows};const G=new Map();
- V.ok.forEach(r=>{const key=r.on+'|'+r.zone+'|'+r.pn+'|'+r.ad+'|'+(r.ot||'')+'|'+(r.kp?'K':'');let g=G.get(key);if(!g)G.set(key,g={zone:r.zone,veh:r.veh,model:r.model,sup:r.sup,pn:r.pn,drv:r.drv,sub:r.sub,ad:r.ad,ot:r.ot||'',on:r.on,w:[],dup:[],ri:0,kp:r.kp?1:0,xw:{}});if(r.kp)g.xw[r.wb]=r.xw||'';g.w.push(r.wb);if(r.ri)g.ri++;(V.D.get(r.wb)||[]).forEach(n=>{if(g.dup.indexOf(n)<0)g.dup.push(n)})});
+ V.ok.forEach(r=>{const dl=V.D.get(r.wb)||[],re=dl.filter(x=>/^재피킹/.test(x)),ot=re.concat(r.ot?[r.ot]:[]).join(' · '),key=r.on+'|'+r.zone+'|'+r.pn+'|'+r.ad+'|'+ot+'|'+(r.kp?'K':'');let g=G.get(key);if(!g)G.set(key,g={zone:r.zone,veh:r.veh,model:r.model,sup:r.sup,pn:r.pn,drv:r.drv,sub:r.sub,ad:r.ad,ot,on:r.on,w:[],dup:[],ri:0,kp:r.kp?1:0,xw:{}});if(r.kp)g.xw[r.wb]=r.xw||'';g.w.push(r.wb);if(r.ri)g.ri++;dl.filter(x=>!/^재피킹/.test(x)).forEach(n=>{if(g.dup.indexOf(n)<0)g.dup.push(n)})});
  const lines=[...G.values()].sort((a,b)=>zc(a.zone,b.zone)||kc(a.veh,b.veh)||kc(a.pn,b.pn));lines.forEach(g=>{g.w.sort();g.dup.sort((a,b)=>kc(a,b))});
  const exm=new Map();V.ex.forEach(r=>{const k=[r.k==='noinv'?'미입고':'취소요청',r.drv,r.sup,r.veh,r.pn,WS[r.ws]||r.ws].join('|');exm.set(k,(exm.get(k)||0)+1)});
  const all=C.all||[],U=all.filter(r=>S.sup.has(r.sup)&&!r.drv===!!C.tmp&&(!r.cen||r.cen===C.center)),allD=[...new Set(U.map(r=>r.drv))].every(d=>S.drv.has(d)),allS=new Set(all.map(r=>r.sup)).size===S.sup.size,dset=[...new Set(V.ok.map(r=>r.drv))].sort(kc);
  const ds=[...new Set(V.ok.map(r=>r.ad).filter(Boolean))].sort(),c0=String(C.center).replace(/FDC.*/,'').split(',')[0];
  return{v:2,tmp:!!C.tmp,tmpInfo:C.tmp?C.info:null,dates:ds,no:(C.tmp?'TMP-':'PK-')+C.date.replace(/-/g,'')+'-'+c0+'-'+pad(V.no),n:V.no,date:C.date,center:C.center,at:S.at,issued:'',who:S.who,due:S.due||'',
   drvLabel:C.tmp?'기사 미정':dset.length<=3?dset.join(', '):allD?'전체 '+dset.length+'명':dset.slice(0,2).join(', ')+' 외 '+(dset.length-2)+'명',supLabel:allS?'전체':[...S.sup].sort(kc).join(', '),lines,ex:[...exm.entries()].map(([k,n])=>k.split('|').concat([n])),
-  dupN:V.dupN,fromT:V.fromT||0,prev:V.H.map(x=>x.n+'차 '+String(x.at).slice(5,16)).join(', '),un:S.un,out:S.out}}
+  dupN:V.dupN,fromT:V.fromT||0,reN:V.reN||0,reFrom:V.reFrom||'',prev:V.H.map(x=>x.n+'차 '+String(x.at).slice(5,16)).join(', '),un:S.un,out:S.out}}
 /* 이전 등록 표기: 정식 차수는 "중복1·2", 임시에서 넘어온 건은 "임시1" */
-const dupTag=a=>{if(!a||!a.length)return '';const f=a.filter(x=>!/^임시/.test(x)),t=a.filter(x=>/^임시/.test(x));return `<span class="tg">${f.length?'중복'+f.join('·'):''}${f.length&&t.length?' ':''}${t.join('·')}</span>`};
+const dupTag=a=>{if(!a||!a.length)return '';const f=a.filter(x=>/^\d+$/.test(x)),o=a.filter(x=>!/^\d+$/.test(x));return `<span class="tg">${[f.length?'중복'+f.join('·'):''].concat(o).filter(Boolean).join(' ')}</span>`};
 const SZ=/(\d{3}\/\d{2}Z?R\d{2})/;
 function pnParts(pn,veh){let p=String(pn||'');if(veh)p=p.split(veh).join('').trim();const i=p.indexOf('_'),main=(i>=0?p.slice(0,i):p).trim(),tail=i>=0?p.slice(i+1).trim():'';return{main,tail}}
 const pnHtml=(pn,veh)=>{const x=pnParts(pn,veh);return esc(x.main||pn).replace(SZ,'<b>$1</b>')+(x.tail?` <span class="g">${esc(x.tail)}</span>`:'')};
@@ -429,7 +442,7 @@ function sheet(M){{const all=M.lines.filter(g=>!g.kp).flatMap(g=>g.w);let p=all[
  const dn=d=>d||'미배정',ml=(M.dates||[]).length>1;
  let h=`<div class="sheet cp${M.tmp?' tmp':''}"><div class="hd"><div><h3>${M.tmp?'<span class="tmpb">임시</span> ':''}${M.title?esc(M.title)+' <span class="dk">피킹 지시서</span>':'피킹 지시서'}${M.tmp?' <span style="font-size:13px;font-weight:600">— '+(M.tmpInfo?'루티 화면 체크건 · 기사 배정 전':'기사 미배정 건 · 기사 배정 전')+'</span>':''}</h3><small>${M.tmp?(M.tmpInfo?'루티 화면 체크건 · 기사 배정 전 포함':'기사 미배정분'):'기사 배정분'} · 입고완료 + 접수확정(재고위치=거점) · 조회 ${esc(M.at)} · ${M.issued?(M.v>=2?'등록 ':'발행 ')+esc(M.issued):'등록 전 미리보기'}${M.who?' · '+esc(M.who):''}</small></div><div class="no">${esc(M.no)}<b>${M.tmp?(M.issued?'임시 '+M.n+'차':'임시 (등록 전)'):M.n+'차'+(M.issued?'':' (등록 전)')}</b></div></div>
  <div class="meta"><div class="big"><span>출고예정일 (약속일)</span><b>${ml?esc(M.dates[0].slice(5)+' ~ '+M.dates[M.dates.length-1].slice(5))+' <span style="font-size:11px">(여러 날짜)</span>':M.date+' ('+dow(M.date)+')'}</b></div><div><span>거점</span><b>${esc(M.center)}</b></div><div><span>거래처</span><b>${esc(M.supLabel||'전체')}</b></div><div><span>기사 (메인)</span><b>${esc(M.drvLabel)}</b></div><div><span>피킹 마감</span><b>${esc(M.due||'-')}</b></div></div>
- <div class="sm"><span>기사 <b>${dl.filter(Boolean).length}</b>명${dl.includes('')?' + 미배정':''}</span><span>차량 <b>${cars}</b>대</span><span>운송장 <b>${tot}</b>본</span><span>존 <b>${zn}</b>곳</span>${M.dupN?`<span class="dw">⚠ 이전 ${M.v>=2?'등록':'발행'}분 ${M.dupN}본 포함 — ${esc(M.prev)}</span>`:''}${M.fromT?`<span class="dw">임시 지시에 있던 ${M.fromT}본 포함 — 이미 꺼냈을 수 있음 (표의 '임시' 표시)</span>`:''}</div>${shipHtml(M)}${memoHtml(M)}`;
+ <div class="sm"><span>기사 <b>${dl.filter(Boolean).length}</b>명${dl.includes('')?' + 미배정':''}</span><span>차량 <b>${cars}</b>대</span><span>운송장 <b>${tot}</b>본</span><span>존 <b>${zn}</b>곳</span>${M.dupN?`<span class="dw">⚠ 이전 ${M.v>=2?'등록':'발행'}분 ${M.dupN}본 포함 — ${esc(M.prev)}</span>`:''}${M.fromT?`<span class="dw">임시 지시에 있던 ${M.fromT}본 포함 — 이미 꺼냈을 수 있음 (표의 '임시' 표시)</span>`:''}${M.reN?`<span class="dw">재피킹 ${M.reN}본 — 이전 지시에서 출고되지 않아 다시 꺼냄 (${esc(M.reFrom)})</span>`:''}</div>${shipHtml(M)}${memoHtml(M)}`;
  if(!lines.length)h+='<p>피킹할 대상이 없습니다.</p>';
  else{const span=[];for(let i=0;i<lines.length;){let j=i;while(j<lines.length&&lines[j].zone===lines[i].zone)j++;span[i]=j-i;for(let k=i+1;k<j;k++)span[k]=0;i=j}
   h+=`<h4>① 피킹 동선표 — 존코드 순으로 찾아가 꺼내기 (운송장 꺼내면 □ 체크)${GP?` <span class="g" style="font-weight:400">· 운송장 앞자리 <b>${esc(GP)}</b> 생략 · 회색 = 공통 앞자리, 굵게 = 끝 4자리</span>`:''}</h4><table class="t1"><colgroup><col style="width:4%"><col style="width:10%"><col style="width:13%"><col style="width:7.5%"><col><col style="width:4.5%"><col style="width:10%"><col style="width:24%"></colgroup>
@@ -753,7 +766,7 @@ async function loadRooty(){const W=window.opener,m=t=>{$('#flow').hidden=true;$(
   it.forEach(x=>{if(!PICK_TYPES.has(x.serviceMethod)){I.other++;if(x.serviceMethod==='교체회수')I.rec++;return}const y=slim(x);if(y.k==='cx'){I.cx++;return}
    if(y.drv){if(y.k==='out'){I.out++;return}rows.push(y);return}
    if(y.k==='out'){y.k='ok';y.ot='출고건·'+(OUTS.indexOf(x.waybillStatus)>=0?(WS[x.waybillStatus]||'출고'):'출고일 '+String(x.driverOutboundCompletedDate||'').slice(5,10))}else if(y.k==='noinv'){I.ni++;y.k='ok';y.ot='미입고'}else if(y.k==='creq'){I.cq++;y.k='ok';y.ot='취소요청'}rows.push(y)});
-  S.rows=rows;S.info=I;S.un=rows.filter(r=>!r.drv).length;S.out=I.out;S.at=nowS();S.off=new Set();S.drv=new Set(rows.map(r=>r.drv));S.sup=new Set(rows.map(r=>r.sup));S.ship={};
+  S.rows=rows;S.info=I;S.un=rows.filter(r=>!r.drv).length;S.out=I.out;S.at=nowS();S.off=new Set();S.force=new Set();S.drv=new Set(rows.map(r=>r.drv));S.sup=new Set(rows.map(r=>r.sup));S.ship={};
   const cs=[...new Set(rows.map(r=>r.cen).filter(Boolean))],ds=[...new Set(rows.map(r=>r.ad).filter(Boolean))].sort();S.center=cs.join(', ')||S.center;S.date=ds[0]||S.date;S.shared=null;
   await fetchShared();
   S.busy=false;$('#st').textContent=(S.shErr?'⚠ 창고 목록 못 불러옴 · ':'')+'루티 체크 '+I.badge+'건 · '+S.at.slice(5);rootyBadge();snap();render()}
