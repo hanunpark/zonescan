@@ -1,6 +1,6 @@
-/* 피킹 지시서 v60 · 2026-11-28 — 루티 관리자 화면에서 북마크로 불러 씀 */
+/* 피킹 지시서 v61 · 2026-11-28 — 루티 관리자 화면에서 북마크로 불러 씀 */
 (function(){function pick(){
-const API='https://api-prod.flowfix.co.kr/api/v1/admin/orders',CK='flowfix-admin-access-token',VER='v60 · 2026-11-28',MOB='https://hanunpark.github.io/zonescan/pick.html',GAS0='https://script.google.com/macros/s/AKfycby33E3x2WOVkZd_Kh4LSumPMT-KKbNa292E9WNKKTdx40WjCxsVgpSTq2R7oJby6XDF/exec';
+const API='https://api-prod.flowfix.co.kr/api/v1/admin/orders',CK='flowfix-admin-access-token',VER='v61 · 2026-11-28',MOB='https://hanunpark.github.io/zonescan/pick.html',GAS0='https://script.google.com/macros/s/AKfycby33E3x2WOVkZd_Kh4LSumPMT-KKbNa292E9WNKKTdx40WjCxsVgpSTq2R7oJby6XDF/exec';
 const $=s=>document.querySelector(s),esc=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const LS=(k,v)=>{try{if(v===undefined)return JSON.parse(localStorage.getItem('tcpk_'+k)||'null');if(v===null)localStorage.removeItem('tcpk_'+k);else localStorage.setItem('tcpk_'+k,JSON.stringify(v))}catch(e){return null}};
 const pad=n=>String(n).padStart(2,'0'),ymd=d=>d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());
@@ -193,7 +193,10 @@ document.body.innerHTML=`<div class="bar noprint"><div class="ttl"><b>피킹 지
 <div id="flow" class="noprint" hidden></div><div id="opt" hidden></div><div id="sum" class="noprint"></div><div id="dup" class="noprint" hidden></div>
 <div id="main"></div>`;
 $('#dt').value=S.date;
-const fillCen=L=>{$('#cen').innerHTML=L.map(c=>`<option${c===S.center?' selected':''}>${esc(c)}</option>`).join('')};
+/* v61: 거점 목록 — 맨 위 '전체 거점', 그다음 직영 창고(운영 중인 센터) 묶음, 나머지는 '그 외 거점' */
+const ALLC='전체',DIRECT=['일산FDC','청주FDC(B2B)','전주FDC','경산FDC','원주FDC(B2B)'],cenOrd=c=>{const i=DIRECT.indexOf(c);return i<0?99:i},cenC=(a,b)=>cenOrd(a)-cenOrd(b)||kc(a,b);
+const fillCen=L=>{const o=v=>`<option value="${esc(v)}"${v===S.center?' selected':''}>${esc(v===ALLC?'전체 거점':v)}</option>`,rest=[...new Set(L)].filter(c=>c&&DIRECT.indexOf(c)<0).sort(kc);
+ $('#cen').innerHTML=o(ALLC)+`<optgroup label="직영 창고">${DIRECT.map(o).join('')}</optgroup><optgroup label="그 외 거점">${rest.map(o).join('')}</optgroup>`};
 fillCen(CEN0);
 api('/filter-options','?driverUnassignedOnly=false').then(d=>{const L=(d.centerName||[]).map(x=>typeof x==='string'?x:String(x&&(x.name||x.value)||'')).filter(Boolean);if(L.length)fillCen(L)}).catch(()=>{});
 
@@ -223,10 +226,10 @@ const lcnt=()=>{$('#lc').textContent='('+allIssued().length+')'};lcnt();
 
 /* v58: 약속일·거점 조회 — 기사 배정분(정식)과 미배정분(임시)을 함께 받는다. 이미 기사출고한 건만 뺀다 */
 async function load(){if(S.busy)return;S.busy=true;S.date=$('#dt').value;S.center=$('#cen').value;LS('center',S.center);S.src='date';S.done=null;srcUI();$('#st').textContent='불러오는 중…';
- try{const q='?driverUnassignedOnly=false&from='+S.date+'&to='+S.date+'&dateType=orderAppointedDate&centerNames='+encodeURIComponent(S.center)+'&size=1000';
+ try{const q='?driverUnassignedOnly=false&from='+S.date+'&to='+S.date+'&dateType=orderAppointedDate'+(S.center===ALLC?'':'&centerNames='+encodeURIComponent(S.center))+'&size=1000';
   let p=1,tp=1;const R=[];let un=0,out=0;
-  do{if(p>1)await new Promise(z=>setTimeout(z,300));const d=await api('',q+'&page='+p);tp=Math.min(d.totalPages||1,20);
-   for(const it of d.items||[]){if(!PICK_TYPES.has(it.serviceMethod)||(it.centerName&&it.centerName!==S.center))continue;const x=slim(it);
+  do{if(p>1)await new Promise(z=>setTimeout(z,300));const d=await api('',q+'&page='+p);tp=Math.min(d.totalPages||1,40);
+   for(const it of d.items||[]){if(!PICK_TYPES.has(it.serviceMethod)||(S.center!==ALLC&&it.centerName&&it.centerName!==S.center))continue;const x=slim(it);
     if(x.k==='cx')continue;if(x.k==='out'){out++;continue}if(!x.drv)un++;R.push(x)}p++}while(p<=tp);
   S.rows=R;S.un=un;S.out=out;S.at=nowS();S.off=new Set();S.drv=new Set(R.map(r=>r.drv).filter(Boolean));S.sup=new Set(R.map(r=>r.sup));S.shared=null;S.info=null;S.ship={};
   await fetchShared();
@@ -238,7 +241,7 @@ S.src='date';S.noDup=true;S.ship={};S.due=LS('due')||'08:00';S.title='';S.done=n
 const vkey=r=>String(r.veh||'').replace(/\s/g,'')||r.on;
 const SNK=['rows','un','out','at','drv','sup','off','center','date','shared','shErr','info','ship','done','stTxt'];
 /* 창고 지시서 목록(공유) 받기 — 이미 등록된 운송장을 빼는 데 씀. 실패하면 이유를 남기고 [다시 불러오기] */
-async function fetchShared(){if(!S.gas){S.shErr='';return true}let q;if(S.src==='date')q='a=list&c='+encodeURIComponent(S.center)+'&from='+addD(S.date,-3)+'&to='+S.date;else{const ds=[...new Set(S.rows.map(r=>r.ad).filter(Boolean))].sort();q='a=list&from='+addD(ds[0]||S.date,-3)+'&to='+(ds[ds.length-1]||S.date)}
+async function fetchShared(){if(!S.gas){S.shErr='';return true}let q;if(S.src==='date')q='a=list'+(S.center===ALLC?'':'&c='+encodeURIComponent(S.center))+'&from='+addD(S.date,-3)+'&to='+S.date;else{const ds=[...new Set(S.rows.map(r=>r.ad).filter(Boolean))].sort();q='a=list&from='+addD(ds[0]||S.date,-3)+'&to='+(ds[ds.length-1]||S.date)}
  try{S.shared=(await gget(q)).items;S.shErr='';return true}catch(e){S.shared=null;S.shErr=e.message||'알 수 없는 오류';return false}}
 /* 기사 선택 상태: 0 해제 · 1 일부(차량 일부만) · 2 전체 — 왼쪽 목록과 표의 기사 줄이 같은 상태를 씀 */
 function pickOns(d,P){const sk=(P||S.P||{}).skip||(()=>false);return [...new Set(S.rows.filter(r=>r.drv===d&&S.sup.has(r.sup)&&r.k==='ok'&&!sk(r)).map(r=>r.on))]}
@@ -259,9 +262,9 @@ function regMap(){const M=new Map(),add=(w,e)=>{let a=M.get(w);if(!a)M.set(w,a=[
    임시 지시에 있던 운송장이라도 기사가 정해졌으면 정식으로 다시 등록한다 (결정 4: 새로 등록 + '임시' 표기) */
 function plan(){const R=regMap(),inF=w=>(R.get(w)||[]).some(e=>!e.tmp),inT=w=>(R.get(w)||[]).some(e=>e.tmp),skip=r=>S.noDup&&(inF(r.wb)||(!r.drv&&inT(r.wb)));
  const vis=S.rows.filter(r=>S.sup.has(r.sup)&&S.drv.has(r.drv)),sel=vis.filter(r=>!S.off.has(r.on)&&!skip(r)),gone=vis.filter(r=>r.k==='ok'&&skip(r));
- const G=new Map();sel.forEach(r=>{const t=!r.drv,d=S.src==='date'?S.date:(r.ad||S.date),c=S.src==='date'?S.center:(r.cen||S.center),k=t?'T':'F|'+d+'|'+c;let g=G.get(k);if(!g)G.set(k,g={k,tmp:t,date:d,center:c,rows:[]});g.rows.push(r)});
- const gs=[...G.values()].sort((a,b)=>(a.tmp?1:0)-(b.tmp?1:0)||kc(a.date,b.date)||kc(a.center,b.center));
- gs.forEach(g=>{if(g.tmp&&S.src!=='date'){const cs=[...new Set(g.rows.map(r=>r.cen).filter(Boolean))],ds=[...new Set(g.rows.map(r=>r.ad).filter(Boolean))].sort();g.center=cs.join(', ')||S.center;g.date=ds[0]||S.date}
+ const G=new Map();sel.forEach(r=>{const t=!r.drv,d=S.src==='date'?S.date:(r.ad||S.date),c=S.src==='date'&&S.center!==ALLC?S.center:(r.cen||S.center),k=t?'T|'+c:'F|'+d+'|'+c;let g=G.get(k);if(!g)G.set(k,g={k,tmp:t,date:d,center:c,rows:[]});g.rows.push(r)});
+ const gs=[...G.values()].sort((a,b)=>cenC(a.center,b.center)||(a.tmp?1:0)-(b.tmp?1:0)||kc(a.date,b.date));
+ gs.forEach(g=>{if(g.tmp&&S.src!=='date'){const ds=[...new Set(g.rows.map(r=>r.ad).filter(Boolean))].sort();g.date=ds[0]||S.date}
   const D=new Map();g.rows.forEach(r=>{const a=R.get(r.wb);if(a)D.set(r.wb,a.map(e=>e.tmp?'임시'+e.n:String(e.n)))});
   g.ok=g.rows.filter(r=>r.k==='ok');{const dk=new Set(g.ok.map(r=>r.drv)),hasOk=new Set(S.rows.filter(r=>r.k==='ok').map(r=>r.drv));g.ex=g.rows.filter(r=>r.k!=='ok'&&(dk.has(r.drv)||!hasOk.has(r.drv)))}
   const same=m=>m&&m.date===g.date&&m.center===g.center&&!!m.tmp===g.tmp,sh=(S.shared||[]).filter(x=>same(x.M)),loc=allIssued().filter(x=>same(x.h.M));
@@ -273,9 +276,9 @@ function plan(){const R=regMap(),inF=w=>(R.get(w)||[]).some(e=>!e.tmp),inT=w=>(R
 const md5=d=>d.slice(5).replace('-','/');
 function emptyMsg(){return S.src==='rooty'?'<div id="msg">루티 [주문 조회 및 관리]에서 피킹할 건을 체크한 뒤 위의 [체크한 주문 읽기]를 누르세요.<br><small class="mu">기사가 있는 건은 정식 지시, 기사가 없는 건은 임시 지시로 나뉘어 한 번에 등록됩니다.</small></div>':'<div id="msg">약속일과 거점을 고르고 [조회]를 누르세요.<br><small class="mu">기사가 배정된 건을 정식 지시로 등록합니다. 기사 미배정 건은 왼쪽에서 따로 고르면 임시 지시로 함께 등록됩니다. 등록한 지시서는 창고의 [지시서 목록]에 바로 올라갑니다.</small></div>'}
 function flowHtml(P){const ok=S.rows.filter(r=>r.k==='ok'),exN=S.rows.length-ok.length,reg=ok.filter(r=>P.R.has(r.wb)).length,asg=S.rows.filter(r=>r.drv).length,W=new Set(S.rows.map(r=>r.wb));
- const mine=(S.shared||[]).filter(x=>x.M&&!(x.fl||{}).cancel&&(S.src==='date'?x.M.center===S.center&&(x.M.date===S.date||(x.M.dates||[]).indexOf(S.date)>=0):(x.items||[]).some(w=>W.has(w))));
+ const mine=(S.shared||[]).filter(x=>x.M&&!(x.fl||{}).cancel&&(S.src==='date'?(S.center===ALLC||x.M.center===S.center)&&(x.M.date===S.date||(x.M.dates||[]).indexOf(S.date)>=0):(x.items||[]).some(w=>W.has(w))));
  const pr=mine.filter(x=>(x.fl||{}).print).length,pk=mine.filter(x=>(x.checked||0)>0&&!((x.fl||{}).pick)&&(x.checked||0)<(x.cnt||(x.items||[]).length)).length;
- const s1=S.src==='date'?`<div class="stg"><span class="k">${esc(md5(S.date))} ${esc(S.center)} 주문</span><span class="v">${S.rows.length}<small>본 · 배정 ${asg} · 미배정 ${S.rows.length-asg}${S.out?' · 기사출고 '+S.out+' 제외':''}</small></span></div>`
+ const s1=S.src==='date'?`<div class="stg"><span class="k">${esc(md5(S.date))} ${esc(S.center===ALLC?'전체 거점':S.center)} 주문</span><span class="v">${S.rows.length}<small>본 · 배정 ${asg} · 미배정 ${S.rows.length-asg}${S.out?' · 기사출고 '+S.out+' 제외':''}</small></span></div>`
   :`<div class="stg"><span class="k">루티에서 체크한 주문</span><span class="v">${S.info?S.info.badge:S.rows.length}<small>건 · 피킹 대상 ${S.rows.length}본</small></span></div>`;
  return s1+`<span class="ar">→</span><div class="stg cur"><span class="k">지시 등록</span><span class="v">${reg}<small> / ${ok.length}본 등록됨${exN?' · 예외 '+exN+'본 제외':''}</small></span></div><span class="ar">→</span><button class="stg" data-goto="list" title="지시서 목록으로"><span class="k">지시서 (창고 작업)</span><span class="v">${S.shared?mine.length:'–'}<small>건${S.shared?' · 인쇄 '+pr+' · 피킹 중 '+pk:''}</small></span></button>`}
 function leftHtml(P){const cS=new Map(),cD=new Map(),acc=(m,k,r)=>{let a=m.get(k);if(!a)m.set(k,a={c:new Set(),n:0});a.c.add(vkey(r));a.n++};
@@ -286,7 +289,7 @@ function leftHtml(P){const cS=new Map(),cD=new Map(),acc=(m,k,r)=>{let a=m.get(k
  <div class="gh2"><b>기사 (메인기사)</b><button class="lk" data-all="drv">${allD?'모두 해제':'모두 선택'}</button></div>${dl.map(v=>lab('data-fd',v,v?esc(v):'기사 미배정 <small>(임시)</small>',cD.get(v),v?'':'un')).join('')||'<p>거래처를 고르세요.</p>'}<hr>
  <p>기사 미배정은 기본으로 빠져 있습니다. 고르면 <b>임시 지시(TMP)</b>로 따로 등록됩니다. ${S.noDup?'이미 등록된 운송장은 자동으로 빠집니다.':'<b>이미 등록된 운송장도 포함합니다</b> (지시서에 중복 표기).'}</p>`}
 function midHtml(P){const R=P.R,sk=P.skip,by=new Map(),U=S.rows.filter(r=>S.sup.has(r.sup)),off0=new Map();U.forEach(r=>{if(!S.drv.has(r.drv)){const a=off0.get(r.drv)||[];a.push(r);off0.set(r.drv,a)}});P.vis.forEach(r=>{if(!by.has(r.drv))by.set(r.drv,new Map());const m=by.get(r.drv);if(!m.has(r.on))m.set(r.on,[]);m.get(r.on).push(r)});
- const ds=[...new Set([...by.keys(),...off0.keys()])].sort((a,b)=>a?(b?kc(a,b):-1):1),multi=new Set(P.vis.map(r=>r.ad)).size>1,live=r=>r.k==='ok'&&!sk(r)&&!S.off.has(r.on),selCars=new Set(P.vis.filter(live).map(vkey)).size;
+ const ds=[...new Set([...by.keys(),...off0.keys()])].sort((a,b)=>a?(b?kc(a,b):-1):1),multi=new Set(P.vis.map(r=>r.ad)).size>1,multiC=new Set(P.vis.map(r=>r.cen)).size>1,live=r=>r.k==='ok'&&!sk(r)&&!S.off.has(r.on),selCars=new Set(P.vis.filter(live).map(vkey)).size;
  let h='';
  ds.forEach(d=>{if(!S.drv.has(d)){const a=off0.get(d)||[],ok=a.filter(r=>r.k==='ok');h+=`<tr class="grp off${d?'':' t'}"><td><input type="checkbox" data-d="${esc(d)}" aria-label="${esc(d||'미배정')} 선택"></td><td colspan="6">${d?esc(d):'<b style="color:var(--crit)">기사 미배정</b> <span class="tg2 t">임시</span>'}<span class="sbt">선택 안 함 · ${new Set(ok.map(vkey)).size}대 ${ok.length}본${a.length>ok.length?' · 예외 '+(a.length-ok.length)+'본':''}${d?'':' — 고르면 임시 지시로 따로 등록'}</span></td></tr>`;return}
   const m=by.get(d),ons=[...m.keys()],all=[].concat(...m.values()),pick=ons.filter(o=>m.get(o).some(r=>r.k==='ok'&&!sk(r))),on=pick.filter(o=>!S.off.has(o)),L=all.filter(live),exN=all.filter(r=>r.k!=='ok').length,gN=all.filter(r=>r.k==='ok'&&sk(r)).length;
@@ -299,7 +302,7 @@ function midHtml(P){const R=P.R,sk=P.skip,by=new Map(),U=S.rows.filter(r=>S.sup.
    if(fd.length)tg.push(`<span class="tg2 c">중복 ${fd.length}본</span>`);if(d&&ft.length)tg.push(`<span class="tg2 t">임시에 있던 ${ft.length}본</span>`);
    if(!d)tg.push('<span class="tg2 t">기사 미정</span>');if(!zs.length&&pk.length)tg.push('<span class="tg2 w">존 미지정</span>');
    if(r0.sub)tg.push('<span class="tg2">서브 Y</span>');if(ok.some(r=>r.ri))tg.push('<span class="tg2">접수확정 · 재고위치</span>');if(a.some(r=>r.kp))tg.push('<span class="tg2">보관품</span>');
-   [...new Set(a.map(r=>r.ot).filter(Boolean))].forEach(t=>tg.push(`<span class="tg2 w">${esc(t)}</span>`));if(multi)tg.push(`<span class="tg2 a">${esc([...new Set(a.map(r=>r.ad))].map(md5).join(', '))}</span>`);
+   [...new Set(a.map(r=>r.ot).filter(Boolean))].forEach(t=>tg.push(`<span class="tg2 w">${esc(t)}</span>`));if(multiC&&r0.cen)tg.push(`<span class="tg2${DIRECT.indexOf(r0.cen)>=0?' a':''}">${esc(r0.cen)}</span>`);if(multi)tg.push(`<span class="tg2 a">${esc([...new Set(a.map(r=>r.ad))].map(md5).join(', '))}</span>`);
    const box=pk.length?`<input type="checkbox" data-o="${esc(o)}"${off?'':' checked'} aria-label="${esc(r0.veh)}">`:ex.length&&!ok.length?'<span class="tg2 c">예외</span>':'<span class="tg2 g">완료</span>';
    h+=`<tr class="${pk.length?(off?'off':''):'dim'}"><td>${box}</td><td><div class="vh">${esc(r0.veh)}</div><div class="sbt">${esc(r0.model||'')}</div></td><td>${esc(supS(r0.sup))}</td><td class="zn">${zs.length?esc(zs.join(', ')):'<span class="mu">–</span>'}</td><td>${esc(sz.join(' · '))}</td><td class="n">${pk.length||ok.length||ex.length}</td><td>${tg.join('')}</td></tr>`})});
  const nd=P.vis.filter(r=>r.k==='ok'&&(P.inF(r.wb)||(!r.drv&&P.inT(r.wb)))).length;
@@ -309,9 +312,9 @@ function midHtml(P){const R=P.R,sk=P.skip,by=new Map(),U=S.rows.filter(r=>S.sup.
 function rightHtml(P){const gs=P.reg,F=gs.filter(g=>!g.tmp),exA=P.exA,noZ=P.sel.filter(r=>r.k==='ok'&&!r.zone),cars=L=>[...new Set(L.map(r=>r.veh))];
  let h=`<div class="ttl2">등록할 지시 ${gs.length}건</div>`;if(!gs.length)h+='<div class="mu" style="font-size:13px">고른 차량 중 등록할 대상이 없습니다.</div>';
  gs.forEach(g=>{const M=g.M,ex=g.ex.length?' · 예외 '+g.ex.length+'본':'';
-  if(g.tmp){h+=`<div class="ic t"><div class="h"><b>임시 지시</b><span>예상 ${esc(M.no)}</span></div><div class="d">기사 미정 · <b>${g.cars}대 ${g.ok.length}본</b>${M.dates.length>1?' · '+M.dates.map(d=>md5(d)+' '+g.ok.filter(r=>r.ad===d).length).join(' · '):''}${ex}</div><p>기사가 정해지면 정식 지시로 다시 등록합니다. 그때 정식 지시서에 '임시'로 표시되어 이미 꺼낸 운송장을 알 수 있습니다.</p></div>`;return}
+  if(g.tmp){h+=`<div class="ic t"><div class="h"><b>임시 지시</b><span>예상 ${esc(M.no)}${gs.filter(x=>x.tmp).length>1||S.center===ALLC?' · '+esc(g.center):''}</span></div><div class="d">기사 미정 · <b>${g.cars}대 ${g.ok.length}본</b>${M.dates.length>1?' · '+M.dates.map(d=>md5(d)+' '+g.ok.filter(r=>r.ad===d).length).join(' · '):''}${ex}</div><p>기사가 정해지면 정식 지시로 다시 등록합니다. 그때 정식 지시서에 '임시'로 표시되어 이미 꺼낸 운송장을 알 수 있습니다.</p></div>`;return}
   const sm=S.ship[g.k]||'none';
-  h+=`<div class="ic"><div class="h"><b>정식 지시</b><span>예상 ${esc(M.no)}${F.length>1||S.src!=='date'?' · '+esc(md5(g.date))+' '+esc(g.center):''}</span></div><div class="d">${esc(M.drvLabel)} · <b>${g.cars}대 ${g.ok.length}본</b>${ex}${g.V.fromT?' · 임시에 있던 '+g.V.fromT+'본':''}${g.V.dupN?` · <span style="color:var(--crit)">중복 ${g.V.dupN}본</span>`:''}</div>
+  h+=`<div class="ic"><div class="h"><b>정식 지시</b><span>예상 ${esc(M.no)}${F.length>1||S.src!=='date'||S.center===ALLC?' · '+esc(md5(g.date))+' '+esc(g.center):''}</span></div><div class="d">${esc(M.drvLabel)} · <b>${g.cars}대 ${g.ok.length}본</b>${ex}${g.V.fromT?' · 임시에 있던 '+g.V.fromT+'본':''}${g.V.dupN?` · <span style="color:var(--crit)">중복 ${g.V.dupN}본</span>`:''}</div>
   <div class="ship" role="radiogroup" aria-label="출고 방식"><span class="mu">출고 방식</span>${[['none','기사출고'],['add','용차출고']].map(([v,l])=>`<label class="${sm===v?'on':''}"><input type="radio" name="sh${esc(g.k)}" data-ship="${esc(g.k)}" value="${v}"${sm===v?' checked':''}>${l}</label>`).join('')}</div>${sm==='add'?'<p>[등록]을 누르면 용차 정보(상차 예정·차량·하차지)를 먼저 받습니다. 차량은 나중에 정해도 됩니다.</p>':''}</div>`});
  const w=[];if(exA.length){const v=cars(exA);w.push(`<div><span class="tg2 c">예외 ${exA.length}본</span>${esc(v.slice(0,3).join(', '))}${v.length>3?' 외 '+(v.length-3)+'대':''} — 꺼낼 수 없음 (지시서 예외란)</div>`)}
  if(noZ.length){const v=cars(noZ);w.push(`<div><span class="tg2 w">존 ${noZ.length}본</span>${esc(v.slice(0,3).join(', '))}${v.length>3?' 외 '+(v.length-3)+'대':''} 존 미지정</div>`)}
@@ -399,7 +402,7 @@ function model(V,C){C=C||{tmp:false,date:S.date,center:S.center,info:null,all:S.
  V.ok.forEach(r=>{const key=r.on+'|'+r.zone+'|'+r.pn+'|'+r.ad+'|'+(r.ot||'')+'|'+(r.kp?'K':'');let g=G.get(key);if(!g)G.set(key,g={zone:r.zone,veh:r.veh,model:r.model,sup:r.sup,pn:r.pn,drv:r.drv,sub:r.sub,ad:r.ad,ot:r.ot||'',on:r.on,w:[],dup:[],ri:0,kp:r.kp?1:0,xw:{}});if(r.kp)g.xw[r.wb]=r.xw||'';g.w.push(r.wb);if(r.ri)g.ri++;(V.D.get(r.wb)||[]).forEach(n=>{if(g.dup.indexOf(n)<0)g.dup.push(n)})});
  const lines=[...G.values()].sort((a,b)=>zc(a.zone,b.zone)||kc(a.veh,b.veh)||kc(a.pn,b.pn));lines.forEach(g=>{g.w.sort();g.dup.sort((a,b)=>kc(a,b))});
  const exm=new Map();V.ex.forEach(r=>{const k=[r.k==='noinv'?'미입고':'취소요청',r.drv,r.sup,r.veh,r.pn,WS[r.ws]||r.ws].join('|');exm.set(k,(exm.get(k)||0)+1)});
- const all=C.all||[],U=all.filter(r=>S.sup.has(r.sup)&&!r.drv===!!C.tmp),allD=[...new Set(U.map(r=>r.drv))].every(d=>S.drv.has(d)),allS=new Set(all.map(r=>r.sup)).size===S.sup.size,dset=[...new Set(V.ok.map(r=>r.drv))].sort(kc);
+ const all=C.all||[],U=all.filter(r=>S.sup.has(r.sup)&&!r.drv===!!C.tmp&&(!r.cen||r.cen===C.center)),allD=[...new Set(U.map(r=>r.drv))].every(d=>S.drv.has(d)),allS=new Set(all.map(r=>r.sup)).size===S.sup.size,dset=[...new Set(V.ok.map(r=>r.drv))].sort(kc);
  const ds=[...new Set(V.ok.map(r=>r.ad).filter(Boolean))].sort(),c0=String(C.center).replace(/FDC.*/,'').split(',')[0];
  return{v:2,tmp:!!C.tmp,tmpInfo:C.tmp?C.info:null,dates:ds,no:(C.tmp?'TMP-':'PK-')+C.date.replace(/-/g,'')+'-'+c0+'-'+pad(V.no),n:V.no,date:C.date,center:C.center,at:S.at,issued:'',who:S.who,due:S.due||'',
   drvLabel:C.tmp?'기사 미정':dset.length<=3?dset.join(', '):allD?'전체 '+dset.length+'명':dset.slice(0,2).join(', ')+' 외 '+(dset.length-2)+'명',supLabel:allS?'전체':[...S.sup].sort(kc).join(', '),lines,ex:[...exm.entries()].map(([k,n])=>k.split('|').concat([n])),
