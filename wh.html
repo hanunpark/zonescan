@@ -29,6 +29,7 @@ header{position:sticky;top:0;z-index:5;background:var(--hd);color:var(--hdink);p
 .seg{display:grid;grid-template-columns:1fr 1fr;border:1px solid var(--line2);border-radius:8px;overflow:hidden;height:34px;background:var(--bg)}.seg button{border:0;background:transparent;font-weight:600;color:var(--ink2);cursor:pointer}.seg button.on{background:var(--acc);color:var(--onacc)}
 #flt .b{padding:0 6px;transition:transform .08s,background .15s}#flt .b:active{transform:scale(.97)}#flt .rg.on,#flt .f3 .b.sel{background:var(--soft);color:var(--acc);border-color:var(--acc)}
 #fst{margin-top:6px;font-size:12px;color:var(--ink2);min-height:17px;text-align:right}#fst.ld{color:var(--acc)}#fst.ok{color:var(--good);font-weight:600;animation:fl 1.2s}@keyframes fl{0%{background:var(--goodbg)}100%{background:transparent}}
+.b.bz{position:relative;color:transparent!important;opacity:1}.b.bz::after{content:'';position:absolute;left:50%;top:50%;width:14px;height:14px;margin:-7px 0 0 -7px;border:2px solid var(--acc);border-right-color:transparent;border-radius:50%;animation:bzs .7s linear infinite}@keyframes bzs{to{transform:rotate(360deg)}}@media(prefers-reduced-motion:reduce){.b.bz::after{animation:none;border-right-color:var(--acc);opacity:.55}}
 .kk{animation:kk .45s}@keyframes kk{0%{box-shadow:0 0 0 0 #4b5fe066}100%{box-shadow:0 0 0 9px #4b5fe000}}
 .ctx{display:flex;align-items:baseline;flex-wrap:wrap;gap:4px 12px;background:var(--hd);color:#fff;border-radius:10px;padding:9px 14px;margin-bottom:10px}.ctx .cn{font-size:18px;font-weight:700}.ctx .cn.all{color:#ffd98a}.ctx .cd{font-size:14px;font-weight:600;color:#dfe2f3}.ctx .cd small{font-weight:400;color:var(--hdmu);margin-left:4px}
 .b{height:36px;border:1px solid var(--line2);background:var(--bg);border-radius:8px;padding:0 12px;font-weight:600;font-size:13.5px;cursor:pointer}.b:hover{border-color:var(--mute)}.b.p{background:var(--acc);border-color:var(--acc);color:var(--onacc)}.b.p:hover{background:var(--acch)}.b.s{height:30px;font-size:12.5px;padding:0 10px}
@@ -199,7 +200,7 @@ table.gt .n{text-align:right;white-space:nowrap}table.gt .nm{font-weight:600}tab
 </style>
 </head>
 <body>
-<header><div class="h1"><div class="tt"><b>타이어케어 출고 관리</b><small>v2.24 · 2026-11-28</small></div><button id="ctr" title="거점 바꾸기"></button><button id="whoB"></button></div>
+<header><div class="h1"><div class="tt"><b>타이어케어 출고 관리</b><small>v2.25 · 2026-11-28</small></div><button id="ctr" title="거점 바꾸기"></button><button id="whoB"></button></div>
 <div class="tabs"><button data-tab="list">지시서 목록</button><button data-tab="out">출고 관리</button><button data-tab="ib">입고예정</button><button data-tab="ntc" class="tr">공지</button></div></header>
 <div id="flt" hidden><div class="f1"><label>거점</label><select id="fc"></select></div><div class="fb"><label>기준</label><div class="seg"><button data-by="iss">등록일</button><button data-by="due">약속일</button></div></div><div class="f2"><label>날짜</label><button class="b nv" data-dd="-1" title="하루 앞">‹</button><input type="date" id="ff"><span id="fsep">~</span><input type="date" id="ft"><button class="b nv" data-dd="1" title="하루 뒤">›</button><button class="b rg" id="frg" title="여러 날을 한꺼번에 보기">기간</button></div><div class="f3"><button class="b p" id="fg">조회</button><button class="b" data-q="0">오늘</button><button class="b" data-q="1">내일</button><button class="b" id="f7">최근 7일</button><button class="b" id="fr">새로고침</button></div><div id="fst"></div></div>
 <main id="m"><div class="msg">여는 중…</div></main><div id="busy" hidden>최신 내용 확인 중…</div>
@@ -222,7 +223,7 @@ const T0=ymd(new Date()),F={from:T0,to:T0,center:ls('center')||'',by:ls('by')||'
 /* 고른 기간은 같은 날 같은 탭 안에서만 유지 (지시서를 열었다 돌아와도 그대로) */
 try{const r=JSON.parse(sessionStorage.getItem('wh_range')||'null');if(r&&r.day===T0){F.from=r.from;F.to=r.to;F.rng=r.from!==r.to}}catch(e){}
 function keepRange(){try{sessionStorage.setItem('wh_range',JSON.stringify({day:T0,from:F.from,to:F.to}))}catch(e){}}
-const PV='v2.24';
+const PV='v2.25';
 /* 새 판이 올라왔는데 브라우저가 예전 판을 보여 주면 자동으로 새로 읽는다 (GitHub Pages 캐시 대비) */
 let VC=0;function verCheck(){if(Date.now()-VC<600000)return;VC=Date.now();fetch(location.pathname+'?_='+Date.now(),{cache:'no-store'}).then(r=>r.text()).then(t=>{const m=t.match(/const PV='([^']+)'/);if(m&&m[1]!==PV&&!sessionStorage.getItem('wh_upd_'+m[1])){sessionStorage.setItem('wh_upd_'+m[1],'1');const u=new URL(location.href);u.searchParams.set('v',m[1]);location.replace(u.toString())}}).catch(()=>{})}
 let ST='',SHOWCX=false,SHOWCXS=false,D={srv:[],trk:[],ntc:[],role:'',ib:[]},LOADED=false,PEND=0,SEQ=0,FOCUS='',WIDE=false;
@@ -235,7 +236,8 @@ let LR={};async function getR(q,tries){const p=LR[q],j=await get(q+(p&&p.rev?'&r
 async function post(b,safe){b.t=KEY;for(let n=0;;n++){let j;try{j=await jfetch(GAS,{method:'POST',body:JSON.stringify(b)},safe?(b.a==='link'?5:3):1)}catch(e){throw new Error(e.srv?'구글 서버가 잠시 응답하지 않아 저장하지 못했을 수 있습니다. 잠시 뒤 새로고침으로 확인해 주세요.':'통신 실패 — 저장되지 않았을 수 있습니다.')}if(j.busy&&safe&&n<1){await new Promise(r=>setTimeout(r,1500));continue}if(!j.ok)throw new Error(j.err||'오류');return j}}
 function fkey(){return F.from+'|'+F.to}
 /* 누른 버튼에 바로 표시 */
-let BB=null;function busyBtn(b){if(BB){BB.textContent=BB.dataset.t;BB.disabled=false;BB=null}if(b){BB=b;b.dataset.t=b.textContent;b.textContent='불러오는 중…';b.disabled=true}}
+/* v2.25: 버튼 글자를 '불러오는 중…'으로 바꾸지 않는다 — 화살표 버튼(26px)에서 글자가 커지고 버튼이 늘어나던 문제. 버튼 크기는 그대로 두고 안쪽에 작은 원만 돌리며, 글로 된 안내는 아래 상태 줄(#fst)에만 */
+let BB=null;function busyBtn(b){if(BB){BB.classList.remove('bz');BB.disabled=false;BB.removeAttribute('aria-busy');BB=null}if(b){BB=b;b.classList.add('bz');b.disabled=true;b.setAttribute('aria-busy','true')}}
 /* 오늘·내일은 미리 받아 두어 누르면 바로 보이게 */
 let PF=false;function prefetch(){if(PF)return;PF=true;const t=ymd(new Date());[[t,t],[addD(t,1),addD(t,1)]].forEach(([a,b])=>{const k=a+'|'+b;if(MC[k]||k===fkey())return;const sv=[F.from,F.to];F.from=a;F.to=b;fetchAll().then(n=>{MC[n.k]=n}).catch(()=>{});F.from=sv[0];F.to=sv[1]})}
 function fetchAll(quiet){const k=fkey(),t=quiet?1:3;const ibP=IBOFF&&TAB!=='ib'?Promise.resolve({ib:[],unsup:1,s:true}):getR('a=ib_list&from='+F.from+'&to='+F.to,t).then(([j,s])=>{IBOFF=false;return {ib:j.items||[],s}},e=>/unknown action/.test(e.message)?(IBOFF=true,{ib:[],unsup:1,s:true}):{ib:((MC[k]||{}).ib)||[],err:e.message,s:false});return Promise.all([ibP,getR('a=list&from='+addD(F.from,-7)+'&to='+addD(F.to,7)+'&ifrom='+F.from+'&ito='+F.to,t),getR('a=trk_list&from='+addD(F.from,-10)+'&to='+addD(F.to,10),t)]).then(([I,[l,s1],[tr,s2]])=>({k,srv:l.items.filter(x=>x.M),trk:tr.items,ntc:l.ntc||[],role:l.role||'',ib:I.ib,ibUnsup:!!I.unsup,ibErr:I.err||'',same:s1&&s2&&I.s}))}
