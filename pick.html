@@ -145,7 +145,9 @@ async function pull(){if(!LK)return;const t0=Date.now();try{const j=await jfetch
  else if(h){O=await dec(h);K='pk_'+O.no+'_'+O.n+'_'+O.f;done=LS(K)||{}}
  else throw new Error('지시서 링크가 아닙니다. PC의 [전달하기]로 받은 링크를 열어 주세요.');document.title=TITLE||(O.d.slice(5)+' 피킹 · '+O.f);
  $('#no').textContent=(TITLE?TITLE+' · ':'')+(O.t?'[임시] ':'')+O.no+(O.t?'':' · '+O.n+'차')+' · 출고예정일';$('#dt').textContent=O.d+' ('+dow(O.d)+')';
- try{if(localStorage.getItem('wh_key')){$('#nav').hidden=false;$('#n1').href='wh.html?tab=list&no='+encodeURIComponent(O.no);$('#n2').href='wh.html?tab=out&no='+encodeURIComponent(O.no)}}catch(_){}
+ try{const op=(()=>{try{return window.opener&&!window.opener.closed}catch(_){return false}})();
+  if(op){$('#nav').hidden=false;$('#n1').textContent='‹ 목록으로 돌아가기 (이 탭 닫기)';$('#n1').href='wh.html?tab=list&no='+encodeURIComponent(O.no);$('#n1').onclick=e=>{e.preventDefault();window.close();setTimeout(()=>{location.href=$('#n1').href},400)};$('#n2').hidden=true;$('#n2').style.display='none'}
+  else if(localStorage.getItem('wh_key')){$('#nav').hidden=false;$('#n1').href='wh.html?tab=list&no='+encodeURIComponent(O.no);$('#n2').href='wh.html?tab=out&no='+encodeURIComponent(O.no)}}catch(_){}
  const L=lines();$('#sb').textContent=O.c+' · '+O.f+' · 차량 '+new Set(L.map(VK)).size+'대'+(O.u?' · 마감 '+O.u:'');$('#hd').hidden=false;render();
  if(late)late.then(j=>{if(!j.ok)return;KEY=j.key||KEY;REVG=j.rev||'';if(j.cap&&j.cap.batch)BATCH=true;TK=j.tk||null;TITLE=j.title||'';NT=j.ntc||[];MM=j.mm||[];cxBanner(j.cancel);applyRel(j);done=merge(j.checked,t0);LS(K,done);
   $('#no').textContent=(TITLE?TITLE+' · ':'')+(O.t?'[임시] ':'')+O.no+(O.t?'':' · '+O.n+'차')+' · 출고예정일';if(TITLE)document.title=TITLE;render()}).catch(()=>{})}
