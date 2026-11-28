@@ -64,10 +64,13 @@ nav{background:#f2f4f6;border-radius:12px;padding:3px;gap:0;margin-top:12px}nav 
 .ex{color:#9a6200}.ft{color:#8b95a1;font-size:12.5px;line-height:1.6}
 .ship{background:#fff}.ship .ln{border-top:1px solid #f2f4f6;margin-top:12px;padding-top:12px;font-size:14.5px;line-height:1.65}
 main>div:not(.card)>button.l,.ft button.l{background:#fff}
+#rob[hidden],#nav[hidden]{display:none!important}/* #nav는 style에 display:flex가 있어 hidden이 먹지 않던 문제(v2.4부터) — 관리 키 없는 작업자 폰에도 빈 이동 줄이 보였음 */#rob{position:sticky;top:0;z-index:20;display:flex;align-items:center;gap:10px;background:#fff7e0;color:#5a4300;border-bottom:1px solid #f0dca0;padding:9px 12px;font-size:13.5px;line-height:1.45}#rob span{flex:1}#rob button{flex:none;border:0;border-radius:8px;background:#3273f6;color:#fff;font-weight:700;font-size:14px;padding:8px 14px}#rob.flash{animation:rof .5s 2}@keyframes rof{50%{background:#ffe08a}}
+body.ro .wb{cursor:default}body.ro #rs{display:none}
 .wb .wt{display:block;font-size:10.5px;font-weight:700;line-height:1.2;margin-top:2px}.wb .wt.pre{color:#1e7a3c}.wb .wt.mv{color:#b05a00}.wb.d .wt{color:#fff;opacity:.92}
 </style>
 </head>
 <body>
+<div id="rob" hidden><span><b>보기 전용</b> · 지시자 화면에서 열었습니다. 체크는 창고 진행 현황에 바로 반영되니, 직접 피킹할 때만 켜세요.</span><button id="roon" type="button">체크하기</button></div>
 <div id="nav" hidden style="background:#0b1829;display:flex;gap:6px;padding:6px 10px"><a id="n1" style="flex:1;text-align:center;color:#fff;text-decoration:none;font-weight:700;font-size:14px;border:1px solid #ffffff55;border-radius:8px;padding:7px 4px">‹ 지시서 목록</a><a id="n2" style="flex:1;text-align:center;color:#fff;text-decoration:none;font-weight:700;font-size:14px;border:1px solid #ffffff55;border-radius:8px;padding:7px 4px">출고 관리</a></div><header id="hd" hidden><div class="r1"><div class="dt"><small id="no"></small><span id="dt"></span></div><div class="pc"><span id="pc"></span><small>꺼낸 수 / 전체</small></div></div>
 <div class="sub" id="sb"></div><div class="pb"><i id="pbi"></i></div>
 <nav><button data-v="z" class="on">존 순서로 꺼내기</button><button data-v="d">기사별로 모으기</button></nav></header>
@@ -114,7 +117,13 @@ function render(){const L=lines();let h='';const SH=shipHtml(L);
  if(O.X&&O.X.length)h+=`<div class="card ex"><b>꺼낼 수 없는 건 (참고)</b>${O.X.map(x=>`<div class="row"><span>${esc(x[0])} · ${esc(x[2])} · ${esc(x[1])}</span><b>${x[4]}본</b></div>`).join('')}</div>`;
  h+=`<div class="ft">${esc(O.no)} · ${O.t?'임시':O.n+'차'} · 등록 ${esc(O.i)}${O.w?' · '+esc(O.w):''}<br>등록 시점 기준 화면입니다. 이후 루티 변경은 반영되지 않습니다. (출고 방식·용차 정보는 열 때마다 최신으로 받습니다)${LK?'<br>체크는 같은 지시서를 받은 사람끼리 공유됩니다.':''}<br>${LK?'<button class="l" id="rf" style="margin-top:8px">다른 사람 체크 불러오기</button> ':''}<button class="l" id="rs" style="margin-top:8px">체크 모두 지우기</button></div>`;
  $('#m').innerHTML=topHtml()+SH+h;prog()}
+/* v2.28 보기 전용: 지시자(PC 도구)가 연 화면은 ?ro=1 — 체크·지우기만 막고, [체크하기]로 풀면 이 탭은 계속 체크 가능(주소에서 ro를 지움) */
+let RO=new URLSearchParams(location.search).get('ro')==='1';
+function roUI(){document.body.classList.toggle('ro',RO);$('#rob').hidden=!RO}
+function roOff(){if(!confirm('이 화면에서 피킹 체크를 할까요?\n체크는 창고의 피킹 진행 현황에 바로 반영됩니다.'))return;RO=false;roUI();try{const u=new URL(location.href);u.searchParams.delete('ro');history.replaceState(null,'',u.pathname+u.search+u.hash)}catch(_){}}
 document.addEventListener('click',e=>{const t=(e.target.closest&&e.target.closest('[data-w]'))||e.target;
+ if(t.id==='roon'){roOff();return}
+ if(RO&&(t.dataset.w||t.id==='rs')){const b=$('#rob');b.classList.remove('flash');void b.offsetWidth;b.classList.add('flash');return}
  if(t.dataset.w){const w=t.dataset.w;if(done[w])delete done[w];else done[w]=1;LS(K,done);push(w,done[w]?1:0);t.classList.toggle('d',!!done[w]);prog();if(navigator.vibrate)navigator.vibrate(20);
   const c=t.closest('.card');if(c&&view==='z'){const b=[...c.querySelectorAll('[data-w]')],d=b.filter(x=>done[x.dataset.w]).length;c.querySelector('.cnt').textContent=d+'/'+b.length+(d===b.length?' ✓':'');c.classList.toggle('done',d===b.length)}return}
  if(t.dataset&&t.dataset.nk){let me=ME();if(!me){me=(prompt('확인한 사람 이름을 넣어 주세요. (이 폰에서 한 번만 묻습니다)')||'').trim();if(!me)return;try{localStorage.setItem('pk_who',me)}catch(_){}}const no=t.dataset.nk,n=NT.find(z=>z.no===no);t.disabled=true;t.textContent='저장 중…';
@@ -145,7 +154,7 @@ async function pull(){if(!LK)return;const t0=Date.now();try{const j=await jfetch
  else if(h){O=await dec(h);K='pk_'+O.no+'_'+O.n+'_'+O.f;done=LS(K)||{}}
  else throw new Error('지시서 링크가 아닙니다. PC의 [전달하기]로 받은 링크를 열어 주세요.');document.title=TITLE||(O.d.slice(5)+' 피킹 · '+O.f);
  $('#no').textContent=(TITLE?TITLE+' · ':'')+(O.t?'[임시] ':'')+O.no+(O.t?'':' · '+O.n+'차')+' · 출고예정일';$('#dt').textContent=O.d+' ('+dow(O.d)+')';
- try{const op=(()=>{try{return window.opener&&!window.opener.closed}catch(_){return false}})();
+ roUI();try{const op=(()=>{try{return window.opener&&!window.opener.closed}catch(_){return false}})();
   if(op){$('#nav').hidden=false;$('#n1').textContent='‹ 목록으로 돌아가기 (이 탭 닫기)';$('#n1').href='wh.html?tab=list&no='+encodeURIComponent(O.no);$('#n1').onclick=e=>{e.preventDefault();window.close();setTimeout(()=>{location.href=$('#n1').href},400)};$('#n2').hidden=true;$('#n2').style.display='none'}
   else if(localStorage.getItem('wh_key')){$('#nav').hidden=false;$('#n1').href='wh.html?tab=list&no='+encodeURIComponent(O.no);$('#n2').href='wh.html?tab=out&no='+encodeURIComponent(O.no)}}catch(_){}
  const L=lines();$('#sb').textContent=O.c+' · '+O.f+' · 차량 '+new Set(L.map(VK)).size+'대'+(O.u?' · 마감 '+O.u:'');$('#hd').hidden=false;render();

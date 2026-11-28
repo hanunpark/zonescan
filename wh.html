@@ -200,7 +200,7 @@ table.gt .n{text-align:right;white-space:nowrap}table.gt .nm{font-weight:600}tab
 </style>
 </head>
 <body>
-<header><div class="h1"><div class="tt"><b>타이어케어 출고 관리</b><small>v2.27 · 2026-11-28</small></div><button id="ctr" title="거점 바꾸기"></button><button id="whoB"></button></div>
+<header><div class="h1"><div class="tt"><b>타이어케어 출고 관리</b><small>v2.28 · 2026-11-28</small></div><button id="ctr" title="거점 바꾸기"></button><button id="whoB"></button></div>
 <div class="tabs"><button data-tab="list">지시서 목록</button><button data-tab="out">출고 관리</button><button data-tab="ib">입고예정</button><button data-tab="ntc" class="tr">공지</button></div></header>
 <div id="flt" hidden><div class="f1"><label>거점</label><select id="fc"></select></div><div class="fb"><label>기준</label><div class="seg"><button data-by="iss">등록일</button><button data-by="due">약속일</button></div></div><div class="f2"><label>날짜</label><button class="b nv" data-dd="-1" title="하루 앞">‹</button><input type="date" id="ff"><span id="fsep">~</span><input type="date" id="ft"><button class="b nv" data-dd="1" title="하루 뒤">›</button><button class="b rg" id="frg" title="여러 날을 한꺼번에 보기">기간</button></div><div class="f3"><button class="b p" id="fg">조회</button><button class="b" data-q="0">오늘</button><button class="b" data-q="1">내일</button><button class="b" id="f7">최근 7일</button><button class="b" id="fr">새로고침</button></div><div id="fst"></div></div>
 <main id="m"><div class="msg">여는 중…</div></main><div id="busy" hidden>최신 내용 확인 중…</div>
@@ -223,7 +223,7 @@ const T0=ymd(new Date()),F={from:T0,to:T0,center:ls('center')||'',by:ls('by')||'
 /* 고른 기간은 같은 날 같은 탭 안에서만 유지 (지시서를 열었다 돌아와도 그대로) */
 try{const r=JSON.parse(sessionStorage.getItem('wh_range')||'null');if(r&&r.day===T0){F.from=r.from;F.to=r.to;F.rng=r.from!==r.to}}catch(e){}
 function keepRange(){try{sessionStorage.setItem('wh_range',JSON.stringify({day:T0,from:F.from,to:F.to}))}catch(e){}}
-const PV='v2.27';
+const PV='v2.28';
 /* 새 판이 올라왔는데 브라우저가 예전 판을 보여 주면 자동으로 새로 읽는다 (GitHub Pages 캐시 대비) */
 let VC=0;function verCheck(){if(Date.now()-VC<600000)return;VC=Date.now();fetch(location.pathname+'?_='+Date.now(),{cache:'no-store'}).then(r=>r.text()).then(t=>{const m=t.match(/const PV='([^']+)'/);if(m&&m[1]!==PV&&!sessionStorage.getItem('wh_upd_'+m[1])){sessionStorage.setItem('wh_upd_'+m[1],'1');const u=new URL(location.href);u.searchParams.set('v',m[1]);location.replace(u.toString())}}).catch(()=>{})}
 let FADJ=false,ST='',SHOWCX=false,SHOWCXS=false,D={srv:[],trk:[],ntc:[],role:'',ib:[]},LOADED=false,PEND=0,SEQ=0,FOCUS='',WIDE=false;
@@ -570,7 +570,7 @@ function prefetchLink(r){const no=r.M.no,k=linkOf(r);if(k)return Promise.resolve
  return LKP[no]=post({a:'link',key:no,target:'전체',reuse:1,o:toObj(r.M)},true).then(j=>{const lk=ls('lnk')||{};lk[no]=j.id;ls('lnk',lk);return j.id}).catch(e=>{delete LKP[no];throw e})}
 async function hashOf(o){const by=new TextEncoder().encode(JSON.stringify(o));let out=by,z='0';if(window.CompressionStream){out=new Uint8Array(await new Response(new Blob([by]).stream().pipeThrough(new CompressionStream('deflate-raw'))).arrayBuffer());z='1'}let b='';for(let i=0;i<out.length;i+=8192)b+=String.fromCharCode.apply(null,out.subarray(i,i+8192));return z+btoa(b).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'')}
 async function openSheet(r){let w=null;if(BR||WD()){try{w=window.open('','_blank')}catch(e){}}const slow=!linkOf(r);
- try{if(slow){$('#busy').hidden=false;$('#busy').textContent='지시서 여는 중…'}const [k,h]=await Promise.all([prefetchLink(r),hashOf(toObj(r.M)).catch(()=>'')]);const u=new URL(PICK+'?k='+k+(h?'#'+h:''),location.href).href;if(w){w.location.href=u}else location.href=u}
+ try{if(slow){$('#busy').hidden=false;$('#busy').textContent='지시서 여는 중…'}const [k,h]=await Promise.all([prefetchLink(r),hashOf(toObj(r.M)).catch(()=>'')]);const u=new URL(PICK+'?k='+k+(BR?'&ro=1':'')+(h?'#'+h:''),location.href).href;/* v2.28: 지시자(PC 도구 안)가 열면 보기 전용 */if(w){w.location.href=u}else location.href=u}
  catch(e){if(w)w.close();alert('지시서를 열지 못했습니다.\n'+e.message)}finally{if(slow){$('#busy').hidden=true;$('#busy').textContent='최신 내용 확인 중…'}}}
 /* 전달 링크 복사: 작업자·기사 등 누구에게나 보낼 폰 지시서 주소만 복사 */
 function copyText(t){let ok=false;try{const ta=document.createElement('textarea');ta.value=t;ta.setAttribute('readonly','');ta.style.cssText='position:fixed;top:0;left:0;opacity:0';document.body.appendChild(ta);ta.select();ok=document.execCommand('copy');ta.remove()}catch(e){}
