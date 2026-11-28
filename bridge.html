@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="ko"><head><meta charset="utf-8"><meta name="robots" content="noindex"><title>공유 저장소 중계</title></head>
+<body>
+<script>
+/* 공유 저장소 중계 v1 · 2026-11-28
+   루티 화면에서 연 PC 피킹 지시서 도구는 루티 주소(admin.flowfix.co.kr)에서 돌아가서,
+   일부 조회(지시서 목록 등)가 브라우저에서 바로 막힐 때가 있다. 그때 이 페이지(github.io)가 대신 받아서 돌려준다.
+   - 루티 주소에서 온 요청만 받는다.
+   - Apps Script 웹앱 주소(script.google.com/macros/s/…/exec)에 대한 조회(GET)만 한다. 저장·수정은 하지 않는다. */
+const OK_ORIGIN = 'https://admin.flowfix.co.kr';
+const OK_URL = /^https:\/\/script\.google\.com\/macros\/s\/[A-Za-z0-9_-]+\/exec\?[^#\s]*$/;
+addEventListener('message', async e => {
+  if (e.origin !== OK_ORIGIN) return;
+  const d = e.data || {};
+  if (d.t !== 'tc-get' || typeof d.u !== 'string' || !OK_URL.test(d.u)) return;
+  const r = { t: 'tc-got', id: d.id };
+  try { const x = await fetch(d.u, { redirect: 'follow', cache: 'no-store' }); r.text = await x.text(); }
+  catch (er) { r.err = String((er && er.message) || er); }
+  e.source.postMessage(r, e.origin);
+});
+if (parent !== window) parent.postMessage({ t: 'tc-bridge-ready' }, OK_ORIGIN);
+</script>
+</body></html>
