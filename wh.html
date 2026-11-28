@@ -8,14 +8,14 @@
 <title>타이어케어 출고 관리</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
 <style>
-:root{--bg:#fff;--sub:#f2f4f6;--ink:#191f28;--ink2:#4e5968;--mute:#8b95a1;--line:#eceef1;--line2:#d1d6db;--acc:#4b5fe0;--acch:#3f51c9;--soft:#eef0ff;--good:#0a7d3c;--goodbg:#e6f6ec;--warn:#8a5a00;--warnbg:#fff4d6;--crit:#c0302f;--critbg:#fdeaea;--hd:#1b1d33;--hdink:#f3f4fb;--hdmu:#aab0cf;--onacc:#fff;--card:#fff}
-@media(prefers-color-scheme:dark){html.pc{--bg:#14151d;--sub:#1c1e2a;--ink:#eff0f6;--ink2:#c0c3d4;--mute:#888da3;--line:#2c2f43;--line2:#3a3e57;--acc:#8b9bff;--acch:#a3b0ff;--soft:#23274a;--good:#4cc77e;--goodbg:#143122;--warn:#f5b93a;--warnbg:#3a2e0c;--crit:#f07878;--critbg:#3c1b1b;--hd:#0f1018;--onacc:#10121c;--card:#1a1c27}}
+:root{--cb:#3273f6;--bg:#fff;--sub:#f2f4f6;--ink:#191f28;--ink2:#4e5968;--mute:#8b95a1;--line:#eceef1;--line2:#d1d6db;--acc:#4b5fe0;--acch:#3f51c9;--soft:#eef0ff;--good:#0a7d3c;--goodbg:#e6f6ec;--warn:#8a5a00;--warnbg:#fff4d6;--crit:#c0302f;--critbg:#fdeaea;--hd:#1b1d33;--hdink:#f3f4fb;--hdmu:#aab0cf;--onacc:#fff;--card:#fff}
+@media(prefers-color-scheme:dark){html.pc{--cb:#5b8ff9;--bg:#14151d;--sub:#1c1e2a;--ink:#eff0f6;--ink2:#c0c3d4;--mute:#888da3;--line:#2c2f43;--line2:#3a3e57;--acc:#8b9bff;--acch:#a3b0ff;--soft:#23274a;--good:#4cc77e;--goodbg:#143122;--warn:#f5b93a;--warnbg:#3a2e0c;--crit:#f07878;--critbg:#3c1b1b;--hd:#0f1018;--onacc:#10121c;--card:#1a1c27}}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}[hidden]{display:none!important}
 body{margin:0;background:var(--sub);color:var(--ink);font:14px/1.5 -apple-system,"Apple SD Gothic Neo","Pretendard","Noto Sans KR","Malgun Gothic",sans-serif;font-variant-numeric:tabular-nums}
 button,input,select,textarea{font:inherit;color:inherit}
 header{position:sticky;top:0;z-index:5;background:var(--hd);color:var(--hdink);padding:8px 12px 0}html.br header{display:none}
 .h1{display:flex;flex-wrap:wrap;align-items:center;gap:6px 8px}.tt{display:flex;flex-direction:column;line-height:1.2}.tt b{white-space:nowrap;font-size:16px}.tt small{margin-top:2px;color:var(--hdmu);font-size:11px}
-#ctr{order:3;flex-basis:100%;text-align:left;border:0;border-radius:8px;background:#2a2d4a;color:#fff;font-weight:700;font-size:17px;height:38px;padding:0 12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}#ctr::after{content:' ▾';font-size:12px;color:var(--hdmu)}#ctr .pv{float:right;font-size:10.5px;font-weight:400;color:var(--hdmu);margin-top:11px}#ctr small{font-weight:500;font-size:11px;color:var(--hdmu);margin-right:6px}#ctr.all{background:#5a3f0a;color:#ffd98a}
+#ctr{order:3;flex-basis:100%;text-align:left;border:0;border-radius:8px;background:#2a2d4a;color:#fff;font-weight:700;font-size:17px;height:38px;padding:0 12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}#ctr::after{content:' ▾';font-size:12px;color:var(--hdmu)}#ctr .pv{float:right;font-size:10.5px;font-weight:400;color:var(--hdmu);margin-top:11px}#ctr small{font-weight:500;font-size:11px;color:var(--hdmu);margin-right:6px}
 .h1 #whoB{margin-left:auto;white-space:nowrap;border:1px solid #3a3e5e;border-radius:999px;height:30px;padding:0 12px;font-size:13px;font-weight:600;background:transparent;color:var(--hdink)}.h1 button.need{background:#f5b93a;border-color:#f5b93a;color:#3d2800;animation:nb 1.2s ease-in-out infinite alternate}@keyframes nb{to{box-shadow:0 0 0 4px #f5b93a55}}
 .tabs{display:flex;margin-top:6px}.tabs button{flex:1;height:40px;border:0;background:transparent;color:var(--hdmu);font-weight:600;font-size:14.5px;border-bottom:2px solid transparent;cursor:pointer}.tabs button.on{color:#fff;border-bottom-color:#8b9bff}
 .tabs .nbg{display:inline-block;min-width:17px;height:17px;line-height:17px;border-radius:9px;background:var(--crit);color:#fff;font-size:10.5px;font-style:normal;margin-left:4px;padding:0 5px;vertical-align:1px}
@@ -25,13 +25,13 @@ header{position:sticky;top:0;z-index:5;background:var(--hd);color:var(--hdink);p
 #flt .f3{grid-template-columns:repeat(5,minmax(0,1fr))}
 @media(max-width:520px){#flt .f2:not(.one){grid-template-columns:44px minmax(0,1fr) 14px minmax(0,1fr) 52px}#flt .f2:not(.one) .nv{display:none}}
 #flt select,#flt input{height:36px;width:100%;min-width:0;border:1px solid var(--line2);border-radius:8px;padding:0 8px;background:var(--bg);font-size:14px}#flt label{color:var(--ink2);font-weight:600;font-size:12.5px}
-#fc{font-weight:700;font-size:15px!important;border:1.5px solid var(--acc)!important;color:var(--ink)}#fc.all{border-color:var(--warn)!important;background:var(--warnbg)!important;color:var(--warn)}
+#fc{font-weight:700;font-size:15px!important;color:var(--ink)}html.wide #fc{-webkit-appearance:none;appearance:none;border:0!important;background:var(--fill) var(--chev) no-repeat right 10px center/18px!important;border-radius:12px!important;padding:0 34px 0 12px;color:var(--ink)!important}
 .seg{display:grid;grid-template-columns:1fr 1fr;border:1px solid var(--line2);border-radius:8px;overflow:hidden;height:34px;background:var(--bg)}.seg button{border:0;background:transparent;font-weight:600;color:var(--ink2);cursor:pointer}.seg button.on{background:var(--acc);color:var(--onacc)}
 #flt .b{padding:0 6px;transition:transform .08s,background .15s}#flt .b:active{transform:scale(.97)}#flt .rg.on,#flt .f3 .b.sel{background:var(--soft);color:var(--acc);border-color:var(--acc)}
 #fst{margin-top:6px;font-size:12px;color:var(--ink2);min-height:17px;text-align:right}#fst.ld{color:var(--acc)}#fst.ok{color:var(--good);font-weight:600;animation:fl 1.2s}@keyframes fl{0%{background:var(--goodbg)}100%{background:transparent}}
 .b.bz{position:relative;color:transparent!important;opacity:1}.b.bz::after{content:'';position:absolute;left:50%;top:50%;width:14px;height:14px;margin:-7px 0 0 -7px;border:2px solid var(--acc);border-right-color:transparent;border-radius:50%;animation:bzs .7s linear infinite}@keyframes bzs{to{transform:rotate(360deg)}}@media(prefers-reduced-motion:reduce){.b.bz::after{animation:none;border-right-color:var(--acc);opacity:.55}}
 .kk{animation:kk .45s}@keyframes kk{0%{box-shadow:0 0 0 0 #4b5fe066}100%{box-shadow:0 0 0 9px #4b5fe000}}
-.ctx{display:flex;align-items:baseline;flex-wrap:wrap;gap:4px 12px;background:var(--hd);color:#fff;border-radius:10px;padding:9px 14px;margin-bottom:10px}.ctx .cn{font-size:18px;font-weight:700}.ctx .cn.all{color:#ffd98a}.ctx .cd{font-size:14px;font-weight:600;color:#dfe2f3}.ctx .cd small{font-weight:400;color:var(--hdmu);margin-left:4px}
+.ctx{display:flex;align-items:baseline;flex-wrap:wrap;gap:4px 12px;background:var(--hd);color:#fff;border-radius:10px;padding:9px 14px;margin-bottom:10px}.ctx .cn{font-size:18px;font-weight:700}.ctx .cd{font-size:14px;font-weight:600;color:#dfe2f3}.ctx .cd small{font-weight:400;color:var(--hdmu);margin-left:4px}
 .b{height:36px;border:1px solid var(--line2);background:var(--bg);border-radius:8px;padding:0 12px;font-weight:600;font-size:13.5px;cursor:pointer}.b:hover{border-color:var(--mute)}.b.p{background:var(--acc);border-color:var(--acc);color:var(--onacc)}.b.p:hover{background:var(--acch)}.b.s{height:30px;font-size:12.5px;padding:0 10px}
 main{padding:10px 10px 70px;max-width:980px;margin:0 auto}
 .kind{display:flex;gap:8px;margin-bottom:10px}.kind button{flex:1;border:1px solid var(--line2);background:var(--bg);border-radius:10px;padding:8px 12px;text-align:left;font-weight:700;font-size:14.5px;cursor:pointer}.kind button small{display:block;font-weight:400;font-size:11.5px;color:var(--ink2)}.kind button.on{background:var(--soft);border-color:var(--acc);color:var(--acc)}.kind button.on small{color:var(--acc)}
@@ -88,7 +88,7 @@ html:not(.wide) #flt{border:0;padding:16px 20px 14px;display:grid;grid-template-
 html:not(.wide) #flt>div{margin:0!important;max-width:none}html:not(.wide) #flt label{display:none}
 html:not(.wide) #flt .f1{display:flex;align-items:center;gap:8px;grid-template-columns:none;min-width:0}
 html:not(.wide) #fc{-webkit-appearance:none;appearance:none;width:auto;max-width:100%;height:40px;border:0!important;background:transparent var(--chev) no-repeat right 0 center/20px!important;padding:0 26px 0 0;font-size:26px!important;font-weight:800;color:var(--ink)!important;letter-spacing:-.02em;text-overflow:ellipsis}
-.seg{border:0;background:var(--fill);border-radius:10px;padding:3px;gap:0;height:36px}.seg button{border-radius:8px;font-size:13px;color:var(--mute);padding:0 10px}.seg button.on{background:var(--card);color:var(--ink);box-shadow:0 1px 3px rgba(0,0,0,.08)}
+.seg{border:0;background:var(--fill);border-radius:10px;padding:3px;gap:2px;height:36px}.seg button{border-radius:8px;font-size:14px;font-weight:600;color:var(--ink2);padding:0 12px;white-space:nowrap}.seg button.on{background:var(--cb);color:#fff;box-shadow:0 1px 3px rgba(0,0,0,.18)}
 html:not(.wide) #flt .fb{grid-template-columns:none}
 html:not(.wide) #flt .f2{grid-column:1/-1;grid-template-columns:40px minmax(0,1fr) 14px minmax(0,1fr) 40px 64px;gap:6px}html:not(.wide) #flt .f2.one{grid-template-columns:40px minmax(0,1fr) 40px 64px}
 @media(max-width:520px){html:not(.wide) #flt .f2:not(.one){grid-template-columns:minmax(0,1fr) 14px minmax(0,1fr) 64px}}
@@ -146,7 +146,7 @@ main{padding:12px 16px 80px}
 html.wide body{font-size:13px}html.wide main{max-width:none;padding:12px 16px 40px}html.wide .ctx{display:none}
 html.wide header{position:static}html.wide #ctr{order:0;flex-basis:auto;height:30px;font-size:14px;margin-left:12px}html.wide #ctr .pv{display:none}html.wide .tabs{max-width:560px}html.wide #flt{position:sticky;top:0;z-index:4;padding:8px 16px}html.wide [data-a=tgla]{display:none}html.wide #flt>div{margin:0;max-width:none}
 html.wide #flt{display:flex;flex-wrap:wrap;align-items:center;gap:8px 14px}html.wide #flt>div{display:flex;gap:6px;margin:0!important}html.wide #flt label{white-space:nowrap}
-html.wide #flt .f1 select{width:190px}html.wide #flt .seg{width:200px}html.wide #flt .f2 input{width:140px}html.wide #flt .f2 .b{width:auto;min-width:34px}html.wide #flt .f3 .b{height:34px}html.wide #fst{margin:0 0 0 auto!important;text-align:right}
+html.wide #flt .f1 select{width:190px}html.wide #flt .seg{width:auto;min-width:200px}html.wide #flt .f2 input{width:140px}html.wide #flt .f2 .b{width:auto;min-width:34px}html.wide #flt .f3 .b{height:34px}html.wide #fst{margin:0 0 0 auto!important;text-align:right}
 html.wide .kind{max-width:560px}
 .split{display:grid;grid-template-columns:minmax(0,1fr) 420px;gap:14px;align-items:start}
 .tbw{background:var(--card);border:1px solid var(--line);border-radius:10px;overflow:hidden}
@@ -200,7 +200,7 @@ table.gt .n{text-align:right;white-space:nowrap}table.gt .nm{font-weight:600}tab
 </style>
 </head>
 <body>
-<header><div class="h1"><div class="tt"><b>타이어케어 출고 관리</b><small>v2.25 · 2026-11-28</small></div><button id="ctr" title="거점 바꾸기"></button><button id="whoB"></button></div>
+<header><div class="h1"><div class="tt"><b>타이어케어 출고 관리</b><small>v2.26 · 2026-11-28</small></div><button id="ctr" title="거점 바꾸기"></button><button id="whoB"></button></div>
 <div class="tabs"><button data-tab="list">지시서 목록</button><button data-tab="out">출고 관리</button><button data-tab="ib">입고예정</button><button data-tab="ntc" class="tr">공지</button></div></header>
 <div id="flt" hidden><div class="f1"><label>거점</label><select id="fc"></select></div><div class="fb"><label>기준</label><div class="seg"><button data-by="iss">등록일</button><button data-by="due">약속일</button></div></div><div class="f2"><label>날짜</label><button class="b nv" data-dd="-1" title="하루 앞">‹</button><input type="date" id="ff"><span id="fsep">~</span><input type="date" id="ft"><button class="b nv" data-dd="1" title="하루 뒤">›</button><button class="b rg" id="frg" title="여러 날을 한꺼번에 보기">기간</button></div><div class="f3"><button class="b p" id="fg">조회</button><button class="b" data-q="0">오늘</button><button class="b" data-q="1">내일</button><button class="b" id="f7">최근 7일</button><button class="b" id="fr">새로고침</button></div><div id="fst"></div></div>
 <main id="m"><div class="msg">여는 중…</div></main><div id="busy" hidden>최신 내용 확인 중…</div>
@@ -223,7 +223,7 @@ const T0=ymd(new Date()),F={from:T0,to:T0,center:ls('center')||'',by:ls('by')||'
 /* 고른 기간은 같은 날 같은 탭 안에서만 유지 (지시서를 열었다 돌아와도 그대로) */
 try{const r=JSON.parse(sessionStorage.getItem('wh_range')||'null');if(r&&r.day===T0){F.from=r.from;F.to=r.to;F.rng=r.from!==r.to}}catch(e){}
 function keepRange(){try{sessionStorage.setItem('wh_range',JSON.stringify({day:T0,from:F.from,to:F.to}))}catch(e){}}
-const PV='v2.25';
+const PV='v2.26';
 /* 새 판이 올라왔는데 브라우저가 예전 판을 보여 주면 자동으로 새로 읽는다 (GitHub Pages 캐시 대비) */
 let VC=0;function verCheck(){if(Date.now()-VC<600000)return;VC=Date.now();fetch(location.pathname+'?_='+Date.now(),{cache:'no-store'}).then(r=>r.text()).then(t=>{const m=t.match(/const PV='([^']+)'/);if(m&&m[1]!==PV&&!sessionStorage.getItem('wh_upd_'+m[1])){sessionStorage.setItem('wh_upd_'+m[1],'1');const u=new URL(location.href);u.searchParams.set('v',m[1]);location.replace(u.toString())}}).catch(()=>{})}
 let ST='',SHOWCX=false,SHOWCXS=false,D={srv:[],trk:[],ntc:[],role:'',ib:[]},LOADED=false,PEND=0,SEQ=0,FOCUS='',WIDE=false;
@@ -234,13 +234,14 @@ async function get(q,tries){const j=await jfetch(GAS+'?'+q+(KEY?'&t='+encodeURIC
 /* v2.18: 조회마다 지난 응답의 판 번호(rev)를 실어 보내고, 서버가 '변경 없음'이라 하면 지난 응답을 그대로 쓴다 (Apps Script v2.10부터) */
 let LR={};async function getR(q,tries){const p=LR[q],j=await get(q+(p&&p.rev?'&r='+encodeURIComponent(p.rev):''),tries);if(j.same&&p)return [p,true];if(j.rev)LR[q]=j;else delete LR[q];return [j,false]}
 async function post(b,safe){b.t=KEY;for(let n=0;;n++){let j;try{j=await jfetch(GAS,{method:'POST',body:JSON.stringify(b)},safe?(b.a==='link'?5:3):1)}catch(e){throw new Error(e.srv?'구글 서버가 잠시 응답하지 않아 저장하지 못했을 수 있습니다. 잠시 뒤 새로고침으로 확인해 주세요.':'통신 실패 — 저장되지 않았을 수 있습니다.')}if(j.busy&&safe&&n<1){await new Promise(r=>setTimeout(r,1500));continue}if(!j.ok)throw new Error(j.err||'오류');return j}}
-function fkey(){return F.from+'|'+F.to}
+let IBBY=ls('ibby')||'due';/* v2.26 입고예정 기준: due=입고예정일(기본) · iss=등록일 */
+function fkey(){return F.from+'|'+F.to+(IBBY==='iss'?'|ir':'')}
 /* 누른 버튼에 바로 표시 */
 /* v2.25: 버튼 글자를 '불러오는 중…'으로 바꾸지 않는다 — 화살표 버튼(26px)에서 글자가 커지고 버튼이 늘어나던 문제. 버튼 크기는 그대로 두고 안쪽에 작은 원만 돌리며, 글로 된 안내는 아래 상태 줄(#fst)에만 */
 let BB=null;function busyBtn(b){if(BB){BB.classList.remove('bz');BB.disabled=false;BB.removeAttribute('aria-busy');BB=null}if(b){BB=b;b.classList.add('bz');b.disabled=true;b.setAttribute('aria-busy','true')}}
 /* 오늘·내일은 미리 받아 두어 누르면 바로 보이게 */
-let PF=false;function prefetch(){if(PF)return;PF=true;const t=ymd(new Date());[[t,t],[addD(t,1),addD(t,1)]].forEach(([a,b])=>{const k=a+'|'+b;if(MC[k]||k===fkey())return;const sv=[F.from,F.to];F.from=a;F.to=b;fetchAll().then(n=>{MC[n.k]=n}).catch(()=>{});F.from=sv[0];F.to=sv[1]})}
-function fetchAll(quiet){const k=fkey(),t=quiet?1:3;const ibP=IBOFF&&TAB!=='ib'?Promise.resolve({ib:[],unsup:1,s:true}):getR('a=ib_list&from='+F.from+'&to='+F.to,t).then(([j,s])=>{IBOFF=false;return {ib:j.items||[],s}},e=>/unknown action/.test(e.message)?(IBOFF=true,{ib:[],unsup:1,s:true}):{ib:((MC[k]||{}).ib)||[],err:e.message,s:false});return Promise.all([ibP,getR('a=list&from='+addD(F.from,-7)+'&to='+addD(F.to,7)+'&ifrom='+F.from+'&ito='+F.to,t),getR('a=trk_list&from='+addD(F.from,-10)+'&to='+addD(F.to,10),t)]).then(([I,[l,s1],[tr,s2]])=>({k,srv:l.items.filter(x=>x.M),trk:tr.items,ntc:l.ntc||[],role:l.role||'',ib:I.ib,ibUnsup:!!I.unsup,ibErr:I.err||'',same:s1&&s2&&I.s}))}
+let PF=false;function prefetch(){if(PF)return;PF=true;const t=ymd(new Date());[[t,t],[addD(t,1),addD(t,1)]].forEach(([a,b])=>{const k=a+'|'+b+(IBBY==='iss'?'|ir':'');if(MC[k]||k===fkey())return;const sv=[F.from,F.to];F.from=a;F.to=b;fetchAll().then(n=>{MC[n.k]=n}).catch(()=>{});F.from=sv[0];F.to=sv[1]})}
+function fetchAll(quiet){const k=fkey(),t=quiet?1:3;const ibP=IBOFF&&TAB!=='ib'?Promise.resolve({ib:[],unsup:1,s:true}):getR('a=ib_list&from='+(IBBY==='iss'?addD(F.from,-120)+'&to='+addD(F.to,180):F.from+'&to='+F.to),t).then(([j,s])=>{IBOFF=false;return {ib:j.items||[],s}},e=>/unknown action/.test(e.message)?(IBOFF=true,{ib:[],unsup:1,s:true}):{ib:((MC[k]||{}).ib)||[],err:e.message,s:false});return Promise.all([ibP,getR('a=list&from='+addD(F.from,-7)+'&to='+addD(F.to,7)+'&ifrom='+F.from+'&ito='+F.to,t),getR('a=trk_list&from='+addD(F.from,-10)+'&to='+addD(F.to,10),t)]).then(([I,[l,s1],[tr,s2]])=>({k,srv:l.items.filter(x=>x.M),trk:tr.items,ntc:l.ntc||[],role:l.role||'',ib:I.ib,ibUnsup:!!I.unsup,ibErr:I.err||'',same:s1&&s2&&I.s}))}
 const MC={};
 let LOADING=0,FAILS=0,SKIP=0,WSEQ=0,IBOFF=false;
 async function load(quiet){const seq=++SEQ,key=fkey(),w0=WSEQ;if(!LOADED){const c=MC[key]||(()=>{const s=ls('cache');return s&&s.k===key?s:null})();if(c){D=c;LOADED=true;draw()}}
@@ -443,7 +444,8 @@ function nameDlg(h,v,note,go){if(myR()!=='pc'){alert('명칭은 지시자(PC 도
  * 필수: 입고거점 · 거래처 · 입고예정일 · 예정시간 · 수량. 나머지는 선택. */
 let SHOWIBX=false;
 const IBS={plan:['예정','w'],done:['입고 완료','g'],cancel:['취소','o']};
-function ibOf(){return (D.ib||[]).filter(x=>inC(x.center)&&inR(x.date))}
+const ibD=x=>IBBY==='iss'?String(x.at||'').slice(0,10):x.date;/* 등록일 기준이면 등록 시각의 날짜 */
+function ibOf(){return (D.ib||[]).filter(x=>inC(x.center)&&inR(ibD(x)))}
 function ibSpecs(x){return (x.specs||[]).filter(s=>s[0]||s[1]).map(s=>`<span>${esc(s[0]||'규격 미기재')}${s[1]?' × <b>'+s[1]+'</b>':''}</span>`).join('')}
 function ibLine(x){const a=[];if(x.from)a.push('발송 '+esc(x.from));a.push('입고 '+esc(x.center));return a.join(' → ')}
 function ibStatus(x){const L=x.log||{},rn=r=>r==='pc'?' (지시자)':r==='wh'?' (창고)':'';if(x.st==='done'&&L.done)return `입고 확인 ${esc(String(L.done.at).slice(5,16))} · ${esc(L.done.by||'')}${rn(L.done.r)}`;if(x.st==='cancel'&&L.cancel)return `취소 ${esc(String(L.cancel.at).slice(5,16))} · ${esc(L.cancel.by||'')}${rn(L.cancel.r)}${L.cancel.why?' — '+esc(L.cancel.why):''}`;const E=(L.edit||[]).slice(-1)[0];return `등록 ${esc(String(x.at).slice(5,16))} · ${esc(x.by||'')}${rn(L.r)}`+(E?` · 수정 ${esc(String(E.at).slice(5,16))} · ${esc(E.by||'')}${rn(E.r)}`:'')}
@@ -458,16 +460,16 @@ function ibCard(x){const s=IBS[x.st]||IBS.plan,tel=String(x.phone||'').replace(/
  <div class="ibst">${ibStatus(x)}</div>
  <div class="act">${x.st==='cancel'?'<button class="b" data-a="ibrs">취소 되돌리기</button>':x.st==='done'?'<button class="b" data-a="ibundo">입고 확인 취소</button>':'<button class="b p" data-a="ibdone">입고 확인</button>'}${x.st!=='cancel'?'<button class="b" data-a="ibedit">수정</button><button class="lk" data-a="ibcx">입고예정 취소</button>':''}</div></div>`}
 function wideIb(L){const keys=L.map(x=>x.id),sel=pickSel('ib',keys),all=!F.center;let h=`<thead><tr><th>입고 예정</th><th>거래처</th>${all?'<th>입고거점</th>':''}<th>발송지</th><th class="n">수량</th><th>용차</th><th>상태</th></tr></thead><tbody>`,pane='',pd='';
- L.forEach(x=>{if(x.date!==pd){h+=`<tr class="gh"><td colspan="${all?7:6}">입고예정일 ${x.date} (${dow(x.date)})</td></tr>`;pd=x.date}const s=IBS[x.st]||IBS.plan;
-  h+=`<tr class="rw${x.id===sel?' on':''}${x.st==='cancel'?' cx':''}" data-a="sel" data-g="ib" data-k="${esc(x.id)}" data-f="${esc(x.id)}"><td class="nw"><b>${esc(x.time)}</b></td><td><span class="nm">${esc(x.client)}</span>${x.recv?'<div class="sb">'+esc(x.recv)+'</div>':''}</td>${all?'<td>'+esc(x.center)+'</td>':''}<td>${esc(x.from||'-')}</td><td class="n"><b>${x.qty}</b></td><td>${x.plate?esc(x.plate):'-'}<div class="sb">${esc(x.phone||'')}</div></td><td><span class="bd ${s[1]}">${s[0]}</span></td></tr>`;
+ L.forEach(x=>{const d=ibD(x);if(d!==pd){h+=`<tr class="gh"><td colspan="${all?7:6}">${IBBY==='iss'?'등록일':'입고예정일'} ${d} (${dow(d)}) · ${L.filter(y=>ibD(y)===d).length}건</td></tr>`;pd=d}const s=IBS[x.st]||IBS.plan;
+  h+=`<tr class="rw${x.id===sel?' on':''}${x.st==='cancel'?' cx':''}" data-a="sel" data-g="ib" data-k="${esc(x.id)}" data-f="${esc(x.id)}"><td class="nw">${IBBY==='iss'?esc(x.date.slice(5).replace('-','/'))+' ('+dow(x.date)+') ':''}<b>${esc(x.time)}</b>${IBBY==='iss'?'<div class="sb">등록 '+esc(String(x.at).slice(11,16))+'</div>':''}</td><td><span class="nm">${esc(x.client)}</span>${x.recv?'<div class="sb">'+esc(x.recv)+'</div>':''}</td>${all?'<td>'+esc(x.center)+'</td>':''}<td>${esc(x.from||'-')}</td><td class="n"><b>${x.qty}</b></td><td>${x.plate?esc(x.plate):'-'}<div class="sb">${esc(x.phone||'')}</div></td><td><span class="bd ${s[1]}">${s[0]}</span></td></tr>`;
   if(x.id===sel)pane=inPane(()=>ibCard(x))});
  return split(h+'</tbody>',pane)}
 function ibView(){if(D.ibUnsup)return '<div class="msg">입고예정은 공유 저장소(Apps Script)를 v2.11로 업데이트한 뒤 사용할 수 있습니다.</div>';
- const A=ibOf(),ncx=A.filter(x=>x.st==='cancel').length,L=(SHOWIBX?A:A.filter(x=>x.st!=='cancel')).slice().sort((a,b)=>kc(a.date+a.time,b.date+b.time));
+ const A=ibOf(),ncx=A.filter(x=>x.st==='cancel').length,L=(SHOWIBX?A:A.filter(x=>x.st!=='cancel')).slice().sort((a,b)=>IBBY==='iss'?kc(String(b.at),String(a.at)):kc(a.date+a.time,b.date+b.time));
  let h=`<div class="chips"><span>예정 <b>${A.filter(x=>x.st==='plan').length}</b></span><span>입고 완료 <b>${A.filter(x=>x.st==='done').length}</b></span><span class="mu">수량 합계 ${A.filter(x=>x.st!=='cancel').reduce((n,x)=>n+(x.qty||0),0)}</span>${ncx?`<button data-a="ibxs" class="${SHOWIBX?'on':''}">${SHOWIBX?'취소 '+ncx+'건 숨기기':'취소 '+ncx+'건 보기'}</button>`:''}<button class="b p ibnew" data-a="ibnew">+ 입고예정 등록</button></div>`;
  if(!L.length)return h+`<div class="msg">이 조건에 입고예정이 없습니다.<br><small>[+ 입고예정 등록]으로 올리세요.</small></div>`;
  if(WD())return h+wideIb(L);
- let pd='';L.forEach(x=>{if(x.date!==pd){h+=`<div class="dh">입고예정일 ${x.date} (${dow(x.date)}) <small>${L.filter(y=>y.date===x.date).length}건</small></div>`;pd=x.date}h+=ibCard(x)});return h}
+ let pd='';const gl=IBBY==='iss'?'등록일':'입고예정일';L.forEach(x=>{const d=ibD(x);if(d!==pd){h+=`<div class="dh">${gl} ${d} (${dow(d)}) <small>${L.filter(y=>ibD(y)===d).length}건</small></div>`;pd=d}h+=ibCard(x)});return h}
 function ibSpecRow(s){return `<div class="ibr"><input class="ibsz" placeholder="규격 (예: 245/45R18)" value="${esc((s||[])[0]||'')}"><input class="ibsq" type="number" min="0" inputmode="numeric" placeholder="수량" value="${esc((s||[])[1]||'')}"><button class="b s" data-x2>×</button></div>`}
 function ibForm(x){if(!needWho())return;x=x||{};const v=k=>esc(x[k]==null?'':x[k]);
  const cs=[...new Set((ls('centers')||[]).concat(F.center?[F.center]:[]))].sort(kc),cl=[...new Set((D.ib||[]).map(y=>y.client).concat(ls('ibcl')||[]).filter(Boolean))].sort(kc),fr=[...new Set((D.ib||[]).map(y=>y.from).filter(Boolean))].sort(kc);
@@ -530,15 +532,15 @@ function printTruck(x){if(!needWho())return;const pw=window.open('','tctruck');i
  pw.document.open();pw.document.write(truckDoc(x));pw.document.close();const at=nowS();save(()=>{x.st.steps=x.st.steps||{};x.st.steps.mprt={at,by:WHO}},{a:'trk_set',id:x.id,step:{name:'mprt',on:1,at,by:WHO}},true)}
 /* ───── 조회 조건 (v2.12): 거점 강조, 기준(지시일·출고예정일, 기본 지시일), 하루(기본 오늘)·기간, 누르면 바로 반응 ───── */
 const dl=d=>d.slice(5).replace('-','/')+' ('+dow(d)+')',rel=d=>{const t=ymd(new Date());return d===t?'오늘':d===addD(t,1)?'내일':d===addD(t,-1)?'어제':''};
-function ctxBar(){const one=F.from===F.to;return `<div class="ctx"><span class="cn${F.center?'':' all'}">📍 ${esc(F.center||'전체 거점')}</span><span class="cd">${TAB==='ib'?'입고예정일':F.by==='due'?'약속일':'등록일'} ${one?dl(F.from)+(rel(F.from)?' · '+rel(F.from):''):dl(F.from)+' ~ '+dl(F.to)}<small>${TAB==='ib'?'입고예정':TAB==='out'?(KIND==='trk'?(F.by==='due'?'용차는 상차일 기준':'용차는 지시서 등록일 기준'):'기사출고'):'지시서 목록'}</small></span></div>`}
-function fltSync(){const t=ymd(new Date());$('#fc').classList.toggle('all',!F.center);$('#flt .f1').classList.toggle('all',!F.center);document.querySelectorAll('[data-by]').forEach(b=>b.classList.toggle('on',b.dataset.by===F.by));
+function ctxBar(){const one=F.from===F.to;return `<div class="ctx"><span class="cn${F.center?'':' all'}">📍 ${esc(F.center||'전체 거점')}</span><span class="cd">${TAB==='ib'?(IBBY==='iss'?'등록일':'입고예정일'):F.by==='due'?'약속일':'등록일'} ${one?dl(F.from)+(rel(F.from)?' · '+rel(F.from):''):dl(F.from)+' ~ '+dl(F.to)}<small>${TAB==='ib'?'입고예정':TAB==='out'?(KIND==='trk'?(F.by==='due'?'용차는 상차일 기준':'용차는 지시서 등록일 기준'):'기사출고'):'지시서 목록'}</small></span></div>`}
+function fltSync(){const t=ymd(new Date());$('#fc').classList.toggle('all',!F.center);$('#flt .f1').classList.toggle('all',!F.center);document.querySelectorAll('[data-by]').forEach(b=>b.classList.toggle('on',b.dataset.by===(TAB==='ib'?IBBY:F.by)));{const d=document.querySelector('[data-by=due]');if(d)d.textContent=TAB==='ib'?'입고예정일':'약속일'}
  $('#flt .f2').classList.toggle('one',!F.rng);$('#frg').classList.toggle('on',F.rng);document.querySelectorAll('[data-q]').forEach(b=>b.classList.toggle('sel',!F.rng&&F.from===addD(t,+b.dataset.q)&&F.to===F.from));$('#f7').classList.toggle('sel',F.from===addD(t,-6)&&F.to===t)}
 function stamp(st,txt){const e=$('#fst');if(!e)return;e.className=st;e.textContent=txt;if(st==='ok'){void e.offsetWidth}}
 function kick(b){if(!b)return;b.classList.remove('kk');void b.offsetWidth;b.classList.add('kk')}
 function setDay(a,b,btn){F.from=a;F.to=b||a;keepRange();LOADED=false;kick(btn);if(!MC[fkey()])busyBtn(btn);$('#busy').hidden=false;stamp('ld','불러오는 중…');draw();load()}
 function draw(){head();$('#flt').hidden=false;const cs=[...new Set(D.srv.map(r=>r.M.center).concat(D.trk.map(x=>x.center),ls('centers')||[],F.center?[F.center]:[]).filter(Boolean))].sort(kc);ls('centers',cs);
  {/* v2.22 직영 창고(운영 중인 센터)를 위에 묶어 보여 줌 */const DIR=['일산FDC','청주FDC(B2B)','전주FDC','경산FDC','원주FDC(B2B)'],o=c=>`<option${c===F.center?' selected':''}>${esc(c)}</option>`,rest=cs.filter(c=>DIR.indexOf(c)<0);$('#fc').innerHTML='<option value="">전체 거점</option><optgroup label="직영 창고">'+DIR.map(o).join('')+'</optgroup>'+(rest.length?'<optgroup label="그 외 거점">'+rest.map(o).join('')+'</optgroup>':'')}$('#ff').value=F.from;$('#ft').value=F.to;fltSync();
- const sc=window.scrollY;let h='',pd='';$('#flt .fb').style.display=TAB==='ib'?'none':'';if(TAB==='ntc'){$('#flt').hidden=true;$('#m').innerHTML=ntcView();window.scrollTo(0,sc);return}h+=ctxBar()+banner();
+ const sc=window.scrollY;let h='',pd='';if(TAB==='ntc'){$('#flt').hidden=true;$('#m').innerHTML=ntcView();window.scrollTo(0,sc);return}h+=ctxBar()+banner();
  if(TAB==='ib'){h+=ibView();$('#m').innerHTML=h;window.scrollTo(0,sc);return}
  if(TAB==='list'){const B0=D.srv.map((r,i)=>({r,i})).filter(x=>inC(x.r.M.center)&&inRng(x.r)),ncs=B0.filter(x=>(x.r.fl||{}).cancel).length,B=B0.filter(x=>!(x.r.fl||{}).cancel),inT=x=>!TYPE||(TYPE==='tmp')===!!x.r.M.tmp;
   const BT=B.filter(inT),inS=x=>!ST||(x.r.fl||{}).cancel||stOf(x.r)[ST];
@@ -683,7 +685,7 @@ document.addEventListener('change',e=>{const t=e.target;if(t.dataset&&t.dataset.
 document.addEventListener('toggle',e=>{const c=e.target.closest&&e.target.closest('[data-id]');if(c){const x=D.trk.find(y=>y.id===c.dataset.id);if(x)x._open=e.target.open}},true);
 document.querySelectorAll('[data-q]').forEach(b=>b.onclick=()=>{const t=addD(ymd(new Date()),+b.dataset.q);F.rng=false;setDay(t,t,b)});
 $('#f7').onclick=e=>{const t=ymd(new Date());F.rng=true;setDay(addD(t,-6),t,e.target)};
-document.querySelectorAll('[data-by]').forEach(b=>b.onclick=()=>{if(F.by===b.dataset.by)return;F.by=b.dataset.by;ls('by',F.by);kick(b);draw()});
+document.querySelectorAll('[data-by]').forEach(b=>b.onclick=()=>{if(TAB==='ib'){if(IBBY===b.dataset.by)return;IBBY=b.dataset.by;ls('ibby',IBBY);setDay(F.from,F.to,b);return}if(F.by===b.dataset.by)return;F.by=b.dataset.by;ls('by',F.by);kick(b);draw()});
 document.querySelectorAll('[data-dd]').forEach(b=>b.onclick=()=>{const d=+b.dataset.dd;setDay(addD(F.from,d),addD(F.to,d),b)});
 $('#frg').onclick=e=>{F.rng=!F.rng;kick(e.target);if(!F.rng&&F.to!==F.from)setDay(F.from,F.from,e.target);else{fltSync();if(F.rng)$('#ft').focus()}};
 $('#ff').onchange=()=>{const a=$('#ff').value;if(!a)return;if(!F.rng)setDay(a,a,$('#fg'));else if(a<=F.to)setDay(a,F.to,$('#fg'))};
