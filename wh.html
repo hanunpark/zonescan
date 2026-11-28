@@ -197,7 +197,7 @@ table.gt .n{text-align:right;white-space:nowrap}table.gt .nm{font-weight:600}tab
 </style>
 </head>
 <body>
-<header><div class="h1"><div class="tt"><b>타이어케어 출고 관리</b><small>v2.21 · 2026-11-28</small></div><button id="ctr" title="거점 바꾸기"></button><button id="whoB"></button></div>
+<header><div class="h1"><div class="tt"><b>타이어케어 출고 관리</b><small>v2.22 · 2026-11-28</small></div><button id="ctr" title="거점 바꾸기"></button><button id="whoB"></button></div>
 <div class="tabs"><button data-tab="list">지시서 목록</button><button data-tab="out">출고 관리</button><button data-tab="ib">입고예정</button><button data-tab="ntc" class="tr">공지</button></div></header>
 <div id="flt" hidden><div class="f1"><label>거점</label><select id="fc"></select></div><div class="fb"><label>기준</label><div class="seg"><button data-by="iss">등록일</button><button data-by="due">약속일</button></div></div><div class="f2"><label>날짜</label><button class="b nv" data-dd="-1" title="하루 앞">‹</button><input type="date" id="ff"><span id="fsep">~</span><input type="date" id="ft"><button class="b nv" data-dd="1" title="하루 뒤">›</button><button class="b rg" id="frg" title="여러 날을 한꺼번에 보기">기간</button></div><div class="f3"><button class="b p" id="fg">조회</button><button class="b" data-q="0">오늘</button><button class="b" data-q="1">내일</button><button class="b" id="f7">최근 7일</button><button class="b" id="fr">새로고침</button></div><div id="fst"></div></div>
 <main id="m"><div class="msg">여는 중…</div></main><div id="busy" hidden>최신 내용 확인 중…</div>
@@ -220,7 +220,7 @@ const T0=ymd(new Date()),F={from:T0,to:T0,center:ls('center')||'',by:ls('by')||'
 /* 고른 기간은 같은 날 같은 탭 안에서만 유지 (지시서를 열었다 돌아와도 그대로) */
 try{const r=JSON.parse(sessionStorage.getItem('wh_range')||'null');if(r&&r.day===T0){F.from=r.from;F.to=r.to;F.rng=r.from!==r.to}}catch(e){}
 function keepRange(){try{sessionStorage.setItem('wh_range',JSON.stringify({day:T0,from:F.from,to:F.to}))}catch(e){}}
-const PV='v2.21';
+const PV='v2.22';
 /* 새 판이 올라왔는데 브라우저가 예전 판을 보여 주면 자동으로 새로 읽는다 (GitHub Pages 캐시 대비) */
 let VC=0;function verCheck(){if(Date.now()-VC<600000)return;VC=Date.now();fetch(location.pathname+'?_='+Date.now(),{cache:'no-store'}).then(r=>r.text()).then(t=>{const m=t.match(/const PV='([^']+)'/);if(m&&m[1]!==PV&&!sessionStorage.getItem('wh_upd_'+m[1])){sessionStorage.setItem('wh_upd_'+m[1],'1');const u=new URL(location.href);u.searchParams.set('v',m[1]);location.replace(u.toString())}}).catch(()=>{})}
 let ST='',SHOWCX=false,SHOWCXS=false,D={srv:[],trk:[],ntc:[],role:'',ib:[]},LOADED=false,PEND=0,SEQ=0,FOCUS='',WIDE=false;
@@ -509,7 +509,7 @@ function stamp(st,txt){const e=$('#fst');if(!e)return;e.className=st;e.textConte
 function kick(b){if(!b)return;b.classList.remove('kk');void b.offsetWidth;b.classList.add('kk')}
 function setDay(a,b,btn){F.from=a;F.to=b||a;keepRange();LOADED=false;kick(btn);if(!MC[fkey()])busyBtn(btn);$('#busy').hidden=false;stamp('ld','불러오는 중…');draw();load()}
 function draw(){head();$('#flt').hidden=false;const cs=[...new Set(D.srv.map(r=>r.M.center).concat(D.trk.map(x=>x.center),ls('centers')||[],F.center?[F.center]:[]).filter(Boolean))].sort(kc);ls('centers',cs);
- $('#fc').innerHTML='<option value="">전체 거점</option>'+cs.map(c=>`<option${c===F.center?' selected':''}>${esc(c)}</option>`).join('');$('#ff').value=F.from;$('#ft').value=F.to;fltSync();
+ {/* v2.22 직영 창고(운영 중인 센터)를 위에 묶어 보여 줌 */const DIR=['일산FDC','청주FDC(B2B)','전주FDC','경산FDC','원주FDC(B2B)'],o=c=>`<option${c===F.center?' selected':''}>${esc(c)}</option>`,rest=cs.filter(c=>DIR.indexOf(c)<0);$('#fc').innerHTML='<option value="">전체 거점</option><optgroup label="직영 창고">'+DIR.map(o).join('')+'</optgroup>'+(rest.length?'<optgroup label="그 외 거점">'+rest.map(o).join('')+'</optgroup>':'')}$('#ff').value=F.from;$('#ft').value=F.to;fltSync();
  const sc=window.scrollY;let h='',pd='';$('#flt .fb').style.display=TAB==='ib'?'none':'';if(TAB==='ntc'){$('#flt').hidden=true;$('#m').innerHTML=ntcView();window.scrollTo(0,sc);return}h+=ctxBar()+banner();
  if(TAB==='ib'){h+=ibView();$('#m').innerHTML=h;window.scrollTo(0,sc);return}
  if(TAB==='list'){const B0=D.srv.map((r,i)=>({r,i})).filter(x=>inC(x.r.M.center)&&inRng(x.r)),ncs=B0.filter(x=>(x.r.fl||{}).cancel).length,B=B0.filter(x=>!(x.r.fl||{}).cancel),inT=x=>!TYPE||(TYPE==='tmp')===!!x.r.M.tmp;
